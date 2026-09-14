@@ -85,10 +85,10 @@ export default async function BuscaPage({
     prisma.client.findMany({
       where: {
         OR: [
-          { fullName: { contains: query } },
-          { legalName: { contains: query } },
-          { tradeName: { contains: query } },
-          { email: { contains: query } },
+          { fullName: { contains: query, mode: "insensitive" } },
+          { legalName: { contains: query, mode: "insensitive" } },
+          { tradeName: { contains: query, mode: "insensitive" } },
+          { email: { contains: query, mode: "insensitive" } },
           ...(digits.length >= 3 ? [{ cpf: { contains: digits } }, { cnpj: { contains: digits } }] : []),
           ...(maskedPhone
             ? [{ whatsapp: { contains: maskedPhone } }, { phone: { contains: maskedPhone } }]
@@ -101,8 +101,8 @@ export default async function BuscaPage({
     prisma.lead.findMany({
       where: {
         OR: [
-          { name: { contains: query } },
-          { instagram: { contains: query } },
+          { name: { contains: query, mode: "insensitive" } },
+          { instagram: { contains: query, mode: "insensitive" } },
           ...(digits.length >= 3 ? [{ whatsapp: { contains: digits } }, { phone: { contains: digits } }] : []),
         ],
       },
@@ -112,9 +112,9 @@ export default async function BuscaPage({
     prisma.prospectingEntry.findMany({
       where: {
         OR: [
-          { name: { contains: query } },
-          { contactName: { contains: query } },
-          { instagram: { contains: query } },
+          { name: { contains: query, mode: "insensitive" } },
+          { contactName: { contains: query, mode: "insensitive" } },
+          { instagram: { contains: query, mode: "insensitive" } },
           ...(digits.length >= 3 ? [{ whatsapp: { contains: digits } }] : []),
         ],
       },
@@ -123,7 +123,10 @@ export default async function BuscaPage({
     }),
     prisma.service.findMany({
       where: {
-        OR: [{ name: { contains: query } }, { category: { contains: query } }],
+        OR: [
+          { name: { contains: query, mode: "insensitive" } },
+          { category: { contains: query, mode: "insensitive" } },
+        ],
       },
       take: 15,
       orderBy: { name: "asc" },
@@ -133,7 +136,12 @@ export default async function BuscaPage({
   const canSeeUsers = session.role === "ADMIN";
   const users = canSeeUsers
     ? await prisma.user.findMany({
-        where: { OR: [{ name: { contains: query } }, { email: { contains: query } }] },
+        where: {
+          OR: [
+            { name: { contains: query, mode: "insensitive" } },
+            { email: { contains: query, mode: "insensitive" } },
+          ],
+        },
         take: 15,
         orderBy: { name: "asc" },
       })

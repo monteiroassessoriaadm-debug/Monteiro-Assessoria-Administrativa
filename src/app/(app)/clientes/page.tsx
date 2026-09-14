@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { onlyDigits } from "@/lib/utils";
+import { onlyDigits, maskPhone } from "@/lib/utils";
 import { displayClientName, displayClientDocument } from "@/lib/client-display";
 
 export default async function ClientesPage({
@@ -15,6 +15,9 @@ export default async function ClientesPage({
 }) {
   const { q, status } = await searchParams;
   const qDigits = q ? onlyDigits(q) : "";
+  // Telefone/WhatsApp são salvos já mascarados (ex.: "(11) 93333-2222"), então
+  // buscar pelos dígitos puros não bate — reaplicamos a máscara do formulário.
+  const qMaskedPhone = qDigits.length >= 8 ? maskPhone(qDigits) : null;
 
   const clients = await prisma.client.findMany({
     where: {
@@ -22,12 +25,14 @@ export default async function ClientesPage({
       ...(q
         ? {
             OR: [
-              { fullName: { contains: q } },
-              { legalName: { contains: q } },
-              { tradeName: { contains: q } },
+              { fullName: { contains: q, mode: "insensitive" } },
+              { legalName: { contains: q, mode: "insensitive" } },
+              { tradeName: { contains: q, mode: "insensitive" } },
               ...(qDigits ? [{ cpf: { contains: qDigits } }, { cnpj: { contains: qDigits } }] : []),
-              { whatsapp: { contains: q } },
-              { email: { contains: q } },
+              ...(qMaskedPhone
+                ? [{ whatsapp: { contains: qMaskedPhone } }, { phone: { contains: qMaskedPhone } }]
+                : []),
+              { email: { contains: q, mode: "insensitive" } },
             ],
           }
         : {}),
