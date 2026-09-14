@@ -25,6 +25,7 @@ import {
   Megaphone,
   MessageCircle,
   Sparkles,
+  BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Role } from "@/generated/prisma/enums";
@@ -101,6 +102,12 @@ const navGroups: NavGroup[] = [
         href: "/financeiro/contas",
         label: "Contas bancárias",
         icon: Wallet,
+        roles: ["ADMIN", "GESTOR"],
+      },
+      {
+        href: "/relatorios",
+        label: "Relatórios",
+        icon: BarChart3,
         roles: ["ADMIN", "GESTOR"],
       },
     ],
