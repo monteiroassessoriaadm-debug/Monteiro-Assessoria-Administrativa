@@ -413,3 +413,22 @@ export const mediaContentApprovalSchema = z.object({
 export const mediaContentPublishSchema = z.object({
   link: z.string().optional(),
 });
+
+export const whatsAppTemplateSchema = z.object({
+  name: z.string().min(1, "Informe o nome do modelo."),
+  category: z.string().optional(),
+  content: z.string().min(1, "Informe o conteúdo da mensagem."),
+  active: z.boolean().default(true),
+});
+
+export type WhatsAppTemplateFormValues = z.infer<typeof whatsAppTemplateSchema>;
+
+export const whatsAppMessageSchema = z.object({
+  clientId: z.string().min(1, "Selecione um cliente."),
+  templateId: z.string().optional(),
+  direction: z.enum(["ENVIADA", "RECEBIDA"]).default("ENVIADA"),
+  content: z.string().min(1, "Informe o conteúdo da mensagem."),
+  sentAt: optionalDateString,
+});
+
+export type WhatsAppMessageFormValues = z.infer<typeof whatsAppMessageSchema>;

@@ -50,6 +50,8 @@ model User {
   mediaContentsResponsible    MediaContent[]      @relation("MediaContentResponsible")
   mediaContentsApproved       MediaContent[]      @relation("MediaContentApprovedBy")
   mediaContentsCreated        MediaContent[]      @relation("MediaContentCreatedBy")
+  whatsappTemplatesCreated    WhatsAppTemplate[]  @relation("WhatsAppTemplateCreatedBy")
+  whatsappMessagesCreated     WhatsAppMessage[]   @relation("WhatsAppMessageCreatedBy")
 
   @@map("users")
 }
@@ -133,6 +135,7 @@ model Client {
   receivables      Receivable[]
   commissions      Commission[]
   mediaContents    MediaContent[]
+  whatsappMessages WhatsAppMessage[]
 
   @@unique([cpf])
   @@unique([cnpj])
@@ -734,4 +737,54 @@ model MediaContent {
   @@index([status])
   @@index([scheduledDate])
   @@map("media_contents")
+}
+
+// ---------- Fase 7: WhatsApp (preparação) ----------
+// Não existe integração real com a API do WhatsApp Business — isto é uma
+// biblioteca de modelos de mensagem e um registro manual de histórico de
+// conversas, para manter tudo no cadastro único do cliente. O envio real
+// continua sendo feito pelo WhatsApp normal; o usuário registra aqui depois.
+
+model WhatsAppTemplate {
+  id       String  @id @default(cuid())
+  name     String
+  category String?
+  content  String // texto com {{TOKENS}} do cliente
+  active   Boolean @default(true)
+
+  createdById String?
+  createdBy   User?    @relation("WhatsAppTemplateCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  messages WhatsAppMessage[]
+
+  @@map("whatsapp_templates")
+}
+
+enum WhatsAppDirection {
+  ENVIADA
+  RECEBIDA
+}
+
+model WhatsAppMessage {
+  id String @id @default(cuid())
+
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id])
+
+  templateId String?
+  template   WhatsAppTemplate? @relation(fields: [templateId], references: [id])
+
+  direction WhatsAppDirection @default(ENVIADA)
+  content   String
+  sentAt    DateTime          @default(now())
+
+  createdById String?
+  createdBy   User?    @relation("WhatsAppMessageCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@index([clientId])
+  @@index([sentAt])
+  @@map("whatsapp_messages")
 }

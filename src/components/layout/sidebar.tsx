@@ -23,6 +23,7 @@ import {
   PiggyBank,
   LineChart,
   Megaphone,
+  MessageCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Role } from "@/generated/prisma/enums";
@@ -110,6 +111,12 @@ const navGroups: NavGroup[] = [
         label: "Modelos de documentos",
         icon: FileStack,
         roles: ["ADMIN"],
+      },
+      {
+        href: "/whatsapp/modelos",
+        label: "Modelos de WhatsApp",
+        icon: MessageCircle,
+        roles: ["ADMIN", "GESTOR"],
       },
       {
         href: "/configuracoes",

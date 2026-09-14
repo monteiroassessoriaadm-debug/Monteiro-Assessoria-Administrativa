@@ -177,6 +177,16 @@ export const mediaContentStatusTone: Record<
   CANCELADO: "red",
 };
 
+export const whatsAppDirectionLabels: Record<string, string> = {
+  ENVIADA: "Enviada",
+  RECEBIDA: "Recebida",
+};
+
+export const whatsAppDirectionTone: Record<string, "blue" | "slate"> = {
+  ENVIADA: "blue",
+  RECEBIDA: "slate",
+};
+
 export const calendarEventTypeLabels: Record<string, string> = {
   ATENDIMENTO: "Atendimento",
   REUNIAO: "Reunião",

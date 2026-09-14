@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Pencil, FileText, FileSignature, FileStack, Megaphone } from "lucide-react";
+import { Pencil, FileText, FileSignature, FileStack, Megaphone, MessageCircle } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +17,8 @@ import {
   serviceInstanceStatusTone,
   mediaContentStatusLabels,
   mediaContentStatusTone,
+  whatsAppDirectionLabels,
+  whatsAppDirectionTone,
 } from "@/lib/lead-labels";
 import { ToggleStatusButton } from "./toggle-status-button";
 
@@ -37,6 +39,7 @@ export default async function ClienteDetailPage({
       documents: { orderBy: { createdAt: "desc" } },
       serviceInstances: { orderBy: { createdAt: "desc" } },
       mediaContents: { orderBy: { createdAt: "desc" } },
+      whatsappMessages: { orderBy: { sentAt: "desc" }, take: 20 },
     },
   });
 
@@ -83,6 +86,11 @@ export default async function ClienteDetailPage({
           <Link href={`/midia/novo?clientId=${client.id}`}>
             <Button variant="outline">
               <Megaphone className="h-4 w-4" /> Conteúdo
+            </Button>
+          </Link>
+          <Link href={`/whatsapp/novo?clientId=${client.id}`}>
+            <Button variant="outline">
+              <MessageCircle className="h-4 w-4" /> WhatsApp
             </Button>
           </Link>
           <ToggleStatusButton clientId={client.id} status={client.status} />
@@ -274,6 +282,31 @@ export default async function ClienteDetailPage({
                     </Link>
                   ))}
                 </>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>WhatsApp</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {client.whatsappMessages.length === 0 ? (
+                <p className="text-sm text-slate-400">Nenhuma mensagem registrada ainda.</p>
+              ) : (
+                client.whatsappMessages.map((m) => (
+                  <div key={m.id} className="rounded-lg border border-slate-100 px-3 py-2 text-sm">
+                    <div className="mb-1 flex items-center justify-between">
+                      <Badge tone={whatsAppDirectionTone[m.direction]}>
+                        {whatsAppDirectionLabels[m.direction]}
+                      </Badge>
+                      <span className="text-xs text-slate-400">
+                        {formatDateTimeBR(m.sentAt)}
+                      </span>
+                    </div>
+                    <p className="whitespace-pre-wrap text-slate-700">{m.content}</p>
+                  </div>
+                ))
               )}
             </CardContent>
           </Card>
