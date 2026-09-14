@@ -44,6 +44,31 @@ function extractClientData(formData: FormData) {
   };
 }
 
+async function findDuplicateDocument(
+  data: { cpf?: string; cnpj?: string },
+  excludeClientId?: string,
+): Promise<ClientFormState | null> {
+  if (data.cpf) {
+    const existing = await prisma.client.findUnique({ where: { cpf: data.cpf } });
+    if (existing && existing.id !== excludeClientId) {
+      return {
+        error: "Já existe um cliente cadastrado com este CPF.",
+        fieldErrors: { cpf: "CPF já cadastrado." },
+      };
+    }
+  }
+  if (data.cnpj) {
+    const existing = await prisma.client.findUnique({ where: { cnpj: data.cnpj } });
+    if (existing && existing.id !== excludeClientId) {
+      return {
+        error: "Já existe um cliente cadastrado com este CNPJ.",
+        fieldErrors: { cnpj: "CNPJ já cadastrado." },
+      };
+    }
+  }
+  return null;
+}
+
 export async function createClientAction(
   _prevState: ClientFormState,
   formData: FormData,
@@ -61,6 +86,10 @@ export async function createClientAction(
   }
 
   const data = parsed.data;
+
+  const duplicate = await findDuplicateDocument(data);
+  if (duplicate) return duplicate;
+
   const client = await prisma.client.create({
     data: {
       type: data.type,
@@ -139,6 +168,10 @@ export async function updateClientAction(
   }
 
   const data = parsed.data;
+
+  const duplicate = await findDuplicateDocument(data, clientId);
+  if (duplicate) return duplicate;
+
   await prisma.client.update({
     where: { id: clientId },
     data: {
@@ -186,9 +219,8 @@ export async function updateClientAction(
 
 export async function toggleClientStatusAction(clientId: string) {
   const session = await requireSession();
-  const client = await prisma.client.findUniqueOrThrow({
-    where: { id: clientId },
-  });
+  const client = await prisma.client.findUnique({ where: { id: clientId } });
+  if (!client) return;
   const newStatus = client.status === "ATIVO" ? "INATIVO" : "ATIVO";
 
   await prisma.client.update({

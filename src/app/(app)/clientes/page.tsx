@@ -5,10 +5,16 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { maskCpf, maskCnpj, onlyDigits } from "@/lib/utils";
 
 function displayName(c: { type: string; fullName: string | null; legalName: string | null; tradeName: string | null }) {
   if (c.type === "PF") return c.fullName ?? "(sem nome)";
   return c.tradeName || c.legalName || "(sem razão social)";
+}
+
+function displayDocument(c: { type: string; cpf: string | null; cnpj: string | null }) {
+  if (c.type === "PF") return c.cpf ? maskCpf(c.cpf) : "-";
+  return c.cnpj ? maskCnpj(c.cnpj) : "-";
 }
 
 export default async function ClientesPage({
@@ -17,6 +23,7 @@ export default async function ClientesPage({
   searchParams: Promise<{ q?: string; status?: string }>;
 }) {
   const { q, status } = await searchParams;
+  const qDigits = q ? onlyDigits(q) : "";
 
   const clients = await prisma.client.findMany({
     where: {
@@ -27,8 +34,7 @@ export default async function ClientesPage({
               { fullName: { contains: q } },
               { legalName: { contains: q } },
               { tradeName: { contains: q } },
-              { cpf: { contains: q } },
-              { cnpj: { contains: q } },
+              ...(qDigits ? [{ cpf: { contains: qDigits } }, { cnpj: { contains: qDigits } }] : []),
               { whatsapp: { contains: q } },
               { email: { contains: q } },
             ],
@@ -106,7 +112,7 @@ export default async function ClientesPage({
                   {c.type === "PF" ? "Pessoa Física" : "Pessoa Jurídica"}
                 </td>
                 <td className="px-4 py-3 text-slate-600">
-                  {c.type === "PF" ? c.cpf : c.cnpj}
+                  {displayDocument(c)}
                 </td>
                 <td className="px-4 py-3 text-slate-600">{c.whatsapp ?? "-"}</td>
                 <td className="px-4 py-3 text-slate-600">

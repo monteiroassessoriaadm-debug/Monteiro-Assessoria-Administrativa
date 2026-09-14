@@ -159,6 +159,9 @@ export function LeadForm({
               name="nextContactDate"
               defaultValue={defaults?.nextContactDate}
             />
+            {fieldError("nextContactDate") && (
+              <p className="mt-1 text-xs text-red-600">{fieldError("nextContactDate")}</p>
+            )}
           </div>
           <div className="col-span-3">
             <Label>Observações</Label>

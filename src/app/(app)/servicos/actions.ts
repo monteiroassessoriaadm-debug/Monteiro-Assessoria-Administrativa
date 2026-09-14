@@ -106,9 +106,8 @@ export async function updateServiceAction(
 
 export async function toggleServiceActiveAction(serviceId: string) {
   await requireRole(Role.ADMIN, Role.GESTOR);
-  const service = await prisma.service.findUniqueOrThrow({
-    where: { id: serviceId },
-  });
+  const service = await prisma.service.findUnique({ where: { id: serviceId } });
+  if (!service) return;
   await prisma.service.update({
     where: { id: serviceId },
     data: { active: !service.active },

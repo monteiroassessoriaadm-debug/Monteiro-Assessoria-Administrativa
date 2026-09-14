@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/permissions";
 import { Role } from "@/generated/prisma/enums";
+import { withCurrentOption } from "@/lib/options";
 import { ServiceForm } from "../../service-form";
 import { updateServiceAction } from "../../actions";
 
@@ -12,7 +13,7 @@ export default async function EditarServicoPage({
 }) {
   await requireRole(Role.ADMIN, Role.GESTOR);
   const { id } = await params;
-  const [service, users] = await Promise.all([
+  const [service, activeUsers] = await Promise.all([
     prisma.service.findUnique({ where: { id } }),
     prisma.user.findMany({
       where: { active: true },
@@ -22,6 +23,14 @@ export default async function EditarServicoPage({
   ]);
 
   if (!service) notFound();
+
+  const currentResponsible = service.defaultResponsibleId
+    ? await prisma.user.findUnique({
+        where: { id: service.defaultResponsibleId },
+        select: { id: true, name: true },
+      })
+    : null;
+  const users = withCurrentOption(activeUsers, currentResponsible);
 
   const boundAction = updateServiceAction.bind(null, id);
 

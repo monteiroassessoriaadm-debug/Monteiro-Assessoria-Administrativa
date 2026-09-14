@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { withCurrentOption } from "@/lib/options";
 import { LeadForm } from "../../lead-form";
 import { updateLeadAction } from "../../actions";
 
@@ -9,7 +10,7 @@ export default async function EditarLeadPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [lead, services, users] = await Promise.all([
+  const [lead, activeServices, activeUsers] = await Promise.all([
     prisma.lead.findUnique({ where: { id } }),
     prisma.service.findMany({
       where: { active: true },
@@ -24,6 +25,24 @@ export default async function EditarLeadPage({
   ]);
 
   if (!lead) notFound();
+
+  const [currentService, currentResponsible] = await Promise.all([
+    lead.serviceInterestId
+      ? prisma.service.findUnique({
+          where: { id: lead.serviceInterestId },
+          select: { id: true, name: true },
+        })
+      : null,
+    lead.responsibleId
+      ? prisma.user.findUnique({
+          where: { id: lead.responsibleId },
+          select: { id: true, name: true },
+        })
+      : null,
+  ]);
+
+  const services = withCurrentOption(activeServices, currentService);
+  const users = withCurrentOption(activeUsers, currentResponsible);
 
   const boundAction = updateLeadAction.bind(null, id);
 

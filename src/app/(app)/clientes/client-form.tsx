@@ -7,7 +7,14 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { maskCpf, maskCnpj, maskPhone } from "@/lib/utils";
 import type { ClientFormState } from "./actions";
+
+function handleMaskInput(mask: (value: string) => string) {
+  return (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.target.value = mask(e.target.value);
+  };
+}
 
 type ClientDefaults = Partial<{
   type: "PF" | "PJ";
@@ -115,7 +122,16 @@ export function ClientForm({
             </div>
             <div>
               <Label>CPF</Label>
-              <Input name="cpf" defaultValue={defaults?.cpf} />
+              <Input
+                name="cpf"
+                defaultValue={defaults?.cpf ? maskCpf(defaults.cpf) : undefined}
+                onChange={handleMaskInput(maskCpf)}
+                maxLength={14}
+                inputMode="numeric"
+              />
+              {fieldError("cpf") && (
+                <p className="mt-1 text-xs text-red-600">{fieldError("cpf")}</p>
+              )}
             </div>
             <div>
               <Label>RG</Label>
@@ -124,6 +140,9 @@ export function ClientForm({
             <div>
               <Label>Data de nascimento</Label>
               <Input type="date" name="birthDate" defaultValue={defaults?.birthDate} />
+              {fieldError("birthDate") && (
+                <p className="mt-1 text-xs text-red-600">{fieldError("birthDate")}</p>
+              )}
             </div>
             <div>
               <Label>Estado civil</Label>
@@ -154,7 +173,16 @@ export function ClientForm({
             </div>
             <div>
               <Label>CNPJ</Label>
-              <Input name="cnpj" defaultValue={defaults?.cnpj} />
+              <Input
+                name="cnpj"
+                defaultValue={defaults?.cnpj ? maskCnpj(defaults.cnpj) : undefined}
+                onChange={handleMaskInput(maskCnpj)}
+                maxLength={18}
+                inputMode="numeric"
+              />
+              {fieldError("cnpj") && (
+                <p className="mt-1 text-xs text-red-600">{fieldError("cnpj")}</p>
+              )}
             </div>
             <div>
               <Label>Inscrição estadual</Label>
@@ -169,7 +197,18 @@ export function ClientForm({
             </div>
             <div>
               <Label>CPF do responsável</Label>
-              <Input name="responsibleCpf" defaultValue={defaults?.responsibleCpf} />
+              <Input
+                name="responsibleCpf"
+                defaultValue={
+                  defaults?.responsibleCpf ? maskCpf(defaults.responsibleCpf) : undefined
+                }
+                onChange={handleMaskInput(maskCpf)}
+                maxLength={14}
+                inputMode="numeric"
+              />
+              {fieldError("responsibleCpf") && (
+                <p className="mt-1 text-xs text-red-600">{fieldError("responsibleCpf")}</p>
+              )}
             </div>
             <div>
               <Label>Cargo do responsável</Label>
@@ -228,11 +267,23 @@ export function ClientForm({
         <CardContent className="grid grid-cols-2 gap-4">
           <div>
             <Label>Telefone</Label>
-            <Input name="phone" defaultValue={defaults?.phone} />
+            <Input
+              name="phone"
+              defaultValue={defaults?.phone ? maskPhone(defaults.phone) : undefined}
+              onChange={handleMaskInput(maskPhone)}
+              maxLength={15}
+              inputMode="numeric"
+            />
           </div>
           <div>
             <Label>WhatsApp</Label>
-            <Input name="whatsapp" defaultValue={defaults?.whatsapp} />
+            <Input
+              name="whatsapp"
+              defaultValue={defaults?.whatsapp ? maskPhone(defaults.whatsapp) : undefined}
+              onChange={handleMaskInput(maskPhone)}
+              maxLength={15}
+              inputMode="numeric"
+            />
           </div>
           <div>
             <Label>E-mail</Label>

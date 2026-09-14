@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { formatDateBR, formatDateTimeBR } from "@/lib/utils";
+import { formatDateBR, formatDateTimeBR, maskCpf, maskCnpj } from "@/lib/utils";
 import { ToggleStatusButton } from "./toggle-status-button";
 
 export default async function ClienteDetailPage({
@@ -67,7 +67,7 @@ export default async function ClienteDetailPage({
               {client.type === "PF" ? (
                 <>
                   <Field label="Nome completo" value={client.fullName} />
-                  <Field label="CPF" value={client.cpf} />
+                  <Field label="CPF" value={client.cpf ? maskCpf(client.cpf) : null} />
                   <Field label="RG" value={client.rg} />
                   <Field
                     label="Data de nascimento"
@@ -80,7 +80,7 @@ export default async function ClienteDetailPage({
                 <>
                   <Field label="Razão social" value={client.legalName} />
                   <Field label="Nome fantasia" value={client.tradeName} />
-                  <Field label="CNPJ" value={client.cnpj} />
+                  <Field label="CNPJ" value={client.cnpj ? maskCnpj(client.cnpj) : null} />
                   <Field
                     label="Inscrição estadual"
                     value={client.stateRegistration}
@@ -88,7 +88,7 @@ export default async function ClienteDetailPage({
                   <Field label="Responsável" value={client.responsibleName} />
                   <Field
                     label="CPF do responsável"
-                    value={client.responsibleCpf}
+                    value={client.responsibleCpf ? maskCpf(client.responsibleCpf) : null}
                   />
                   <Field
                     label="Cargo do responsável"

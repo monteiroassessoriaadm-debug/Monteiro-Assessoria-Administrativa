@@ -1,7 +1,45 @@
 import { z } from "zod";
 
+const normalizedEmail = z
+  .string()
+  .email("Informe um e-mail válido.")
+  .transform((v) => v.trim().toLowerCase());
+
+const optionalDateString = z
+  .string()
+  .optional()
+  .refine(
+    (v) => !v || !Number.isNaN(Date.parse(v)),
+    "Data inválida.",
+  );
+
+const optionalDecimalString = z
+  .string()
+  .optional()
+  .refine(
+    (v) => !v || /^\d+(\.\d{1,2})?$/.test(v),
+    "Informe um valor numérico válido (ex.: 150.00).",
+  );
+
+const optionalIntString = z
+  .string()
+  .optional()
+  .refine((v) => !v || /^\d+$/.test(v), "Informe um número inteiro válido.");
+
+const optionalCpfString = z
+  .string()
+  .optional()
+  .transform((v) => (v ? v.replace(/\D/g, "") : v))
+  .refine((v) => !v || v.length === 11, "CPF deve conter 11 dígitos.");
+
+const optionalCnpjString = z
+  .string()
+  .optional()
+  .transform((v) => (v ? v.replace(/\D/g, "") : v))
+  .refine((v) => !v || v.length === 14, "CNPJ deve conter 14 dígitos.");
+
 export const loginSchema = z.object({
-  email: z.string().email("Informe um e-mail válido."),
+  email: normalizedEmail,
   password: z.string().min(1, "Informe a senha."),
 });
 
@@ -11,18 +49,18 @@ export const clientSchema = z
     status: z.enum(["ATIVO", "INATIVO"]).default("ATIVO"),
 
     fullName: z.string().optional(),
-    cpf: z.string().optional(),
+    cpf: optionalCpfString,
     rg: z.string().optional(),
-    birthDate: z.string().optional(),
+    birthDate: optionalDateString,
     maritalStatus: z.string().optional(),
     profession: z.string().optional(),
 
     legalName: z.string().optional(),
     tradeName: z.string().optional(),
-    cnpj: z.string().optional(),
+    cnpj: optionalCnpjString,
     stateRegistration: z.string().optional(),
     responsibleName: z.string().optional(),
-    responsibleCpf: z.string().optional(),
+    responsibleCpf: optionalCpfString,
     responsibleRole: z.string().optional(),
 
     addressStreet: z.string().optional(),
@@ -81,7 +119,7 @@ export const leadSchema = z.object({
       "PERDIDO",
     ])
     .default("NOVO_LEAD"),
-  nextContactDate: z.string().optional(),
+  nextContactDate: optionalDateString,
   notes: z.string().optional(),
 });
 
@@ -91,8 +129,8 @@ export const serviceSchema = z.object({
   name: z.string().min(1, "Informe o nome do serviço."),
   category: z.string().optional(),
   description: z.string().optional(),
-  defaultPrice: z.string().optional(),
-  defaultTermDays: z.string().optional(),
+  defaultPrice: optionalDecimalString,
+  defaultTermDays: optionalIntString,
   checklistTemplate: z.string().optional(),
   defaultResponsibleId: z.string().optional(),
   active: z.boolean().default(true),
@@ -102,7 +140,7 @@ export type ServiceFormValues = z.infer<typeof serviceSchema>;
 
 export const userSchema = z.object({
   name: z.string().min(1, "Informe o nome."),
-  email: z.string().email("E-mail inválido."),
+  email: normalizedEmail,
   password: z.string().min(6, "A senha deve ter ao menos 6 caracteres.").optional(),
   role: z.enum(["ADMIN", "GESTOR", "BIA"]),
   active: z.boolean().default(true),

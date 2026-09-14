@@ -88,9 +88,13 @@ export function ServiceForm({
               min="0"
               defaultValue={defaults?.defaultPrice}
             />
-            <p className="mt-1 text-xs text-slate-400">
-              Configurável — pode ser ajustado por orçamento.
-            </p>
+            {fieldError("defaultPrice") ? (
+              <p className="mt-1 text-xs text-red-600">{fieldError("defaultPrice")}</p>
+            ) : (
+              <p className="mt-1 text-xs text-slate-400">
+                Configurável — pode ser ajustado por orçamento.
+              </p>
+            )}
           </div>
           <div>
             <Label>Prazo padrão (dias)</Label>
@@ -100,6 +104,9 @@ export function ServiceForm({
               min="0"
               defaultValue={defaults?.defaultTermDays}
             />
+            {fieldError("defaultTermDays") && (
+              <p className="mt-1 text-xs text-red-600">{fieldError("defaultTermDays")}</p>
+            )}
           </div>
           <div className="col-span-2">
             <Label>Descrição</Label>

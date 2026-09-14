@@ -107,8 +107,8 @@ model Client {
   leads          Lead[]
   timelineEvents TimelineEvent[]
 
-  @@index([cpf])
-  @@index([cnpj])
+  @@unique([cpf])
+  @@unique([cnpj])
   @@index([whatsapp])
   @@map("clients")
 }
