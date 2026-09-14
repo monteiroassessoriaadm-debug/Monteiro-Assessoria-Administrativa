@@ -2,26 +2,37 @@
 
 Centro de operações da **Monteiro Assessoria Administrativa** — *A Monteiro Resolve.*
 
-Sistema de CRM e gestão empresarial construído por fases (veja o roadmap abaixo). Esta é a **Fase 1 — Base**.
+Sistema de CRM e gestão empresarial construído por fases. Cadastro único de
+cliente, reutilizado em todo o sistema — comercial, documentos, operacional,
+financeiro, mídia, WhatsApp e um assistente de análise automática (Monteiro IA).
 
 ## Stack
 
 - **Next.js 16 (App Router) + TypeScript**
-- **Prisma ORM + SQLite** (dev) — pronto para migrar para PostgreSQL em produção trocando `DATABASE_URL`
+- **Prisma ORM + PostgreSQL** (via `@prisma/adapter-pg`)
 - **Autenticação própria** com sessão em cookie assinado (JWT via `jose`), sem dependências externas de auth
 - **Tailwind CSS** para a interface
+- **@react-pdf/renderer** para geração de PDF (orçamentos, propostas, documentos)
 
-## Como rodar
+## Como rodar localmente
 
 ```bash
 npm install
-cp .env.example .env      # ajuste SESSION_SECRET em produção
-npx prisma migrate deploy # cria o banco a partir das migrations
-npx prisma db seed        # cria o usuário administrador e o catálogo inicial de serviços
+cp .env.example .env        # preencha DATABASE_URL (Postgres) e SESSION_SECRET
+npx prisma migrate deploy   # cria o banco a partir das migrations
+npx prisma db seed          # cria o usuário administrador e o catálogo inicial
 npm run dev
 ```
 
 Acesse `http://localhost:3000`.
+
+### Deploy (Vercel)
+
+O `build` já roda `prisma migrate deploy` antes do `next build`, então basta:
+
+1. Importar o repositório na Vercel
+2. Configurar `DATABASE_URL` (string de conexão Postgres — Neon, Vercel Postgres, Supabase, etc.) e `SESSION_SECRET`
+3. Deploy
 
 ### Login inicial (criado pelo seed)
 
@@ -30,25 +41,18 @@ Acesse `http://localhost:3000`.
 
 > Troque a senha assim que possível em **Usuários → editar**.
 
-## O que tem na Fase 1 (Base)
+## Módulos entregues
 
-- Login e controle de acesso por papel (Administrador, Gestor, Bia/Mídia)
-- Cadastro único de clientes (Pessoa Física e Pessoa Jurídica), com linha do tempo
-- Leads (prospecção) com temperatura e etapa do funil, e conversão em cliente sem redigitar dados
-- Catálogo de serviços com preço e prazo **configuráveis pelo painel** (nada fixo no código)
-- Gestão de usuários (Administrador)
-- Configurações da empresa: nome, slogan e logo oficial (usada futuramente em contratos/orçamentos/PDFs — o sistema nunca cria identidade visual por conta própria)
-- Dashboard com indicadores reais (comercial, clientes, equipe); seções de fases futuras aparecem identificadas como "Disponível na Fase X"
+- **Cadastro único de clientes** (PF/PJ) com linha do tempo completa de todas as interações
+- **Comercial**: prospecção ativa, leads com funil Kanban, orçamentos e propostas com PDF
+- **Documentos**: modelos de contrato com campos dinâmicos e versionamento, geração com tokens do cliente
+- **Operacional**: abertura automática de serviço a partir de orçamento/proposta aprovado, checklist por serviço, tarefas, agenda, pós-venda
+- **Financeiro**: contas bancárias, contas a receber/pagar, comissões (salário fixo, comissão e outros pagamentos sempre separados), fluxo de caixa
+- **Bia / Mídia**: calendário de conteúdo por cliente com aprovação e publicação
+- **WhatsApp**: biblioteca de modelos de mensagem com tokens do cliente e registro manual de histórico de conversas (sem integração automática real com a API do WhatsApp Business)
+- **Monteiro IA**: painel de análise automática sobre os dados reais do sistema (comercial, financeiro, operacional, mídia, reativação de clientes) — não é um chat com IA externa
+- **Busca global** e **relatórios** consolidados por período
 
-## Roadmap por fases
-
-1. **Base** — login, usuários, clientes, leads, serviços, dashboard ✅ (esta entrega)
-2. **Comercial** — funil (Kanban), orçamentos, propostas, follow-up, prospecção ativa
-3. **Documentos** — gerador de contratos com modelos e campos dinâmicos, editor de modelos, PDF
-4. **Operacional** — checklist por serviço, tarefas, agenda, prazos e entregas
-5. **Financeiro** — contas a receber/pagar, contas bancárias, fluxo de caixa, comissões
-6. **Bia / Mídia** — clientes de mídia, calendário editorial, aprovações, relatórios
-7. **WhatsApp** — inbox, histórico por cliente, automações de mensagens
-8. **Monteiro IA** — assistente que consulta os dados reais do sistema
-
-Cada fase evolui o schema (`prisma/schema.prisma`) sem reescrever o que já existe, seguindo o princípio: **cadastrar uma vez, reutilizar em todo o sistema**.
+Nenhum preço, cláusula contratual ou identidade visual é inventado pelo
+sistema — tudo é configurável pelo painel (Serviços, Modelos de documentos,
+Configurações) e cadastrado pela administração da Monteiro.
