@@ -114,6 +114,46 @@ export const serviceInstanceStatusTone: Record<
   CANCELADO: "red",
 };
 
+export const receivableStatusLabels: Record<string, string> = {
+  PENDENTE: "Pendente",
+  RECEBIDO: "Recebido",
+  CANCELADO: "Cancelado",
+};
+
+export const receivableStatusTone: Record<string, "slate" | "yellow" | "green" | "red"> = {
+  PENDENTE: "yellow",
+  RECEBIDO: "green",
+  CANCELADO: "red",
+};
+
+export const payableStatusLabels: Record<string, string> = {
+  PENDENTE: "Pendente",
+  PAGO: "Pago",
+  CANCELADO: "Cancelado",
+};
+
+export const payableStatusTone: Record<string, "slate" | "yellow" | "green" | "red"> = {
+  PENDENTE: "yellow",
+  PAGO: "green",
+  CANCELADO: "red",
+};
+
+export const commissionCategoryLabels: Record<string, string> = {
+  SALARIO_FIXO: "Salário / fixo",
+  COMISSAO: "Comissão",
+  OUTRO_PAGAMENTO: "Outro pagamento",
+};
+
+export const commissionStatusLabels: Record<string, string> = {
+  PENDENTE: "Pendente",
+  PAGO: "Pago",
+};
+
+export const commissionStatusTone: Record<string, "yellow" | "green"> = {
+  PENDENTE: "yellow",
+  PAGO: "green",
+};
+
 export const calendarEventTypeLabels: Record<string, string> = {
   ATENDIMENTO: "Atendimento",
   REUNIAO: "Reunião",

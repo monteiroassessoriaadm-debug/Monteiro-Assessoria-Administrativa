@@ -34,7 +34,9 @@ export async function openServicesFromQuoteAction(quoteId: string) {
   if (existing > 0) return; // evita abrir duplicado se já foi aberto
 
   const count = await prisma.serviceInstance.count();
+  const receivableCount = await prisma.receivable.count();
   let created = 0;
+  let receivablesCreated = 0;
 
   for (const item of quote.items) {
     const number = count + created + 1;
@@ -67,11 +69,25 @@ export async function openServicesFromQuoteAction(quoteId: string) {
       description: `Serviço "${instance.title}" aberto a partir do orçamento #${quote.number} por ${session.name}.`,
       createdById: session.userId,
     });
+
+    await prisma.receivable.create({
+      data: {
+        number: receivableCount + receivablesCreated + 1,
+        clientId: quote.clientId,
+        serviceInstanceId: instance.id,
+        quoteId: quote.id,
+        description: `Serviço: ${instance.title}`,
+        amount: item.unitPrice,
+        dueDate,
+      },
+    });
+    receivablesCreated += 1;
   }
 
   revalidatePath("/servicos-abertos");
   revalidatePath(`/orcamentos/${quoteId}`);
   revalidatePath(`/clientes/${quote.clientId}`);
+  revalidatePath("/financeiro/receber");
 }
 
 /** Abre um serviço a partir de uma proposta aprovada. */
@@ -114,9 +130,23 @@ export async function openServiceFromProposalAction(proposalId: string) {
     createdById: session.userId,
   });
 
+  if (proposal.investment) {
+    const receivableCount = await prisma.receivable.count();
+    await prisma.receivable.create({
+      data: {
+        number: receivableCount + 1,
+        clientId: proposal.clientId,
+        serviceInstanceId: instance.id,
+        description: `Serviço: ${instance.title}`,
+        amount: proposal.investment,
+      },
+    });
+  }
+
   revalidatePath("/servicos-abertos");
   revalidatePath(`/propostas/${proposalId}`);
   revalidatePath(`/clientes/${proposal.clientId}`);
+  revalidatePath("/financeiro/receber");
 }
 
 export async function toggleChecklistItemAction(itemId: string) {

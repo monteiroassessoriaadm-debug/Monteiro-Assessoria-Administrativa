@@ -14,16 +14,22 @@ import {
   ClipboardList,
   CalendarClock,
   CheckSquare,
+  ArrowDownCircle,
+  ArrowUpCircle,
+  Wallet,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { StatCard, SectionTitle, ComingSoonCard } from "@/components/dashboard/stat-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { daysAgo, formatDateBR } from "@/lib/utils";
+import { daysAgo, formatCurrencyBRL, formatDateBR } from "@/lib/utils";
 import { displayClientName } from "@/lib/client-display";
+import { getSession } from "@/lib/session";
 
 const QUOTE_AWAITING_STATUSES = ["ENVIADO", "VISUALIZADO", "EM_NEGOCIACAO"] as const;
 
 export default async function DashboardPage() {
+  const session = await getSession();
+  const canSeeFinanceiro = session?.role === "ADMIN" || session?.role === "GESTOR";
   const thirtyDaysAgo = daysAgo(30);
   const threeDaysAgo = daysAgo(3);
   const endOfToday = new Date();
@@ -131,6 +137,28 @@ export default async function DashboardPage() {
     where: { id: { in: responsibleIds } },
     select: { id: true, name: true },
   });
+
+  const financeiro = canSeeFinanceiro
+    ? await (async () => {
+        const [pendenteReceber, recebido30, pendentePagar, atrasadas] = await Promise.all([
+          prisma.receivable.aggregate({ where: { status: "PENDENTE" }, _sum: { amount: true } }),
+          prisma.receivable.aggregate({
+            where: { status: "RECEBIDO", receivedAt: { gte: thirtyDaysAgo } },
+            _sum: { amount: true },
+          }),
+          prisma.payable.aggregate({ where: { status: "PENDENTE" }, _sum: { amount: true } }),
+          prisma.receivable.count({
+            where: { status: "PENDENTE", dueDate: { lt: startOfToday } },
+          }),
+        ]);
+        return {
+          pendenteReceber: Number(pendenteReceber._sum.amount ?? 0),
+          recebido30: Number(recebido30._sum.amount ?? 0),
+          pendentePagar: Number(pendentePagar._sum.amount ?? 0),
+          atrasadas,
+        };
+      })()
+    : null;
   const responsibleNameById = Object.fromEntries(responsibleUsers.map((u) => [u.id, u.name]));
 
   const roleCounts = Object.fromEntries(
@@ -294,15 +322,37 @@ export default async function DashboardPage() {
         )}
       </section>
 
-      <section>
-        <SectionTitle>Financeiro</SectionTitle>
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          <ComingSoonCard phase="Fase 5 (Contas a receber e a pagar)" />
-          <ComingSoonCard phase="Fase 5 (Contas a receber e a pagar)" />
-          <ComingSoonCard phase="Fase 5 (Fluxo de caixa)" />
-          <ComingSoonCard phase="Fase 5 (Previsão de recebimentos)" />
-        </div>
-      </section>
+      {financeiro && (
+        <section>
+          <SectionTitle>Financeiro</SectionTitle>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            <StatCard
+              label="A receber (pendente)"
+              value={formatCurrencyBRL(financeiro.pendenteReceber)}
+              icon={ArrowDownCircle}
+              tone="green"
+            />
+            <StatCard
+              label="Recebido (30 dias)"
+              value={formatCurrencyBRL(financeiro.recebido30)}
+              icon={Wallet}
+              tone="blue"
+            />
+            <StatCard
+              label="A pagar (pendente)"
+              value={formatCurrencyBRL(financeiro.pendentePagar)}
+              icon={ArrowUpCircle}
+              tone="amber"
+            />
+            <StatCard
+              label="Contas a receber vencidas"
+              value={financeiro.atrasadas}
+              icon={AlertTriangle}
+              tone="red"
+            />
+          </div>
+        </section>
+      )}
 
       <section>
         <SectionTitle>Equipe</SectionTitle>

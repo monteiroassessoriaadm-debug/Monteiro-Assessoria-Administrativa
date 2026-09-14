@@ -17,6 +17,11 @@ import {
   ClipboardList,
   CheckSquare,
   CalendarDays,
+  Wallet,
+  ArrowDownCircle,
+  ArrowUpCircle,
+  PiggyBank,
+  LineChart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Role } from "@/generated/prisma/enums";
@@ -56,6 +61,41 @@ const navGroups: NavGroup[] = [
       { href: "/servicos-abertos", label: "Serviços em andamento", icon: ClipboardList },
       { href: "/tarefas", label: "Tarefas", icon: CheckSquare },
       { href: "/agenda", label: "Agenda", icon: CalendarDays },
+    ],
+  },
+  {
+    label: "Financeiro",
+    items: [
+      {
+        href: "/financeiro/receber",
+        label: "Contas a receber",
+        icon: ArrowDownCircle,
+        roles: ["ADMIN", "GESTOR"],
+      },
+      {
+        href: "/financeiro/pagar",
+        label: "Contas a pagar",
+        icon: ArrowUpCircle,
+        roles: ["ADMIN", "GESTOR"],
+      },
+      {
+        href: "/financeiro/comissoes",
+        label: "Comissões",
+        icon: PiggyBank,
+        roles: ["ADMIN", "GESTOR"],
+      },
+      {
+        href: "/financeiro/fluxo-caixa",
+        label: "Fluxo de caixa",
+        icon: LineChart,
+        roles: ["ADMIN", "GESTOR"],
+      },
+      {
+        href: "/financeiro/contas",
+        label: "Contas bancárias",
+        icon: Wallet,
+        roles: ["ADMIN", "GESTOR"],
+      },
     ],
   },
   {

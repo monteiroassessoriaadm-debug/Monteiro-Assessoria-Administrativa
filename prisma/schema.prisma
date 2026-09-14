@@ -43,6 +43,10 @@ model User {
   tasksCreated                Task[]              @relation("TaskCreatedBy")
   eventsResponsible           CalendarEvent[]     @relation("EventResponsible")
   eventsCreated               CalendarEvent[]     @relation("EventCreatedBy")
+  receivablesCreated          Receivable[]        @relation("ReceivableCreatedBy")
+  payablesCreated             Payable[]           @relation("PayableCreatedBy")
+  commissions                 Commission[]        @relation("CommissionUser")
+  commissionsCreated          Commission[]        @relation("CommissionCreatedBy")
 
   @@map("users")
 }
@@ -123,6 +127,8 @@ model Client {
   serviceInstances ServiceInstance[]
   tasks            Task[]
   calendarEvents   CalendarEvent[]
+  receivables      Receivable[]
+  commissions      Commission[]
 
   @@unique([cpf])
   @@unique([cnpj])
@@ -262,6 +268,7 @@ model Quote {
 
   items            QuoteItem[]
   serviceInstances ServiceInstance[]
+  receivables      Receivable[]
 
   @@index([status])
   @@index([clientId])
@@ -456,6 +463,8 @@ model ServiceInstance {
 
   checklistItems ChecklistItem[]
   tasks          Task[]
+  receivables    Receivable[]
+  commissions    Commission[]
 
   @@index([status])
   @@index([clientId])
@@ -538,4 +547,134 @@ model CalendarEvent {
 
   @@index([startAt])
   @@map("calendar_events")
+}
+
+// ---------- Fase 5: Financeiro ----------
+// Contas a receber, a pagar, contas/carteiras e comissões. Categorias e
+// contas são cadastradas pelo administrador — nada fixo no código.
+
+model FinancialAccount {
+  id     String  @id @default(cuid())
+  name   String
+  type   String? // Caixa, Conta bancária, Conta PJ, Carteira digital... livre
+  active Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  receivables Receivable[]
+  payables    Payable[]
+
+  @@map("financial_accounts")
+}
+
+enum ReceivableStatus {
+  PENDENTE
+  RECEBIDO
+  CANCELADO
+}
+
+model Receivable {
+  id       String  @id @default(cuid())
+  number   Int // número sequencial de exibição, atribuído na criação
+  clientId String?
+  client   Client? @relation(fields: [clientId], references: [id])
+
+  serviceInstanceId String?
+  serviceInstance   ServiceInstance? @relation(fields: [serviceInstanceId], references: [id])
+  quoteId           String?
+  quote             Quote?           @relation(fields: [quoteId], references: [id])
+
+  description   String
+  amount        Decimal
+  dueDate       DateTime?
+  receivedAt    DateTime?
+  paymentMethod String?
+  accountId     String?
+  account       FinancialAccount? @relation(fields: [accountId], references: [id])
+  status        ReceivableStatus  @default(PENDENTE)
+  notes         String?
+
+  createdById String?
+  createdBy   User?    @relation("ReceivableCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status])
+  @@index([dueDate])
+  @@map("receivables")
+}
+
+enum PayableStatus {
+  PENDENTE
+  PAGO
+  CANCELADO
+}
+
+model Payable {
+  id          String  @id @default(cuid())
+  number      Int // número sequencial de exibição, atribuído na criação
+  description String
+  category    String? // categoria financeira — livre, configurável
+  supplier    String? // fornecedor
+
+  amount    Decimal
+  dueDate   DateTime?
+  paidAt    DateTime?
+  accountId String?
+  account   FinancialAccount? @relation(fields: [accountId], references: [id])
+  status    PayableStatus     @default(PENDENTE)
+  notes     String?
+
+  createdById String?
+  createdBy   User?    @relation("PayableCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status])
+  @@index([dueDate])
+  @@map("payables")
+}
+
+// Salário/fixo, comissão e outros pagamentos ficam em categorias separadas —
+// nunca misturados, conforme a operação da Bia exige.
+enum CommissionCategory {
+  SALARIO_FIXO
+  COMISSAO
+  OUTRO_PAGAMENTO
+}
+
+enum CommissionStatus {
+  PENDENTE
+  PAGO
+}
+
+model Commission {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation("CommissionUser", fields: [userId], references: [id])
+
+  serviceInstanceId String?
+  serviceInstance   ServiceInstance? @relation(fields: [serviceInstanceId], references: [id])
+  clientId          String?
+  client            Client?          @relation(fields: [clientId], references: [id])
+
+  category   CommissionCategory @default(COMISSAO)
+  baseAmount Decimal? // valor base do serviço (para cálculo percentual)
+  percentage Decimal? // percentual aplicado
+  amount     Decimal // valor final do pagamento
+  status     CommissionStatus   @default(PENDENTE)
+  date       DateTime           @default(now())
+  paidAt     DateTime?
+  notes      String?
+
+  createdById String?
+  createdBy   User?    @relation("CommissionCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@index([category])
+  @@index([status])
+  @@map("commissions")
 }

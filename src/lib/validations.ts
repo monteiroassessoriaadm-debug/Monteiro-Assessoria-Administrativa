@@ -341,3 +341,54 @@ export const serviceInstanceEditSchema = z.object({
 });
 
 export type ServiceInstanceEditFormValues = z.infer<typeof serviceInstanceEditSchema>;
+
+export const financialAccountSchema = z.object({
+  name: z.string().min(1, "Informe o nome da conta."),
+  type: z.string().optional(),
+  active: z.boolean().default(true),
+});
+
+export type FinancialAccountFormValues = z.infer<typeof financialAccountSchema>;
+
+export const receivableSchema = z.object({
+  clientId: z.string().optional(),
+  description: z.string().min(1, "Informe a descrição."),
+  amount: z
+    .string()
+    .refine((v) => /^\d+(\.\d{1,2})?$/.test(v), "Informe um valor numérico válido."),
+  dueDate: optionalDateString,
+  accountId: z.string().optional(),
+  paymentMethod: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+export type ReceivableFormValues = z.infer<typeof receivableSchema>;
+
+export const payableSchema = z.object({
+  description: z.string().min(1, "Informe a descrição."),
+  category: z.string().optional(),
+  supplier: z.string().optional(),
+  amount: z
+    .string()
+    .refine((v) => /^\d+(\.\d{1,2})?$/.test(v), "Informe um valor numérico válido."),
+  dueDate: optionalDateString,
+  accountId: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+export type PayableFormValues = z.infer<typeof payableSchema>;
+
+export const commissionSchema = z.object({
+  userId: z.string().min(1, "Selecione o usuário."),
+  clientId: z.string().optional(),
+  category: z.enum(["SALARIO_FIXO", "COMISSAO", "OUTRO_PAGAMENTO"]),
+  baseAmount: optionalDecimalString,
+  percentage: optionalDecimalString,
+  amount: z
+    .string()
+    .refine((v) => /^\d+(\.\d{1,2})?$/.test(v), "Informe um valor numérico válido."),
+  date: optionalDateString,
+  notes: z.string().optional(),
+});
+
+export type CommissionFormValues = z.infer<typeof commissionSchema>;
