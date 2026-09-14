@@ -17,6 +17,8 @@ import {
   ArrowDownCircle,
   ArrowUpCircle,
   Wallet,
+  Megaphone,
+  Send,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { StatCard, SectionTitle, ComingSoonCard } from "@/components/dashboard/stat-card";
@@ -159,6 +161,21 @@ export default async function DashboardPage() {
         };
       })()
     : null;
+  const MEDIA_ACTIVE_STATUSES = ["IDEIA", "EM_PRODUCAO", "AGUARDANDO_APROVACAO", "APROVADO"] as const;
+  const [conteudosAguardandoAprovacao, conteudosPublicadosMes, conteudosAtrasados] =
+    await Promise.all([
+      prisma.mediaContent.count({ where: { status: "AGUARDANDO_APROVACAO" } }),
+      prisma.mediaContent.count({
+        where: { status: "PUBLICADO", publishedAt: { gte: thirtyDaysAgo } },
+      }),
+      prisma.mediaContent.count({
+        where: {
+          status: { in: [...MEDIA_ACTIVE_STATUSES] },
+          scheduledDate: { lt: startOfToday },
+        },
+      }),
+    ]);
+
   const responsibleNameById = Object.fromEntries(responsibleUsers.map((u) => [u.id, u.name]));
 
   const roleCounts = Object.fromEntries(
@@ -320,6 +337,30 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
         )}
+      </section>
+
+      <section>
+        <SectionTitle>Bia / Mídia</SectionTitle>
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          <StatCard
+            label="Aguardando aprovação"
+            value={conteudosAguardandoAprovacao}
+            icon={Megaphone}
+            tone="amber"
+          />
+          <StatCard
+            label="Publicados (30 dias)"
+            value={conteudosPublicadosMes}
+            icon={Send}
+            tone="green"
+          />
+          <StatCard
+            label="Conteúdos atrasados"
+            value={conteudosAtrasados}
+            icon={AlertTriangle}
+            tone="red"
+          />
+        </div>
       </section>
 
       {financeiro && (

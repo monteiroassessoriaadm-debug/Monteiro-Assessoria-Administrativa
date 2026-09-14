@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Pencil, FileText, FileSignature, FileStack } from "lucide-react";
+import { Pencil, FileText, FileSignature, FileStack, Megaphone } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,8 @@ import {
   documentStatusTone,
   serviceInstanceStatusLabels,
   serviceInstanceStatusTone,
+  mediaContentStatusLabels,
+  mediaContentStatusTone,
 } from "@/lib/lead-labels";
 import { ToggleStatusButton } from "./toggle-status-button";
 
@@ -34,6 +36,7 @@ export default async function ClienteDetailPage({
       proposals: { orderBy: { createdAt: "desc" } },
       documents: { orderBy: { createdAt: "desc" } },
       serviceInstances: { orderBy: { createdAt: "desc" } },
+      mediaContents: { orderBy: { createdAt: "desc" } },
     },
   });
 
@@ -75,6 +78,11 @@ export default async function ClienteDetailPage({
           <Link href={`/documentos/novo?clientId=${client.id}`}>
             <Button variant="outline">
               <FileStack className="h-4 w-4" /> Documento
+            </Button>
+          </Link>
+          <Link href={`/midia/novo?clientId=${client.id}`}>
+            <Button variant="outline">
+              <Megaphone className="h-4 w-4" /> Conteúdo
             </Button>
           </Link>
           <ToggleStatusButton clientId={client.id} status={client.status} />
@@ -185,6 +193,32 @@ export default async function ClienteDetailPage({
                     </span>
                     <Badge tone={serviceInstanceStatusTone[s.status]}>
                       {serviceInstanceStatusLabels[s.status]}
+                    </Badge>
+                  </Link>
+                ))
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Conteúdo de mídia</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {client.mediaContents.length === 0 ? (
+                <p className="text-sm text-slate-400">Nenhum conteúdo cadastrado ainda.</p>
+              ) : (
+                client.mediaContents.map((m) => (
+                  <Link
+                    key={m.id}
+                    href={`/midia/${m.id}`}
+                    className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2 text-sm hover:bg-slate-50"
+                  >
+                    <span>
+                      #{m.number} — {m.title}
+                    </span>
+                    <Badge tone={mediaContentStatusTone[m.status]}>
+                      {mediaContentStatusLabels[m.status]}
                     </Badge>
                   </Link>
                 ))

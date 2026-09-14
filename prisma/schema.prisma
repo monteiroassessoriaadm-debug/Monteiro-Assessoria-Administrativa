@@ -47,6 +47,9 @@ model User {
   payablesCreated             Payable[]           @relation("PayableCreatedBy")
   commissions                 Commission[]        @relation("CommissionUser")
   commissionsCreated          Commission[]        @relation("CommissionCreatedBy")
+  mediaContentsResponsible    MediaContent[]      @relation("MediaContentResponsible")
+  mediaContentsApproved       MediaContent[]      @relation("MediaContentApprovedBy")
+  mediaContentsCreated        MediaContent[]      @relation("MediaContentCreatedBy")
 
   @@map("users")
 }
@@ -129,6 +132,7 @@ model Client {
   calendarEvents   CalendarEvent[]
   receivables      Receivable[]
   commissions      Commission[]
+  mediaContents    MediaContent[]
 
   @@unique([cpf])
   @@unique([cnpj])
@@ -677,4 +681,57 @@ model Commission {
   @@index([category])
   @@index([status])
   @@map("commissions")
+}
+
+// ---------- Fase 6: Bia / Mídia ----------
+// Calendário de conteúdo por cliente. Tipo e plataforma são texto livre
+// (cadastrados pela Bia/admin), sem lista fixa inventada. Sem integração real
+// com redes sociais — publicação é registrada manualmente após acontecer.
+
+enum MediaContentStatus {
+  IDEIA
+  EM_PRODUCAO
+  AGUARDANDO_APROVACAO
+  APROVADO
+  REPROVADO
+  PUBLICADO
+  CANCELADO
+}
+
+model MediaContent {
+  id     String @id @default(cuid())
+  number Int
+
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id])
+
+  title       String
+  description String?
+  type        String? // ex.: Post, Stories, Reels, Vídeo, Arte — livre
+  platform    String? // ex.: Instagram, Facebook, TikTok — livre
+
+  scheduledDate DateTime?
+  status        MediaContentStatus @default(IDEIA)
+
+  responsibleId String?
+  responsible   User?   @relation("MediaContentResponsible", fields: [responsibleId], references: [id])
+
+  approvalNotes String?
+  approvedById  String?
+  approvedBy    User?     @relation("MediaContentApprovedBy", fields: [approvedById], references: [id])
+  approvedAt    DateTime?
+
+  publishedAt DateTime?
+  link        String? // link do conteúdo publicado, preenchido manualmente
+
+  notes String?
+
+  createdById String?
+  createdBy   User?    @relation("MediaContentCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status])
+  @@index([scheduledDate])
+  @@map("media_contents")
 }

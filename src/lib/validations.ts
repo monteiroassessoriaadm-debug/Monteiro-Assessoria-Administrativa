@@ -392,3 +392,24 @@ export const commissionSchema = z.object({
 });
 
 export type CommissionFormValues = z.infer<typeof commissionSchema>;
+
+export const mediaContentSchema = z.object({
+  clientId: z.string().min(1, "Selecione um cliente."),
+  title: z.string().min(1, "Informe o título do conteúdo."),
+  description: z.string().optional(),
+  type: z.string().optional(),
+  platform: z.string().optional(),
+  scheduledDate: optionalDateString,
+  responsibleId: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+export type MediaContentFormValues = z.infer<typeof mediaContentSchema>;
+
+export const mediaContentApprovalSchema = z.object({
+  approvalNotes: z.string().optional(),
+});
+
+export const mediaContentPublishSchema = z.object({
+  link: z.string().optional(),
+});

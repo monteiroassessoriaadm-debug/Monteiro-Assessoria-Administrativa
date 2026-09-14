@@ -154,6 +154,29 @@ export const commissionStatusTone: Record<string, "yellow" | "green"> = {
   PAGO: "green",
 };
 
+export const mediaContentStatusLabels: Record<string, string> = {
+  IDEIA: "Ideia",
+  EM_PRODUCAO: "Em produção",
+  AGUARDANDO_APROVACAO: "Aguardando aprovação",
+  APROVADO: "Aprovado",
+  REPROVADO: "Reprovado",
+  PUBLICADO: "Publicado",
+  CANCELADO: "Cancelado",
+};
+
+export const mediaContentStatusTone: Record<
+  string,
+  "slate" | "blue" | "yellow" | "green" | "red" | "purple"
+> = {
+  IDEIA: "slate",
+  EM_PRODUCAO: "blue",
+  AGUARDANDO_APROVACAO: "yellow",
+  APROVADO: "purple",
+  REPROVADO: "red",
+  PUBLICADO: "green",
+  CANCELADO: "red",
+};
+
 export const calendarEventTypeLabels: Record<string, string> = {
   ATENDIMENTO: "Atendimento",
   REUNIAO: "Reunião",

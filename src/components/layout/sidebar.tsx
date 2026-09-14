@@ -22,6 +22,7 @@ import {
   ArrowUpCircle,
   PiggyBank,
   LineChart,
+  Megaphone,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Role } from "@/generated/prisma/enums";
@@ -59,6 +60,7 @@ const navGroups: NavGroup[] = [
     label: "Operacional",
     items: [
       { href: "/servicos-abertos", label: "Serviços em andamento", icon: ClipboardList },
+      { href: "/midia", label: "Mídia", icon: Megaphone },
       { href: "/tarefas", label: "Tarefas", icon: CheckSquare },
       { href: "/agenda", label: "Agenda", icon: CalendarDays },
     ],
