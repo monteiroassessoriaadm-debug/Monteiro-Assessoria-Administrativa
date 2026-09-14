@@ -1,0 +1,205 @@
+// Monteiro CRM — Fase 1 (Base)
+// Schema evolutivo: novas fases adicionam modelos/campos, nunca reescrevem o que já existe.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ---------- Usuários e permissões ----------
+
+enum Role {
+  ADMIN // Administrador — acesso total
+  GESTOR // Gestor — acesso conforme autorização
+  BIA // Bia / Mídia — acesso a clientes e serviços de mídia
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(GESTOR)
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  clientsCreated   Client[]        @relation("ClientCreatedBy")
+  leadsResponsible Lead[]          @relation("LeadResponsible")
+  servicesDefault  Service[]       @relation("ServiceDefaultResponsible")
+  timelineEvents   TimelineEvent[] @relation("TimelineCreatedBy")
+
+  @@map("users")
+}
+
+// ---------- Identidade visual / configuração da empresa ----------
+// A logo é cadastrada pelo administrador; o sistema nunca cria/altera identidade visual sozinho.
+
+model CompanySettings {
+  id        String   @id @default(cuid())
+  name      String   @default("Monteiro Assessoria Administrativa")
+  slogan    String? // ex.: "A Monteiro Resolve" — cadastrado pelo admin, não fixo no código
+  logoData  String? // logo enviada pelo admin (data URI), usada em contratos/orçamentos/PDFs
+  updatedAt DateTime @updatedAt
+
+  @@map("company_settings")
+}
+
+// ---------- Cliente único (PF/PJ) ----------
+
+enum ClientType {
+  PF
+  PJ
+}
+
+enum ClientStatus {
+  ATIVO
+  INATIVO
+}
+
+model Client {
+  id     String     @id @default(cuid())
+  type   ClientType
+  status ClientStatus @default(ATIVO)
+
+  // Pessoa física
+  fullName      String? // Nome completo
+  cpf           String?
+  rg            String?
+  birthDate     DateTime?
+  maritalStatus String?
+  profession    String?
+
+  // Pessoa jurídica
+  legalName          String? // Razão social
+  tradeName          String? // Nome fantasia
+  cnpj               String?
+  stateRegistration  String? // Inscrição estadual
+  responsibleName    String?
+  responsibleCpf     String?
+  responsibleRole    String?
+
+  // Endereço (comum a PF/PJ)
+  addressStreet       String?
+  addressNumber       String?
+  addressComplement   String?
+  addressNeighborhood String?
+  addressCity         String?
+  addressState        String?
+  addressZip          String?
+
+  // Contato (comum a PF/PJ)
+  phone     String?
+  whatsapp  String?
+  email     String?
+  instagram String?
+  notes     String?
+
+  createdById String?
+  createdBy   User?    @relation("ClientCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  leads          Lead[]
+  timelineEvents TimelineEvent[]
+
+  @@index([cpf])
+  @@index([cnpj])
+  @@index([whatsapp])
+  @@map("clients")
+}
+
+// ---------- Leads / prospecção ----------
+
+enum LeadTemperature {
+  FRIO
+  MORNO
+  QUENTE
+}
+
+// Etapas do funil (Fase 2 usa isso no Kanban); já modelado agora para não retrabalhar o schema depois.
+enum LeadStage {
+  NOVO_LEAD
+  PRIMEIRO_CONTATO
+  EM_ATENDIMENTO
+  INTERESSADO
+  ORCAMENTO_ENVIADO
+  NEGOCIACAO
+  CONTRATADO
+  PERDIDO
+}
+
+model Lead {
+  id                String          @id @default(cuid())
+  name              String
+  whatsapp          String?
+  phone             String?
+  instagram         String?
+  city              String?
+  clientTypeGuess   ClientType?     // se o interesse é como PF ou PJ
+  serviceInterestId String?
+  serviceInterest   Service?        @relation(fields: [serviceInterestId], references: [id])
+  origin            String? // de onde veio o lead (indicação, instagram, site, etc.)
+  responsibleId     String?
+  responsible       User?           @relation("LeadResponsible", fields: [responsibleId], references: [id])
+  temperature       LeadTemperature @default(MORNO)
+  stage             LeadStage       @default(NOVO_LEAD)
+
+  contactDate     DateTime  @default(now())
+  lastContactDate DateTime?
+  nextContactDate DateTime?
+  notes           String?
+
+  clientId String? // preenchido quando o lead é convertido em cliente
+  client   Client? @relation(fields: [clientId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([stage])
+  @@index([temperature])
+  @@map("leads")
+}
+
+// ---------- Catálogo de serviços (configurável, sem preços fixos no código) ----------
+
+model Service {
+  id                String   @id @default(cuid())
+  name              String
+  category          String?
+  description       String?
+  defaultPrice      Decimal? // configurável pelo admin
+  defaultTermDays   Int? // prazo padrão em dias
+  checklistTemplate String? // JSON com os itens padrão do checklist deste serviço
+  active            Boolean  @default(true)
+
+  defaultResponsibleId String?
+  defaultResponsible    User?  @relation("ServiceDefaultResponsible", fields: [defaultResponsibleId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  leads Lead[]
+
+  @@map("services")
+}
+
+// ---------- Linha do tempo única do cliente ----------
+
+model TimelineEvent {
+  id          String   @id @default(cuid())
+  clientId    String
+  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  type        String // ex.: LEAD_CRIADO, ORCAMENTO_ENVIADO, CONTRATO_GERADO, PAGAMENTO_RECEBIDO...
+  description String
+  createdById String?
+  createdBy   User?    @relation("TimelineCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@index([clientId])
+  @@map("timeline_events")
+}
