@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   FileText,
   FileSignature,
+  FileStack,
   AlertTriangle,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
@@ -39,6 +40,8 @@ export default async function DashboardPage() {
     propostasEnviadas,
     orcamentosParaFollowUp,
     leadsParaFollowUp,
+    contratosAguardandoAssinatura,
+    documentosGeradosMes,
   ] = await Promise.all([
     prisma.lead.count({ where: { stage: "NOVO_LEAD" } }),
     prisma.lead.count({
@@ -72,6 +75,10 @@ export default async function DashboardPage() {
       orderBy: { nextContactDate: "asc" },
       take: 5,
     }),
+    prisma.generatedDocument.count({
+      where: { status: { in: ["ENVIADO", "AGUARDANDO_ASSINATURA"] } },
+    }),
+    prisma.generatedDocument.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
   ]);
 
   const roleCounts = Object.fromEntries(
@@ -158,7 +165,18 @@ export default async function DashboardPage() {
             icon={FileText}
             tone="green"
           />
-          <ComingSoonCard phase="Fase 3 (Contratos aguardando assinatura)" />
+          <StatCard
+            label="Contratos aguardando assinatura"
+            value={contratosAguardandoAssinatura}
+            icon={FileStack}
+            tone="amber"
+          />
+          <StatCard
+            label="Documentos gerados (30 dias)"
+            value={documentosGeradosMes}
+            icon={FileStack}
+            tone="slate"
+          />
           <ComingSoonCard phase="Fase 5 (Vendas realizadas / faturamento)" />
         </div>
       </section>

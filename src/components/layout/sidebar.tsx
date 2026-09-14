@@ -10,6 +10,7 @@ import {
   Search,
   FileText,
   FileSignature,
+  FileStack,
   Briefcase,
   UserCog,
   Settings,
@@ -43,6 +44,7 @@ const navGroups: NavGroup[] = [
       { href: "/funil", label: "Funil", icon: Kanban },
       { href: "/orcamentos", label: "Orçamentos", icon: FileText },
       { href: "/propostas", label: "Propostas", icon: FileSignature },
+      { href: "/documentos", label: "Documentos", icon: FileStack },
     ],
   },
   {
@@ -50,6 +52,12 @@ const navGroups: NavGroup[] = [
     items: [
       { href: "/servicos", label: "Serviços", icon: Briefcase },
       { href: "/usuarios", label: "Usuários", icon: UserCog, roles: ["ADMIN"] },
+      {
+        href: "/configuracoes/modelos",
+        label: "Modelos de documentos",
+        icon: FileStack,
+        roles: ["ADMIN"],
+      },
       {
         href: "/configuracoes",
         label: "Configurações",

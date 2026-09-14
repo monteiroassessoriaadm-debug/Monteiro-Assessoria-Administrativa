@@ -1,12 +1,19 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Pencil, FileText, FileSignature } from "lucide-react";
+import { Pencil, FileText, FileSignature, FileStack } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatDateBR, formatDateTimeBR, maskCpf, maskCnpj } from "@/lib/utils";
-import { quoteStatusLabels, quoteStatusTone, proposalStatusLabels, proposalStatusTone } from "@/lib/lead-labels";
+import {
+  quoteStatusLabels,
+  quoteStatusTone,
+  proposalStatusLabels,
+  proposalStatusTone,
+  documentStatusLabels,
+  documentStatusTone,
+} from "@/lib/lead-labels";
 import { ToggleStatusButton } from "./toggle-status-button";
 
 export default async function ClienteDetailPage({
@@ -23,6 +30,7 @@ export default async function ClienteDetailPage({
       leads: true,
       quotes: { orderBy: { createdAt: "desc" } },
       proposals: { orderBy: { createdAt: "desc" } },
+      documents: { orderBy: { createdAt: "desc" } },
     },
   });
 
@@ -59,6 +67,11 @@ export default async function ClienteDetailPage({
           <Link href={`/propostas/novo?clientId=${client.id}`}>
             <Button variant="outline">
               <FileSignature className="h-4 w-4" /> Proposta
+            </Button>
+          </Link>
+          <Link href={`/documentos/novo?clientId=${client.id}`}>
+            <Button variant="outline">
+              <FileStack className="h-4 w-4" /> Documento
             </Button>
           </Link>
           <ToggleStatusButton clientId={client.id} status={client.status} />
@@ -152,10 +165,12 @@ export default async function ClienteDetailPage({
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Orçamentos e propostas</CardTitle>
+              <CardTitle>Orçamentos, propostas e documentos</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {client.quotes.length === 0 && client.proposals.length === 0 ? (
+              {client.quotes.length === 0 &&
+              client.proposals.length === 0 &&
+              client.documents.length === 0 ? (
                 <p className="text-sm text-slate-400">Nenhum ainda.</p>
               ) : (
                 <>
@@ -180,6 +195,18 @@ export default async function ClienteDetailPage({
                       <span>Proposta #{p.number}</span>
                       <Badge tone={proposalStatusTone[p.status]}>
                         {proposalStatusLabels[p.status]}
+                      </Badge>
+                    </Link>
+                  ))}
+                  {client.documents.map((d) => (
+                    <Link
+                      key={d.id}
+                      href={`/documentos/${d.id}`}
+                      className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2 text-sm hover:bg-slate-50"
+                    >
+                      <span>{d.title}</span>
+                      <Badge tone={documentStatusTone[d.status]}>
+                        {documentStatusLabels[d.status]}
                       </Badge>
                     </Link>
                   ))}

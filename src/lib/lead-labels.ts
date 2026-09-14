@@ -73,3 +73,24 @@ export const proposalStatusTone: Record<
   RECUSADA: "red",
   EXPIRADA: "slate",
 };
+
+export const documentStatusLabels: Record<string, string> = {
+  RASCUNHO: "Rascunho",
+  GERADO: "Gerado",
+  ENVIADO: "Enviado",
+  AGUARDANDO_ASSINATURA: "Aguardando assinatura",
+  ASSINADO: "Assinado",
+  CANCELADO: "Cancelado",
+};
+
+export const documentStatusTone: Record<
+  string,
+  "slate" | "blue" | "yellow" | "green" | "red"
+> = {
+  RASCUNHO: "slate",
+  GERADO: "blue",
+  ENVIADO: "blue",
+  AGUARDANDO_ASSINATURA: "yellow",
+  ASSINADO: "green",
+  CANCELADO: "red",
+};

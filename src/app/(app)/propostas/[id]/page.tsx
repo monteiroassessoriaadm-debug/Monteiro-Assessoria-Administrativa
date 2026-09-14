@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Pencil, Download } from "lucide-react";
+import { Pencil, Download, FileStack } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -54,6 +54,13 @@ export default async function PropostaDetailPage({
               <Pencil className="h-4 w-4" /> Editar
             </Button>
           </Link>
+          {proposal.status === "APROVADA" && (
+            <Link href={`/documentos/novo?clientId=${proposal.clientId}`}>
+              <Button variant="secondary">
+                <FileStack className="h-4 w-4" /> Gerar contrato
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
 

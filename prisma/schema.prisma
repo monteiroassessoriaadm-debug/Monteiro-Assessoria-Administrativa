@@ -28,13 +28,15 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  clientsCreated       Client[]           @relation("ClientCreatedBy")
-  leadsResponsible     Lead[]             @relation("LeadResponsible")
-  servicesDefault      Service[]          @relation("ServiceDefaultResponsible")
-  timelineEvents       TimelineEvent[]    @relation("TimelineCreatedBy")
-  quotesCreated        Quote[]            @relation("QuoteCreatedBy")
-  proposalsCreated     Proposal[]         @relation("ProposalCreatedBy")
-  prospectsResponsible ProspectingEntry[] @relation("ProspectResponsible")
+  clientsCreated       Client[]            @relation("ClientCreatedBy")
+  leadsResponsible     Lead[]              @relation("LeadResponsible")
+  servicesDefault      Service[]           @relation("ServiceDefaultResponsible")
+  timelineEvents       TimelineEvent[]     @relation("TimelineCreatedBy")
+  quotesCreated        Quote[]             @relation("QuoteCreatedBy")
+  proposalsCreated     Proposal[]          @relation("ProposalCreatedBy")
+  prospectsResponsible ProspectingEntry[]  @relation("ProspectResponsible")
+  templatesCreated     DocumentTemplate[]  @relation("TemplateCreatedBy")
+  documentsCreated     GeneratedDocument[] @relation("DocumentCreatedBy")
 
   @@map("users")
 }
@@ -111,6 +113,7 @@ model Client {
   timelineEvents TimelineEvent[]
   quotes         Quote[]
   proposals      Proposal[]
+  documents      GeneratedDocument[]
 
   @@unique([cpf])
   @@unique([cnpj])
@@ -334,4 +337,64 @@ model ProspectingEntry {
   updatedAt DateTime @updatedAt
 
   @@map("prospecting_entries")
+}
+
+// ---------- Fase 3: Documentos ----------
+// O administrador cadastra e edita os modelos; o sistema nunca inventa
+// cláusulas jurídicas. Campos dinâmicos {{TOKEN}} são substituídos na
+// geração. Documentos gerados ficam congelados na versão do modelo usada.
+
+model DocumentTemplate {
+  id             String  @id @default(cuid())
+  baseTemplateId String // agrupa as versões de um mesmo modelo
+  name           String
+  category       String?
+  version        Int     @default(1)
+  active         Boolean @default(true)
+  content        String // corpo do documento com {{TOKENS}} — editado pelo admin
+  headerNote     String?
+  footerNote     String?
+  fieldsSchema   String // JSON: [{ key, label, type, required }] — campos específicos deste modelo
+
+  createdById String?
+  createdBy   User?    @relation("TemplateCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  documents GeneratedDocument[]
+
+  @@index([baseTemplateId])
+  @@map("document_templates")
+}
+
+enum DocumentStatus {
+  RASCUNHO
+  GERADO
+  ENVIADO
+  AGUARDANDO_ASSINATURA
+  ASSINADO
+  CANCELADO
+}
+
+model GeneratedDocument {
+  id         String           @id @default(cuid())
+  number     Int // número sequencial de exibição, atribuído na criação
+  templateId String
+  template   DocumentTemplate @relation(fields: [templateId], references: [id])
+  clientId   String
+  client     Client           @relation(fields: [clientId], references: [id])
+  title      String
+  status     DocumentStatus   @default(GERADO)
+
+  fieldValues     String // JSON com os valores preenchidos no momento da geração
+  renderedContent String // texto final, já com os tokens substituídos (congelado)
+
+  createdById String?
+  createdBy   User?    @relation("DocumentCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([clientId])
+  @@index([status])
+  @@map("generated_documents")
 }
