@@ -94,3 +94,34 @@ export const documentStatusTone: Record<
   ASSINADO: "green",
   CANCELADO: "red",
 };
+
+export const serviceInstanceStatusLabels: Record<string, string> = {
+  ABERTO: "Aberto",
+  EM_ANDAMENTO: "Em andamento",
+  EM_REVISAO: "Em revisão",
+  CONCLUIDO: "Concluído",
+  CANCELADO: "Cancelado",
+};
+
+export const serviceInstanceStatusTone: Record<
+  string,
+  "slate" | "blue" | "yellow" | "green" | "red"
+> = {
+  ABERTO: "slate",
+  EM_ANDAMENTO: "blue",
+  EM_REVISAO: "yellow",
+  CONCLUIDO: "green",
+  CANCELADO: "red",
+};
+
+export const calendarEventTypeLabels: Record<string, string> = {
+  ATENDIMENTO: "Atendimento",
+  REUNIAO: "Reunião",
+  PRAZO: "Prazo",
+  ENTREGA: "Entrega",
+  PROSPECCAO: "Prospecção",
+  TAREFA: "Tarefa",
+  PUBLICACAO: "Publicação",
+  GRAVACAO: "Gravação",
+  RETORNO_CLIENTE: "Retorno de cliente",
+};

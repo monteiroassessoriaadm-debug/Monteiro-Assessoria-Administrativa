@@ -7,8 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatCurrencyBRL, formatDateBR } from "@/lib/utils";
 import { displayClientName } from "@/lib/client-display";
-import { proposalStatusLabels, proposalStatusTone } from "@/lib/lead-labels";
+import { proposalStatusLabels, proposalStatusTone, serviceInstanceStatusTone, serviceInstanceStatusLabels } from "@/lib/lead-labels";
 import { ProposalStatusActions } from "./status-actions";
+import { OpenServiceFromProposalButton } from "./open-service-button";
 
 export default async function PropostaDetailPage({
   params,
@@ -19,7 +20,7 @@ export default async function PropostaDetailPage({
 
   const proposal = await prisma.proposal.findUnique({
     where: { id },
-    include: { client: true, service: true, createdBy: true },
+    include: { client: true, service: true, createdBy: true, serviceInstances: true },
   });
 
   if (!proposal) notFound();
@@ -65,6 +66,41 @@ export default async function PropostaDetailPage({
       </div>
 
       <ProposalStatusActions proposalId={proposal.id} status={proposal.status} />
+
+      {proposal.status === "APROVADA" && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Execução</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {proposal.serviceInstances.length === 0 ? (
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-slate-500">
+                  Nenhum serviço aberto ainda a partir desta proposta.
+                </p>
+                <OpenServiceFromProposalButton proposalId={proposal.id} />
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {proposal.serviceInstances.map((s) => (
+                  <Link
+                    key={s.id}
+                    href={`/servicos-abertos/${s.id}`}
+                    className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2 text-sm hover:bg-slate-50"
+                  >
+                    <span>
+                      #{s.number} — {s.title}
+                    </span>
+                    <Badge tone={serviceInstanceStatusTone[s.status]}>
+                      {serviceInstanceStatusLabels[s.status]}
+                    </Badge>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

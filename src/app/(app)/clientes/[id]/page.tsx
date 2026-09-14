@@ -13,6 +13,8 @@ import {
   proposalStatusTone,
   documentStatusLabels,
   documentStatusTone,
+  serviceInstanceStatusLabels,
+  serviceInstanceStatusTone,
 } from "@/lib/lead-labels";
 import { ToggleStatusButton } from "./toggle-status-button";
 
@@ -31,6 +33,7 @@ export default async function ClienteDetailPage({
       quotes: { orderBy: { createdAt: "desc" } },
       proposals: { orderBy: { createdAt: "desc" } },
       documents: { orderBy: { createdAt: "desc" } },
+      serviceInstances: { orderBy: { createdAt: "desc" } },
     },
   });
 
@@ -163,6 +166,32 @@ export default async function ClienteDetailPage({
         </div>
 
         <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Serviços</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {client.serviceInstances.length === 0 ? (
+                <p className="text-sm text-slate-400">Nenhum serviço aberto ainda.</p>
+              ) : (
+                client.serviceInstances.map((s) => (
+                  <Link
+                    key={s.id}
+                    href={`/servicos-abertos/${s.id}`}
+                    className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2 text-sm hover:bg-slate-50"
+                  >
+                    <span>
+                      #{s.number} — {s.title}
+                    </span>
+                    <Badge tone={serviceInstanceStatusTone[s.status]}>
+                      {serviceInstanceStatusLabels[s.status]}
+                    </Badge>
+                  </Link>
+                ))
+              )}
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle>Orçamentos, propostas e documentos</CardTitle>

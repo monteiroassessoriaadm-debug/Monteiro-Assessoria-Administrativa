@@ -7,8 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatCurrencyBRL, formatDateBR, formatDateTimeBR } from "@/lib/utils";
 import { displayClientName } from "@/lib/client-display";
-import { quoteStatusLabels, quoteStatusTone } from "@/lib/lead-labels";
+import { quoteStatusLabels, quoteStatusTone, serviceInstanceStatusTone, serviceInstanceStatusLabels } from "@/lib/lead-labels";
 import { QuoteStatusActions } from "./status-actions";
+import { OpenServiceFromQuoteButton } from "./open-service-button";
 
 export default async function OrcamentoDetailPage({
   params,
@@ -19,7 +20,7 @@ export default async function OrcamentoDetailPage({
 
   const quote = await prisma.quote.findUnique({
     where: { id },
-    include: { client: true, items: true, createdBy: true },
+    include: { client: true, items: true, createdBy: true, serviceInstances: true },
   });
 
   if (!quote) notFound();
@@ -70,6 +71,41 @@ export default async function OrcamentoDetailPage({
       </div>
 
       <QuoteStatusActions quoteId={quote.id} status={quote.status} />
+
+      {quote.status === "APROVADO" && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Execução</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {quote.serviceInstances.length === 0 ? (
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-slate-500">
+                  Nenhum serviço aberto ainda a partir deste orçamento.
+                </p>
+                <OpenServiceFromQuoteButton quoteId={quote.id} />
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {quote.serviceInstances.map((s) => (
+                  <Link
+                    key={s.id}
+                    href={`/servicos-abertos/${s.id}`}
+                    className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2 text-sm hover:bg-slate-50"
+                  >
+                    <span>
+                      #{s.number} — {s.title}
+                    </span>
+                    <Badge tone={serviceInstanceStatusTone[s.status]}>
+                      {serviceInstanceStatusLabels[s.status]}
+                    </Badge>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

@@ -14,6 +14,9 @@ import {
   Briefcase,
   UserCog,
   Settings,
+  ClipboardList,
+  CheckSquare,
+  CalendarDays,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Role } from "@/generated/prisma/enums";
@@ -45,6 +48,14 @@ const navGroups: NavGroup[] = [
       { href: "/orcamentos", label: "Orçamentos", icon: FileText },
       { href: "/propostas", label: "Propostas", icon: FileSignature },
       { href: "/documentos", label: "Documentos", icon: FileStack },
+    ],
+  },
+  {
+    label: "Operacional",
+    items: [
+      { href: "/servicos-abertos", label: "Serviços em andamento", icon: ClipboardList },
+      { href: "/tarefas", label: "Tarefas", icon: CheckSquare },
+      { href: "/agenda", label: "Agenda", icon: CalendarDays },
     ],
   },
   {

@@ -28,15 +28,21 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  clientsCreated       Client[]            @relation("ClientCreatedBy")
-  leadsResponsible     Lead[]              @relation("LeadResponsible")
-  servicesDefault      Service[]           @relation("ServiceDefaultResponsible")
-  timelineEvents       TimelineEvent[]     @relation("TimelineCreatedBy")
-  quotesCreated        Quote[]             @relation("QuoteCreatedBy")
-  proposalsCreated     Proposal[]          @relation("ProposalCreatedBy")
-  prospectsResponsible ProspectingEntry[]  @relation("ProspectResponsible")
-  templatesCreated     DocumentTemplate[]  @relation("TemplateCreatedBy")
-  documentsCreated     GeneratedDocument[] @relation("DocumentCreatedBy")
+  clientsCreated              Client[]            @relation("ClientCreatedBy")
+  leadsResponsible            Lead[]              @relation("LeadResponsible")
+  servicesDefault             Service[]           @relation("ServiceDefaultResponsible")
+  timelineEvents              TimelineEvent[]     @relation("TimelineCreatedBy")
+  quotesCreated               Quote[]             @relation("QuoteCreatedBy")
+  proposalsCreated            Proposal[]          @relation("ProposalCreatedBy")
+  prospectsResponsible        ProspectingEntry[]  @relation("ProspectResponsible")
+  templatesCreated            DocumentTemplate[]  @relation("TemplateCreatedBy")
+  documentsCreated            GeneratedDocument[] @relation("DocumentCreatedBy")
+  serviceInstancesResponsible ServiceInstance[]   @relation("ServiceInstanceResponsible")
+  serviceInstancesCreated     ServiceInstance[]   @relation("ServiceInstanceCreatedBy")
+  tasksAssigned               Task[]              @relation("TaskAssignedTo")
+  tasksCreated                Task[]              @relation("TaskCreatedBy")
+  eventsResponsible           CalendarEvent[]     @relation("EventResponsible")
+  eventsCreated               CalendarEvent[]     @relation("EventCreatedBy")
 
   @@map("users")
 }
@@ -109,11 +115,14 @@ model Client {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  leads          Lead[]
-  timelineEvents TimelineEvent[]
-  quotes         Quote[]
-  proposals      Proposal[]
-  documents      GeneratedDocument[]
+  leads            Lead[]
+  timelineEvents   TimelineEvent[]
+  quotes           Quote[]
+  proposals        Proposal[]
+  documents        GeneratedDocument[]
+  serviceInstances ServiceInstance[]
+  tasks            Task[]
+  calendarEvents   CalendarEvent[]
 
   @@unique([cpf])
   @@unique([cnpj])
@@ -198,6 +207,7 @@ model Service {
   quoteItems         QuoteItem[]
   proposals          Proposal[]
   prospectingEntries ProspectingEntry[]
+  serviceInstances   ServiceInstance[]
 
   @@map("services")
 }
@@ -250,7 +260,8 @@ model Quote {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  items QuoteItem[]
+  items            QuoteItem[]
+  serviceInstances ServiceInstance[]
 
   @@index([status])
   @@index([clientId])
@@ -303,6 +314,8 @@ model Proposal {
   createdBy   User?    @relation("ProposalCreatedBy", fields: [createdById], references: [id])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  serviceInstances ServiceInstance[]
 
   @@index([status])
   @@index([clientId])
@@ -397,4 +410,132 @@ model GeneratedDocument {
   @@index([clientId])
   @@index([status])
   @@map("generated_documents")
+}
+
+// ---------- Fase 4: Operacional ----------
+// Abertura do serviço a partir de um orçamento/proposta aprovado, com
+// checklist puxado do catálogo, tarefas e agenda. Financeiro (contas a
+// receber) fica para a Fase 5 — não é criado aqui.
+
+enum ServiceInstanceStatus {
+  ABERTO
+  EM_ANDAMENTO
+  EM_REVISAO
+  CONCLUIDO
+  CANCELADO
+}
+
+model ServiceInstance {
+  id       String @id @default(cuid())
+  number   Int // número sequencial de exibição, atribuído na criação
+  title    String
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id])
+
+  serviceId  String?
+  service    Service?  @relation(fields: [serviceId], references: [id])
+  quoteId    String?
+  quote      Quote?    @relation(fields: [quoteId], references: [id])
+  proposalId String?
+  proposal   Proposal? @relation(fields: [proposalId], references: [id])
+
+  status        ServiceInstanceStatus @default(ABERTO)
+  responsibleId String?
+  responsible   User?                 @relation("ServiceInstanceResponsible", fields: [responsibleId], references: [id])
+
+  price       Decimal?
+  startDate   DateTime?
+  dueDate     DateTime?
+  deliveredAt DateTime?
+  notes       String?
+
+  createdById String?
+  createdBy   User?    @relation("ServiceInstanceCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  checklistItems ChecklistItem[]
+  tasks          Task[]
+
+  @@index([status])
+  @@index([clientId])
+  @@index([dueDate])
+  @@map("service_instances")
+}
+
+model ChecklistItem {
+  id                String          @id @default(cuid())
+  serviceInstanceId String
+  serviceInstance   ServiceInstance @relation(fields: [serviceInstanceId], references: [id], onDelete: Cascade)
+  description       String
+  done              Boolean         @default(false)
+  doneAt            DateTime?
+  order             Int             @default(0)
+
+  @@map("checklist_items")
+}
+
+enum TaskStatus {
+  PENDENTE
+  CONCLUIDA
+}
+
+model Task {
+  id           String     @id @default(cuid())
+  title        String
+  description  String?
+  assignedToId String?
+  assignedTo   User?      @relation("TaskAssignedTo", fields: [assignedToId], references: [id])
+  dueDate      DateTime?
+  status       TaskStatus @default(PENDENTE)
+  completedAt  DateTime?
+
+  clientId          String?
+  client            Client?          @relation(fields: [clientId], references: [id])
+  serviceInstanceId String?
+  serviceInstance   ServiceInstance? @relation(fields: [serviceInstanceId], references: [id])
+
+  createdById String?
+  createdBy   User?    @relation("TaskCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([assignedToId])
+  @@index([status])
+  @@index([dueDate])
+  @@map("tasks")
+}
+
+enum CalendarEventType {
+  ATENDIMENTO
+  REUNIAO
+  PRAZO
+  ENTREGA
+  PROSPECCAO
+  TAREFA
+  PUBLICACAO
+  GRAVACAO
+  RETORNO_CLIENTE
+}
+
+model CalendarEvent {
+  id      String            @id @default(cuid())
+  title   String
+  type    CalendarEventType
+  startAt DateTime
+  endAt   DateTime?
+
+  clientId      String?
+  client        Client? @relation(fields: [clientId], references: [id])
+  responsibleId String?
+  responsible   User?   @relation("EventResponsible", fields: [responsibleId], references: [id])
+  notes         String?
+
+  createdById String?
+  createdBy   User?    @relation("EventCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([startAt])
+  @@map("calendar_events")
 }

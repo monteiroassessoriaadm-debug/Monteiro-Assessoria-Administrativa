@@ -11,6 +11,9 @@ import {
   FileSignature,
   FileStack,
   AlertTriangle,
+  ClipboardList,
+  CalendarClock,
+  CheckSquare,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { StatCard, SectionTitle, ComingSoonCard } from "@/components/dashboard/stat-card";
@@ -25,6 +28,10 @@ export default async function DashboardPage() {
   const threeDaysAgo = daysAgo(3);
   const endOfToday = new Date();
   endOfToday.setHours(23, 59, 59, 999);
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+
+  const ACTIVE_SERVICE_STATUSES = ["ABERTO", "EM_ANDAMENTO", "EM_REVISAO"] as const;
 
   const [
     leadsNovos,
@@ -42,6 +49,14 @@ export default async function DashboardPage() {
     leadsParaFollowUp,
     contratosAguardandoAssinatura,
     documentosGeradosMes,
+    servicosEmAndamento,
+    servicosParaHoje,
+    servicosAtrasados,
+    servicosAtrasadosList,
+    tarefasAtrasadas,
+    tarefasBia,
+    tarefasAdmin,
+    servicosPorResponsavel,
   ] = await Promise.all([
     prisma.lead.count({ where: { stage: "NOVO_LEAD" } }),
     prisma.lead.count({
@@ -79,13 +94,51 @@ export default async function DashboardPage() {
       where: { status: { in: ["ENVIADO", "AGUARDANDO_ASSINATURA"] } },
     }),
     prisma.generatedDocument.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
+    prisma.serviceInstance.count({ where: { status: { in: [...ACTIVE_SERVICE_STATUSES] } } }),
+    prisma.serviceInstance.count({
+      where: {
+        status: { in: [...ACTIVE_SERVICE_STATUSES] },
+        dueDate: { gte: startOfToday, lte: endOfToday },
+      },
+    }),
+    prisma.serviceInstance.count({
+      where: { status: { in: [...ACTIVE_SERVICE_STATUSES] }, dueDate: { lt: startOfToday } },
+    }),
+    prisma.serviceInstance.findMany({
+      where: { status: { in: [...ACTIVE_SERVICE_STATUSES] }, dueDate: { lt: startOfToday } },
+      include: { client: true },
+      orderBy: { dueDate: "asc" },
+      take: 5,
+    }),
+    prisma.task.count({ where: { status: "PENDENTE", dueDate: { lt: startOfToday } } }),
+    prisma.task.count({
+      where: { status: "PENDENTE", assignedTo: { role: "BIA" } },
+    }),
+    prisma.task.count({
+      where: { status: "PENDENTE", assignedTo: { role: "ADMIN" } },
+    }),
+    prisma.serviceInstance.groupBy({
+      by: ["responsibleId"],
+      where: { status: { in: [...ACTIVE_SERVICE_STATUSES] } },
+      _count: true,
+    }),
   ]);
+
+  const responsibleIds = servicosPorResponsavel
+    .map((r) => r.responsibleId)
+    .filter((id): id is string => id !== null);
+  const responsibleUsers = await prisma.user.findMany({
+    where: { id: { in: responsibleIds } },
+    select: { id: true, name: true },
+  });
+  const responsibleNameById = Object.fromEntries(responsibleUsers.map((u) => [u.id, u.name]));
 
   const roleCounts = Object.fromEntries(
     usuariosPorPapel.map((r) => [r.role, r._count]),
   );
 
-  const followUpCount = orcamentosParaFollowUp.length + leadsParaFollowUp.length;
+  const followUpCount =
+    orcamentosParaFollowUp.length + leadsParaFollowUp.length + servicosAtrasadosList.length;
 
   return (
     <div className="space-y-8">
@@ -130,6 +183,19 @@ export default async function DashboardPage() {
                   Lead {l.name} — retorno previsto para {formatDateBR(l.nextContactDate)}
                 </span>
                 <span className="text-amber-700">Fazer contato →</span>
+              </Link>
+            ))}
+            {servicosAtrasadosList.map((s) => (
+              <Link
+                key={s.id}
+                href={`/servicos-abertos/${s.id}`}
+                className="flex items-center justify-between rounded-lg bg-white px-3 py-2 text-sm hover:bg-slate-50"
+              >
+                <span>
+                  Serviço &quot;{s.title}&quot; de {displayClientName(s.client)} — prazo era{" "}
+                  {formatDateBR(s.dueDate)}
+                </span>
+                <span className="text-amber-700">Ver serviço →</span>
               </Link>
             ))}
           </CardContent>
@@ -184,9 +250,24 @@ export default async function DashboardPage() {
       <section>
         <SectionTitle>Operacional</SectionTitle>
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          <ComingSoonCard phase="Fase 4 (Serviços, checklist, prazos, entregas)" />
-          <ComingSoonCard phase="Fase 4 (Serviços, checklist, prazos, entregas)" />
-          <ComingSoonCard phase="Fase 4 (Serviços, checklist, prazos, entregas)" />
+          <StatCard
+            label="Serviços em andamento"
+            value={servicosEmAndamento}
+            icon={ClipboardList}
+            tone="blue"
+          />
+          <StatCard
+            label="Serviços para hoje"
+            value={servicosParaHoje}
+            icon={CalendarClock}
+            tone="amber"
+          />
+          <StatCard
+            label="Serviços atrasados"
+            value={servicosAtrasados}
+            icon={AlertTriangle}
+            tone="red"
+          />
           <StatCard
             label="Serviços ativos no catálogo"
             value={servicosAtivos}
@@ -194,6 +275,23 @@ export default async function DashboardPage() {
             tone="slate"
           />
         </div>
+        {servicosPorResponsavel.length > 0 && (
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle>Serviços em andamento por responsável</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-1 text-sm">
+              {servicosPorResponsavel.map((r) => (
+                <div key={r.responsibleId ?? "sem-responsavel"} className="flex justify-between">
+                  <span className="text-slate-600">
+                    {r.responsibleId ? responsibleNameById[r.responsibleId] ?? "-" : "Sem responsável"}
+                  </span>
+                  <span className="font-medium text-slate-900">{r._count}</span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
       </section>
 
       <section>
@@ -227,7 +325,19 @@ export default async function DashboardPage() {
             icon={Users}
             tone="slate"
           />
-          <ComingSoonCard phase="Fase 4 (Tarefas por responsável)" />
+          <StatCard
+            label="Tarefas atrasadas"
+            value={tarefasAtrasadas}
+            icon={AlertTriangle}
+            tone="red"
+          />
+          <StatCard label="Tarefas da Bia" value={tarefasBia} icon={CheckSquare} tone="slate" />
+          <StatCard
+            label="Tarefas do administrador"
+            value={tarefasAdmin}
+            icon={CheckSquare}
+            tone="slate"
+          />
         </div>
       </section>
 

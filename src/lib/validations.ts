@@ -297,3 +297,47 @@ export const generateDocumentSchema = z.object({
 });
 
 export type GenerateDocumentFormValues = z.infer<typeof generateDocumentSchema>;
+
+export const taskSchema = z.object({
+  title: z.string().min(1, "Informe o título da tarefa."),
+  description: z.string().optional(),
+  assignedToId: z.string().optional(),
+  dueDate: optionalDateString,
+  clientId: z.string().optional(),
+});
+
+export type TaskFormValues = z.infer<typeof taskSchema>;
+
+export const calendarEventSchema = z.object({
+  title: z.string().min(1, "Informe o título do evento."),
+  type: z.enum([
+    "ATENDIMENTO",
+    "REUNIAO",
+    "PRAZO",
+    "ENTREGA",
+    "PROSPECCAO",
+    "TAREFA",
+    "PUBLICACAO",
+    "GRAVACAO",
+    "RETORNO_CLIENTE",
+  ]),
+  startAt: z.string().min(1, "Informe a data/hora de início.").refine(
+    (v) => !Number.isNaN(Date.parse(v)),
+    "Data/hora inválida.",
+  ),
+  endAt: optionalDateString,
+  clientId: z.string().optional(),
+  responsibleId: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+export type CalendarEventFormValues = z.infer<typeof calendarEventSchema>;
+
+export const serviceInstanceEditSchema = z.object({
+  title: z.string().min(1, "Informe o título do serviço."),
+  responsibleId: z.string().optional(),
+  dueDate: optionalDateString,
+  notes: z.string().optional(),
+});
+
+export type ServiceInstanceEditFormValues = z.infer<typeof serviceInstanceEditSchema>;
