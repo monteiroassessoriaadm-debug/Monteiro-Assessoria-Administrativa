@@ -8,17 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { LeadFormState } from "./actions";
-
-const stageLabels: Record<string, string> = {
-  NOVO_LEAD: "Novo lead",
-  PRIMEIRO_CONTATO: "Primeiro contato",
-  EM_ATENDIMENTO: "Em atendimento",
-  INTERESSADO: "Interessado",
-  ORCAMENTO_ENVIADO: "Orçamento enviado",
-  NEGOCIACAO: "Negociação",
-  CONTRATADO: "Contratado",
-  PERDIDO: "Perdido",
-};
+import { stageLabels } from "@/lib/lead-labels";
 
 type LeadDefaults = Partial<{
   name: string;
@@ -42,6 +32,7 @@ export function LeadForm({
   services,
   users,
   submitLabel = "Salvar lead",
+  fromProspectId,
 }: {
   action: (
     prevState: LeadFormState,
@@ -51,12 +42,16 @@ export function LeadForm({
   services: { id: string; name: string }[];
   users: { id: string; name: string }[];
   submitLabel?: string;
+  fromProspectId?: string;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
   const fieldError = (name: string) => state.fieldErrors?.[name];
 
   return (
     <form action={formAction} className="space-y-6">
+      {fromProspectId && (
+        <input type="hidden" name="fromProspectId" value={fromProspectId} />
+      )}
       <Card>
         <CardHeader>
           <CardTitle>Dados do lead</CardTitle>

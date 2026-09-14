@@ -1,33 +1,11 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus, Kanban } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatDateBR } from "@/lib/utils";
-
-const stageLabels: Record<string, string> = {
-  NOVO_LEAD: "Novo lead",
-  PRIMEIRO_CONTATO: "Primeiro contato",
-  EM_ATENDIMENTO: "Em atendimento",
-  INTERESSADO: "Interessado",
-  ORCAMENTO_ENVIADO: "Orçamento enviado",
-  NEGOCIACAO: "Negociação",
-  CONTRATADO: "Contratado",
-  PERDIDO: "Perdido",
-};
-
-const temperatureTone: Record<string, "red" | "yellow" | "green"> = {
-  FRIO: "red",
-  MORNO: "yellow",
-  QUENTE: "green",
-};
-
-const temperatureLabel: Record<string, string> = {
-  FRIO: "🔴 Frio",
-  MORNO: "🟡 Morno",
-  QUENTE: "🟢 Quente",
-};
+import { stageLabels, temperatureTone, temperatureLabel } from "@/lib/lead-labels";
 
 export default async function LeadsPage({
   searchParams,
@@ -55,11 +33,18 @@ export default async function LeadsPage({
             Prospecção → Atendimento → Qualificação.
           </p>
         </div>
-        <Link href="/leads/novo">
-          <Button>
-            <Plus className="h-4 w-4" /> Novo lead
-          </Button>
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/funil">
+            <Button variant="outline">
+              <Kanban className="h-4 w-4" /> Ver funil
+            </Button>
+          </Link>
+          <Link href="/leads/novo">
+            <Button>
+              <Plus className="h-4 w-4" /> Novo lead
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <form className="flex gap-3">

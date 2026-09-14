@@ -66,6 +66,16 @@ export async function createLeadAction(
     },
   });
 
+  const fromProspectId = formData.get("fromProspectId");
+  if (typeof fromProspectId === "string" && fromProspectId) {
+    await prisma.prospectingEntry.update({
+      where: { id: fromProspectId },
+      data: { convertedLeadId: lead.id },
+    });
+    revalidatePath("/prospeccao");
+    revalidatePath(`/prospeccao/${fromProspectId}`);
+  }
+
   revalidatePath("/leads");
   redirect(`/leads/${lead.id}`);
 }

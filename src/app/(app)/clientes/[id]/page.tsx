@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Pencil } from "lucide-react";
+import { Pencil, FileText, FileSignature } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatDateBR, formatDateTimeBR, maskCpf, maskCnpj } from "@/lib/utils";
+import { quoteStatusLabels, quoteStatusTone, proposalStatusLabels, proposalStatusTone } from "@/lib/lead-labels";
 import { ToggleStatusButton } from "./toggle-status-button";
 
 export default async function ClienteDetailPage({
@@ -20,6 +21,8 @@ export default async function ClienteDetailPage({
     include: {
       timelineEvents: { orderBy: { createdAt: "desc" } },
       leads: true,
+      quotes: { orderBy: { createdAt: "desc" } },
+      proposals: { orderBy: { createdAt: "desc" } },
     },
   });
 
@@ -48,6 +51,16 @@ export default async function ClienteDetailPage({
           </p>
         </div>
         <div className="flex gap-2">
+          <Link href={`/orcamentos/novo?clientId=${client.id}`}>
+            <Button variant="outline">
+              <FileText className="h-4 w-4" /> Orçamento
+            </Button>
+          </Link>
+          <Link href={`/propostas/novo?clientId=${client.id}`}>
+            <Button variant="outline">
+              <FileSignature className="h-4 w-4" /> Proposta
+            </Button>
+          </Link>
           <ToggleStatusButton clientId={client.id} status={client.status} />
           <Link href={`/clientes/${client.id}/editar`}>
             <Button variant="outline">
@@ -137,6 +150,44 @@ export default async function ClienteDetailPage({
         </div>
 
         <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Orçamentos e propostas</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {client.quotes.length === 0 && client.proposals.length === 0 ? (
+                <p className="text-sm text-slate-400">Nenhum ainda.</p>
+              ) : (
+                <>
+                  {client.quotes.map((q) => (
+                    <Link
+                      key={q.id}
+                      href={`/orcamentos/${q.id}`}
+                      className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2 text-sm hover:bg-slate-50"
+                    >
+                      <span>Orçamento #{q.number}</span>
+                      <Badge tone={quoteStatusTone[q.status]}>
+                        {quoteStatusLabels[q.status]}
+                      </Badge>
+                    </Link>
+                  ))}
+                  {client.proposals.map((p) => (
+                    <Link
+                      key={p.id}
+                      href={`/propostas/${p.id}`}
+                      className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2 text-sm hover:bg-slate-50"
+                    >
+                      <span>Proposta #{p.number}</span>
+                      <Badge tone={proposalStatusTone[p.status]}>
+                        {proposalStatusLabels[p.status]}
+                      </Badge>
+                    </Link>
+                  ))}
+                </>
+              )}
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle>Linha do tempo</CardTitle>

@@ -147,3 +147,77 @@ export const userSchema = z.object({
 });
 
 export type UserFormValues = z.infer<typeof userSchema>;
+
+const quoteItemSchema = z.object({
+  serviceId: z.string().optional(),
+  description: z.string().min(1, "Descreva o item."),
+  quantity: z
+    .string()
+    .optional()
+    .refine((v) => !v || /^\d+$/.test(v), "Quantidade inválida.")
+    .transform((v) => (v ? parseInt(v, 10) : 1)),
+  unitPrice: z
+    .string()
+    .refine((v) => /^\d+(\.\d{1,2})?$/.test(v), "Valor unitário inválido."),
+  termDays: optionalIntString,
+});
+
+export const quoteSchema = z.object({
+  clientId: z.string().min(1, "Selecione um cliente."),
+  paymentTerms: z.string().optional(),
+  validUntil: optionalDateString,
+  notes: z.string().optional(),
+  items: z
+    .string()
+    .min(1, "Adicione ao menos um item.")
+    .transform((raw, ctx) => {
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(raw);
+      } catch {
+        ctx.addIssue({ code: "custom", message: "Itens inválidos." });
+        return z.NEVER;
+      }
+      const result = z.array(quoteItemSchema).min(1, "Adicione ao menos um item.").safeParse(parsed);
+      if (!result.success) {
+        ctx.addIssue({ code: "custom", message: "Verifique os itens do orçamento." });
+        return z.NEVER;
+      }
+      return result.data;
+    }),
+});
+
+export type QuoteFormValues = z.infer<typeof quoteSchema>;
+
+export const proposalSchema = z.object({
+  clientId: z.string().min(1, "Selecione um cliente."),
+  leadId: z.string().optional(),
+  serviceId: z.string().optional(),
+  demand: z.string().min(1, "Descreva a demanda do cliente."),
+  solution: z.string().min(1, "Descreva a solução proposta."),
+  scope: z.string().optional(),
+  termText: z.string().optional(),
+  investment: optionalDecimalString,
+  paymentTerms: z.string().optional(),
+  validUntil: optionalDateString,
+  notes: z.string().optional(),
+});
+
+export type ProposalFormValues = z.infer<typeof proposalSchema>;
+
+export const prospectSchema = z.object({
+  name: z.string().min(1, "Informe o nome."),
+  segment: z.string().optional(),
+  city: z.string().optional(),
+  contactName: z.string().optional(),
+  whatsapp: z.string().optional(),
+  instagram: z.string().optional(),
+  potentialServiceId: z.string().optional(),
+  responsibleId: z.string().optional(),
+  contactDate: optionalDateString,
+  result: z.string().optional(),
+  nextContactDate: optionalDateString,
+  notes: z.string().optional(),
+});
+
+export type ProspectFormValues = z.infer<typeof prospectSchema>;

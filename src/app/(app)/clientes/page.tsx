@@ -5,17 +5,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { maskCpf, maskCnpj, onlyDigits } from "@/lib/utils";
-
-function displayName(c: { type: string; fullName: string | null; legalName: string | null; tradeName: string | null }) {
-  if (c.type === "PF") return c.fullName ?? "(sem nome)";
-  return c.tradeName || c.legalName || "(sem razão social)";
-}
-
-function displayDocument(c: { type: string; cpf: string | null; cnpj: string | null }) {
-  if (c.type === "PF") return c.cpf ? maskCpf(c.cpf) : "-";
-  return c.cnpj ? maskCnpj(c.cnpj) : "-";
-}
+import { onlyDigits } from "@/lib/utils";
+import { displayClientName, displayClientDocument } from "@/lib/client-display";
 
 export default async function ClientesPage({
   searchParams,
@@ -105,14 +96,14 @@ export default async function ClientesPage({
                     href={`/clientes/${c.id}`}
                     className="font-medium text-slate-900 hover:underline"
                   >
-                    {displayName(c)}
+                    {displayClientName(c)}
                   </Link>
                 </td>
                 <td className="px-4 py-3 text-slate-600">
                   {c.type === "PF" ? "Pessoa Física" : "Pessoa Jurídica"}
                 </td>
                 <td className="px-4 py-3 text-slate-600">
-                  {displayDocument(c)}
+                  {displayClientDocument(c)}
                 </td>
                 <td className="px-4 py-3 text-slate-600">{c.whatsapp ?? "-"}</td>
                 <td className="px-4 py-3 text-slate-600">

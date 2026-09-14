@@ -28,10 +28,13 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  clientsCreated   Client[]        @relation("ClientCreatedBy")
-  leadsResponsible Lead[]          @relation("LeadResponsible")
-  servicesDefault  Service[]       @relation("ServiceDefaultResponsible")
-  timelineEvents   TimelineEvent[] @relation("TimelineCreatedBy")
+  clientsCreated       Client[]           @relation("ClientCreatedBy")
+  leadsResponsible     Lead[]             @relation("LeadResponsible")
+  servicesDefault      Service[]          @relation("ServiceDefaultResponsible")
+  timelineEvents       TimelineEvent[]    @relation("TimelineCreatedBy")
+  quotesCreated        Quote[]            @relation("QuoteCreatedBy")
+  proposalsCreated     Proposal[]         @relation("ProposalCreatedBy")
+  prospectsResponsible ProspectingEntry[] @relation("ProspectResponsible")
 
   @@map("users")
 }
@@ -62,7 +65,7 @@ enum ClientStatus {
 }
 
 model Client {
-  id     String     @id @default(cuid())
+  id     String       @id @default(cuid())
   type   ClientType
   status ClientStatus @default(ATIVO)
 
@@ -75,13 +78,13 @@ model Client {
   profession    String?
 
   // Pessoa jurídica
-  legalName          String? // Razão social
-  tradeName          String? // Nome fantasia
-  cnpj               String?
-  stateRegistration  String? // Inscrição estadual
-  responsibleName    String?
-  responsibleCpf     String?
-  responsibleRole    String?
+  legalName         String? // Razão social
+  tradeName         String? // Nome fantasia
+  cnpj              String?
+  stateRegistration String? // Inscrição estadual
+  responsibleName   String?
+  responsibleCpf    String?
+  responsibleRole   String?
 
   // Endereço (comum a PF/PJ)
   addressStreet       String?
@@ -106,6 +109,8 @@ model Client {
 
   leads          Lead[]
   timelineEvents TimelineEvent[]
+  quotes         Quote[]
+  proposals      Proposal[]
 
   @@unique([cpf])
   @@unique([cnpj])
@@ -140,7 +145,7 @@ model Lead {
   phone             String?
   instagram         String?
   city              String?
-  clientTypeGuess   ClientType?     // se o interesse é como PF ou PJ
+  clientTypeGuess   ClientType? // se o interesse é como PF ou PJ
   serviceInterestId String?
   serviceInterest   Service?        @relation(fields: [serviceInterestId], references: [id])
   origin            String? // de onde veio o lead (indicação, instagram, site, etc.)
@@ -160,6 +165,9 @@ model Lead {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  proposals          Proposal[]
+  prospectingEntries ProspectingEntry[]
+
   @@index([stage])
   @@index([temperature])
   @@map("leads")
@@ -178,12 +186,15 @@ model Service {
   active            Boolean  @default(true)
 
   defaultResponsibleId String?
-  defaultResponsible    User?  @relation("ServiceDefaultResponsible", fields: [defaultResponsibleId], references: [id])
+  defaultResponsible   User?   @relation("ServiceDefaultResponsible", fields: [defaultResponsibleId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  leads Lead[]
+  leads              Lead[]
+  quoteItems         QuoteItem[]
+  proposals          Proposal[]
+  prospectingEntries ProspectingEntry[]
 
   @@map("services")
 }
@@ -202,4 +213,125 @@ model TimelineEvent {
 
   @@index([clientId])
   @@map("timeline_events")
+}
+
+// ---------- Fase 2: Comercial ----------
+// Orçamento → Proposta → Contratação. Segue o mesmo cadastro único de cliente.
+
+enum QuoteStatus {
+  RASCUNHO
+  ENVIADO
+  VISUALIZADO
+  EM_NEGOCIACAO
+  APROVADO
+  RECUSADO
+  EXPIRADO
+}
+
+model Quote {
+  id       String      @id @default(cuid())
+  number   Int // número sequencial de exibição, atribuído na criação
+  clientId String
+  client   Client      @relation(fields: [clientId], references: [id])
+  status   QuoteStatus @default(RASCUNHO)
+
+  paymentTerms String? // forma de pagamento
+  validUntil   DateTime? // validade do orçamento
+  notes        String?
+
+  sentAt      DateTime?
+  respondedAt DateTime?
+
+  createdById String?
+  createdBy   User?    @relation("QuoteCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  items QuoteItem[]
+
+  @@index([status])
+  @@index([clientId])
+  @@map("quotes")
+}
+
+model QuoteItem {
+  id          String   @id @default(cuid())
+  quoteId     String
+  quote       Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  serviceId   String?
+  service     Service? @relation(fields: [serviceId], references: [id])
+  description String // preenchido a partir do serviço, editável
+  quantity    Int      @default(1)
+  unitPrice   Decimal
+  termDays    Int?
+
+  @@map("quote_items")
+}
+
+enum ProposalStatus {
+  RASCUNHO
+  ENVIADA
+  APROVADA
+  RECUSADA
+  EXPIRADA
+}
+
+model Proposal {
+  id        String         @id @default(cuid())
+  number    Int // número sequencial de exibição, atribuído na criação
+  clientId  String
+  client    Client         @relation(fields: [clientId], references: [id])
+  leadId    String?
+  lead      Lead?          @relation(fields: [leadId], references: [id])
+  serviceId String?
+  service   Service?       @relation(fields: [serviceId], references: [id])
+  status    ProposalStatus @default(RASCUNHO)
+
+  demand       String // problema / demanda do cliente
+  solution     String // solução proposta
+  scope        String? // escopo
+  termText     String? // prazo (texto livre: "30 dias", "até dezembro"...)
+  investment   Decimal? // investimento
+  paymentTerms String? // forma de pagamento
+  validUntil   DateTime? // validade da proposta
+  notes        String?
+
+  createdById String?
+  createdBy   User?    @relation("ProposalCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status])
+  @@index([clientId])
+  @@map("proposals")
+}
+
+// ---------- Fase 2: Prospecção ativa ----------
+// Listas de empresas/pessoas potenciais, anteriores ao estágio de Lead.
+
+model ProspectingEntry {
+  id                 String   @id @default(cuid())
+  name               String
+  segment            String?
+  city               String?
+  contactName        String?
+  whatsapp           String?
+  instagram          String?
+  potentialServiceId String?
+  potentialService   Service? @relation(fields: [potentialServiceId], references: [id])
+  responsibleId      String?
+  responsible        User?    @relation("ProspectResponsible", fields: [responsibleId], references: [id])
+
+  contactDate     DateTime?
+  result          String? // resultado do contato
+  nextContactDate DateTime?
+  notes           String?
+
+  convertedLeadId String? // preenchido quando vira Lead
+  convertedLead   Lead?   @relation(fields: [convertedLeadId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("prospecting_entries")
 }

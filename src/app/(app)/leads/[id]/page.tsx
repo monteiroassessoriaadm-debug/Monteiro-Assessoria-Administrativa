@@ -1,23 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Pencil, ArrowRightLeft } from "lucide-react";
+import { Pencil, ArrowRightLeft, FileSignature } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatDateBR, formatDateTimeBR } from "@/lib/utils";
 import { MarkLostButton } from "./mark-lost-button";
-
-const stageLabels: Record<string, string> = {
-  NOVO_LEAD: "Novo lead",
-  PRIMEIRO_CONTATO: "Primeiro contato",
-  EM_ATENDIMENTO: "Em atendimento",
-  INTERESSADO: "Interessado",
-  ORCAMENTO_ENVIADO: "Orçamento enviado",
-  NEGOCIACAO: "Negociação",
-  CONTRATADO: "Contratado",
-  PERDIDO: "Perdido",
-};
+import { stageLabels } from "@/lib/lead-labels";
 
 export default async function LeadDetailPage({
   params,
@@ -64,9 +54,16 @@ export default async function LeadDetailPage({
             </Button>
           </Link>
           {lead.clientId ? (
-            <Link href={`/clientes/${lead.clientId}`}>
-              <Button variant="secondary">Ver cliente</Button>
-            </Link>
+            <>
+              <Link href={`/propostas/novo?clientId=${lead.clientId}&leadId=${lead.id}`}>
+                <Button variant="outline">
+                  <FileSignature className="h-4 w-4" /> Criar proposta
+                </Button>
+              </Link>
+              <Link href={`/clientes/${lead.clientId}`}>
+                <Button variant="secondary">Ver cliente</Button>
+              </Link>
+            </>
           ) : (
             <Link href={convertUrl}>
               <Button variant="secondary">
