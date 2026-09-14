@@ -24,6 +24,7 @@ import {
   LineChart,
   Megaphone,
   MessageCircle,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Role } from "@/generated/prisma/enums";
@@ -43,7 +44,10 @@ type NavGroup = {
 const navGroups: NavGroup[] = [
   {
     label: "Visão geral",
-    items: [{ href: "/dashboard", label: "Dashboard", icon: LayoutDashboard }],
+    items: [
+      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/assistente", label: "Monteiro IA", icon: Sparkles },
+    ],
   },
   {
     label: "Comercial",
