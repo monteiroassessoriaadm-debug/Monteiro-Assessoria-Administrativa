@@ -139,16 +139,31 @@ const navGroups: NavGroup[] = [
   },
 ];
 
-export function Sidebar({ role }: { role: Role }) {
+export function Sidebar({
+  role,
+  companyName,
+  logoData,
+}: {
+  role: Role;
+  companyName?: string;
+  logoData?: string | null;
+}) {
   const pathname = usePathname();
 
   return (
     <aside className="flex h-screen w-60 shrink-0 flex-col overflow-y-auto bg-slate-950 text-slate-200">
       <div className="px-5 py-6">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">
-          Monteiro
-        </p>
-        <p className="text-lg font-bold text-white">Monteiro CRM</p>
+        {logoData ? (
+          // eslint-disable-next-line @next/next/no-img-element -- data URI logo uploaded by the admin, no fixed dimensions
+          <img src={logoData} alt={companyName ?? "Logo"} className="h-10 max-w-full object-contain" />
+        ) : (
+          <>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+              Monteiro
+            </p>
+            <p className="text-lg font-bold text-white">Monteiro CRM</p>
+          </>
+        )}
       </div>
       <nav className="flex-1 space-y-5 px-3">
         {navGroups.map((group) => {
