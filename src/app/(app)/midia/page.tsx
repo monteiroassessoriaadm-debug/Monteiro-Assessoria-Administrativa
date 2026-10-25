@@ -12,15 +12,20 @@ import { mediaContentStatusLabels, mediaContentStatusTone } from "@/lib/lead-lab
 export default async function MidiaPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; responsibleId?: string }>;
+  searchParams: Promise<{ status?: string; responsibleId?: string; overdue?: string }>;
 }) {
-  const { status, responsibleId } = await searchParams;
+  const { status, responsibleId, overdue: overdueParam } = await searchParams;
+  const activeStatuses = ["IDEIA", "EM_PRODUCAO", "AGUARDANDO_APROVACAO", "APROVADO"];
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   const [contents, users] = await Promise.all([
     prisma.mediaContent.findMany({
       where: {
-        status: (status as never) || undefined,
+        status: status ? (status as never) : overdueParam ? { in: activeStatuses as never[] } : undefined,
         responsibleId: responsibleId || undefined,
+        ...(overdueParam ? { scheduledDate: { lt: today } } : {}),
       },
       include: { client: true, responsible: true },
       orderBy: [{ scheduledDate: "asc" }, { createdAt: "desc" }],
@@ -28,10 +33,6 @@ export default async function MidiaPage({
     }),
     prisma.user.findMany({ where: { active: true }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
   ]);
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const activeStatuses = ["IDEIA", "EM_PRODUCAO", "AGUARDANDO_APROVACAO", "APROVADO"];
 
   return (
     <div className="space-y-6">

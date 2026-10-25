@@ -11,17 +11,18 @@ import { ToggleTaskButton } from "./toggle-task-button";
 export default async function TarefasPage({
   searchParams,
 }: {
-  searchParams: Promise<{ assignedTo?: string }>;
+  searchParams: Promise<{ assignedTo?: string; overdue?: string }>;
 }) {
   const session = await requireSession();
-  const { assignedTo } = await searchParams;
+  const { assignedTo, overdue: overdueParam } = await searchParams;
   const isAdmin = session.role === "ADMIN" || session.role === "GESTOR";
+  const showAllOverdue = isAdmin && Boolean(overdueParam) && !assignedTo;
   const targetUserId = isAdmin && assignedTo ? assignedTo : session.userId;
 
   const [tasks, users, targetUser] = await Promise.all([
     prisma.task.findMany({
-      where: { assignedToId: targetUserId },
-      include: { client: true },
+      where: showAllOverdue ? {} : { assignedToId: targetUserId },
+      include: { client: true, assignedTo: true },
       orderBy: [{ status: "asc" }, { dueDate: "asc" }],
     }),
     isAdmin
@@ -51,7 +52,11 @@ export default async function TarefasPage({
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-slate-900">
-            {targetUserId === session.userId ? "Minhas tarefas" : `Tarefas de ${targetUser?.name}`}
+            {showAllOverdue
+              ? "Tarefas atrasadas (todos os usuários)"
+              : targetUserId === session.userId
+                ? "Minhas tarefas"
+                : `Tarefas de ${targetUser?.name}`}
           </h1>
           <p className="text-sm text-slate-500">
             Organizadas por prazo — atrasadas, de hoje, próximas e concluídas.
@@ -64,7 +69,7 @@ export default async function TarefasPage({
         </Link>
       </div>
 
-      {isAdmin && users.length > 0 && (
+      {!showAllOverdue && isAdmin && users.length > 0 && (
         <form className="flex gap-3">
           <select
             name="assignedTo"
@@ -86,10 +91,14 @@ export default async function TarefasPage({
         </form>
       )}
 
-      <TaskGroup title="🔴 Atrasadas" tasks={overdue} />
-      <TaskGroup title="🟠 Hoje" tasks={dueToday} />
-      <TaskGroup title="🟡 Próximas" tasks={upcoming} />
-      <TaskGroup title="🟢 Concluídas" tasks={done} />
+      <TaskGroup title="🔴 Atrasadas" tasks={overdue} showAssignee={showAllOverdue} />
+      {!showAllOverdue && (
+        <>
+          <TaskGroup title="🟠 Hoje" tasks={dueToday} />
+          <TaskGroup title="🟡 Próximas" tasks={upcoming} />
+          <TaskGroup title="🟢 Concluídas" tasks={done} />
+        </>
+      )}
     </div>
   );
 }
@@ -97,6 +106,7 @@ export default async function TarefasPage({
 function TaskGroup({
   title,
   tasks,
+  showAssignee,
 }: {
   title: string;
   tasks: {
@@ -106,7 +116,9 @@ function TaskGroup({
     dueDate: Date | null;
     status: string;
     client: { type: string; fullName: string | null; legalName: string | null; tradeName: string | null } | null;
+    assignedTo?: { name: string } | null;
   }[];
+  showAssignee?: boolean;
 }) {
   return (
     <Card>
@@ -132,6 +144,7 @@ function TaskGroup({
                   {task.title}
                 </p>
                 <p className="text-xs text-slate-400">
+                  {showAssignee && task.assignedTo && `${task.assignedTo.name} · `}
                   {task.client && displayClientName(task.client)}
                   {task.client && task.dueDate && " · "}
                   {task.dueDate && `Prazo: ${formatDateBR(task.dueDate)}`}

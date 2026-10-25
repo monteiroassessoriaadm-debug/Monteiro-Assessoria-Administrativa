@@ -14,9 +14,15 @@ export default async function DocumentosPage({
   searchParams: Promise<{ status?: string }>;
 }) {
   const { status } = await searchParams;
+  const statuses = status ? status.split(",") : [];
 
   const documents = await prisma.generatedDocument.findMany({
-    where: status ? { status: status as never } : undefined,
+    where:
+      statuses.length === 1
+        ? { status: statuses[0] as never }
+        : statuses.length > 1
+          ? { status: { in: statuses as never[] } }
+          : undefined,
     include: { client: true, template: true },
     orderBy: { createdAt: "desc" },
     take: 100,

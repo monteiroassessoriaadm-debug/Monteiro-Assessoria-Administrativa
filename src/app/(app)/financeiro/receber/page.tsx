@@ -12,19 +12,22 @@ import { ReceivableStatusActions } from "./status-actions";
 export default async function ContasAReceberPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; overdue?: string }>;
 }) {
-  const { status } = await searchParams;
+  const { status, overdue: overdueParam } = await searchParams;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   const receivables = await prisma.receivable.findMany({
-    where: status ? { status: status as never } : undefined,
+    where: {
+      status: status ? (status as never) : overdueParam ? "PENDENTE" : undefined,
+      ...(overdueParam ? { dueDate: { lt: today } } : {}),
+    },
     include: { client: true, account: true },
     orderBy: [{ status: "asc" }, { dueDate: "asc" }],
     take: 200,
   });
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
 
   const totals = receivables.reduce(
     (acc, r) => {

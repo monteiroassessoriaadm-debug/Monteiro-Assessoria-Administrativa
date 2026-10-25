@@ -13,6 +13,22 @@ export function formatCurrencyBRL(value: number | string | null | undefined) {
   }).format(num || 0);
 }
 
+export function formatCompactBRL(value: number) {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(value || 0);
+}
+
+export function formatCompactNumber(value: number) {
+  return new Intl.NumberFormat("pt-BR", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(value || 0);
+}
+
 export function formatDateBR(date: Date | string | null | undefined) {
   if (!date) return "-";
   const d = typeof date === "string" ? new Date(date) : date;

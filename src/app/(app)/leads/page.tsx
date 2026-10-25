@@ -13,10 +13,15 @@ export default async function LeadsPage({
   searchParams: Promise<{ stage?: string; temperature?: string }>;
 }) {
   const { stage, temperature } = await searchParams;
+  const stages = stage ? stage.split(",") : [];
 
   const leads = await prisma.lead.findMany({
     where: {
-      ...(stage ? { stage: stage as never } : {}),
+      ...(stages.length === 1
+        ? { stage: stages[0] as never }
+        : stages.length > 1
+          ? { stage: { in: stages as never[] } }
+          : {}),
       ...(temperature ? { temperature: temperature as never } : {}),
     },
     include: { responsible: true, serviceInterest: true },

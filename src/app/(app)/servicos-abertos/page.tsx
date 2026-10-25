@@ -7,22 +7,39 @@ import { formatCurrencyBRL, formatDateBR } from "@/lib/utils";
 import { displayClientName } from "@/lib/client-display";
 import { serviceInstanceStatusLabels, serviceInstanceStatusTone } from "@/lib/lead-labels";
 
+const ACTIVE_SERVICE_STATUSES = ["ABERTO", "EM_ANDAMENTO", "EM_REVISAO"] as const;
+
 export default async function ServicosAbertosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; overdue?: string; due?: string }>;
 }) {
-  const { status } = await searchParams;
+  const { status, overdue: overdueParam, due } = await searchParams;
+  const statuses = status ? status.split(",") : [];
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const endOfToday = new Date(today);
+  endOfToday.setHours(23, 59, 59, 999);
+
+  const impliesActiveOnly = statuses.length === 0 && Boolean(overdueParam || due);
 
   const instances = await prisma.serviceInstance.findMany({
-    where: status ? { status: status as never } : undefined,
+    where: {
+      ...(statuses.length === 1
+        ? { status: statuses[0] as never }
+        : statuses.length > 1
+          ? { status: { in: statuses as never[] } }
+          : impliesActiveOnly
+            ? { status: { in: [...ACTIVE_SERVICE_STATUSES] } }
+            : {}),
+      ...(overdueParam ? { dueDate: { lt: today } } : {}),
+      ...(due === "today" ? { dueDate: { gte: today, lte: endOfToday } } : {}),
+    },
     include: { client: true, responsible: true },
     orderBy: { createdAt: "desc" },
     take: 100,
   });
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
 
   return (
     <div className="space-y-6">
