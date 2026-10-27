@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { formatCurrencyBRL } from "@/lib/utils";
 import { iconForCategory } from "../site-icons";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = { title: "Nossos Serviços" };
 
 function priceLabel(service: {
   pricingMode: string;

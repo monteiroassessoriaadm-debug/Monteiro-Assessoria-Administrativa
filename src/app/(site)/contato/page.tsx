@@ -1,9 +1,11 @@
 import { MessageCircle, Camera } from "lucide-react";
+import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { onlyDigits } from "@/lib/utils";
 import { ContactForm } from "./contact-form";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = { title: "Contato" };
 
 export default async function ContatoPage({
   searchParams,

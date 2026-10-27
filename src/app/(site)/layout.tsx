@@ -1,8 +1,31 @@
 import Link from "next/link";
 import { Camera, MessageCircle } from "lucide-react";
+import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/session";
 import { onlyDigits } from "@/lib/utils";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await prisma.companySettings.findFirst({
+    select: { name: true, slogan: true, about: true },
+  });
+  const name = settings?.name ?? "Monteiro Assessoria Administrativa";
+  const description =
+    settings?.about ??
+    settings?.slogan ??
+    "Assessoria administrativa completa: documentos, contratos, abertura de MEI, mídia e muito mais.";
+
+  return {
+    title: { default: name, template: `%s | ${name}` },
+    description,
+    openGraph: {
+      title: name,
+      description,
+      siteName: name,
+      type: "website",
+    },
+  };
+}
 
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
   const [settings, session] = await Promise.all([
