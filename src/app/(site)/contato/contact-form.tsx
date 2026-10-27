@@ -53,9 +53,11 @@ export function ContactForm({
             defaultValue={servicoSelecionado ?? ""}
             className={inputClass}
           >
-            <option value="">Não sei / outro assunto</option>
+            <option value="" className="bg-white text-neutral-900">
+              Não sei / outro assunto
+            </option>
             {servicos.map((s) => (
-              <option key={s.id} value={s.id}>
+              <option key={s.id} value={s.id} className="bg-white text-neutral-900">
                 {s.name}
               </option>
             ))}
