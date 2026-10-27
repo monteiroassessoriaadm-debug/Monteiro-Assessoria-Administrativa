@@ -26,10 +26,19 @@ export default async function HomePage() {
         <div className="pointer-events-none absolute -right-40 -top-40 h-96 w-96 rounded-full bg-[#d4af37]/10 blur-3xl" />
         <div className="pointer-events-none absolute -left-40 top-40 h-96 w-96 rounded-full bg-[#d4af37]/5 blur-3xl" />
         <div className="relative mx-auto max-w-6xl px-5 py-20 md:py-28">
-          <p className="text-sm font-semibold uppercase tracking-widest text-[#d4af37]">
-            {settings?.name ?? "Monteiro Assessoria Administrativa"}
-          </p>
-          <h1 className="mt-4 max-w-2xl text-4xl font-bold leading-tight text-white md:text-5xl">
+          {settings?.logoData ? (
+            // eslint-disable-next-line @next/next/no-img-element -- data URI logo uploaded by the admin, no fixed dimensions
+            <img
+              src={settings.logoData}
+              alt={settings.name ?? "Logo"}
+              className="h-20 max-w-full object-contain drop-shadow-[0_0_30px_rgba(212,175,55,0.25)] md:h-28"
+            />
+          ) : (
+            <p className="text-sm font-semibold uppercase tracking-widest text-[#d4af37]">
+              {settings?.name ?? "Monteiro Assessoria Administrativa"}
+            </p>
+          )}
+          <h1 className="mt-6 max-w-2xl text-4xl font-bold leading-tight text-white md:text-5xl">
             {settings?.slogan ?? "A Monteiro Resolve."}
           </h1>
           <p className="mt-6 max-w-xl text-lg text-neutral-300">
