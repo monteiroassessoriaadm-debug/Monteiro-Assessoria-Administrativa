@@ -55,23 +55,25 @@ export default async function HomePage() {
           </div>
 
           <div className="flex flex-col items-center gap-6 rounded-3xl border border-[#d4af37]/20 bg-white/5 p-8 text-center backdrop-blur-sm">
-            {settings?.logoData ? (
-              // eslint-disable-next-line @next/next/no-img-element -- data URI logo uploaded by the admin, no fixed dimensions
-              <img
-                src={settings.logoData}
-                alt={settings.name ?? "Logo"}
-                className="h-32 max-w-full object-contain drop-shadow-[0_0_40px_rgba(212,175,55,0.3)] md:h-44"
-              />
-            ) : (
-              <p className="text-lg font-semibold uppercase tracking-widest text-[#d4af37]">
-                {settings?.name ?? "Monteiro Assessoria Administrativa"}
-              </p>
-            )}
-
-            <div className="w-full space-y-3 border-t border-white/10 pt-6">
-              <p className="text-xs font-semibold uppercase tracking-widest text-neutral-400">
+            <Link href="/contato" className="flex flex-col items-center gap-6 transition-opacity hover:opacity-80">
+              {settings?.logoData ? (
+                // eslint-disable-next-line @next/next/no-img-element -- data URI logo uploaded by the admin, no fixed dimensions
+                <img
+                  src={settings.logoData}
+                  alt={settings.name ?? "Logo"}
+                  className="h-32 max-w-full object-contain drop-shadow-[0_0_40px_rgba(212,175,55,0.3)] md:h-44"
+                />
+              ) : (
+                <p className="text-lg font-semibold uppercase tracking-widest text-[#d4af37]">
+                  {settings?.name ?? "Monteiro Assessoria Administrativa"}
+                </p>
+              )}
+              <p className="text-xs font-semibold uppercase tracking-widest text-neutral-400 hover:text-[#d4af37]">
                 Fale com a gente
               </p>
+            </Link>
+
+            <div className="w-full space-y-3 border-t border-white/10 pt-6">
               {whatsappLink && (
                 <a
                   href={whatsappLink}
