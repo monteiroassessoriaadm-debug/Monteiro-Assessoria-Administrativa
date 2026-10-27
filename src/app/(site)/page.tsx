@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MessageCircle, ArrowRight, ShieldCheck, Clock, HandHeart } from "lucide-react";
+import { MessageCircle, ArrowRight, ShieldCheck, Clock, HandHeart, Camera } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { onlyDigits } from "@/lib/utils";
 import { iconForCategory } from "./site-icons";
@@ -25,43 +25,74 @@ export default async function HomePage() {
       <section className="relative overflow-hidden">
         <div className="pointer-events-none absolute -right-40 -top-40 h-96 w-96 rounded-full bg-[#d4af37]/10 blur-3xl" />
         <div className="pointer-events-none absolute -left-40 top-40 h-96 w-96 rounded-full bg-[#d4af37]/5 blur-3xl" />
-        <div className="relative mx-auto max-w-6xl px-5 py-20 md:py-28">
-          {settings?.logoData ? (
-            // eslint-disable-next-line @next/next/no-img-element -- data URI logo uploaded by the admin, no fixed dimensions
-            <img
-              src={settings.logoData}
-              alt={settings.name ?? "Logo"}
-              className="h-20 max-w-full object-contain drop-shadow-[0_0_30px_rgba(212,175,55,0.25)] md:h-28"
-            />
-          ) : (
-            <p className="text-sm font-semibold uppercase tracking-widest text-[#d4af37]">
-              {settings?.name ?? "Monteiro Assessoria Administrativa"}
+        <div className="relative mx-auto grid max-w-6xl gap-12 px-5 py-20 md:grid-cols-[1.1fr_0.9fr] md:items-center md:py-28">
+          <div>
+            <h1 className="max-w-2xl text-4xl font-bold leading-tight text-white md:text-5xl">
+              {settings?.slogan ?? "A Monteiro Resolve."}
+            </h1>
+            <p className="mt-6 max-w-xl text-lg text-neutral-300">
+              Documentos, contratos, abertura de MEI, mídia e tudo que envolve burocracia e
+              organização no seu dia a dia — resolvido de um jeito simples, sem complicação.
             </p>
-          )}
-          <h1 className="mt-6 max-w-2xl text-4xl font-bold leading-tight text-white md:text-5xl">
-            {settings?.slogan ?? "A Monteiro Resolve."}
-          </h1>
-          <p className="mt-6 max-w-xl text-lg text-neutral-300">
-            Documentos, contratos, abertura de MEI, mídia e tudo que envolve burocracia e
-            organização no seu dia a dia — resolvido de um jeito simples, sem complicação.
-          </p>
-          <div className="mt-8 flex flex-wrap gap-4">
-            <Link
-              href="/nossos-servicos"
-              className="flex items-center gap-2 rounded-lg bg-[#d4af37] px-6 py-3 text-sm font-semibold text-neutral-950 transition-opacity hover:opacity-90"
-            >
-              Ver serviços <ArrowRight className="h-4 w-4" />
-            </Link>
-            {whatsappLink && (
-              <a
-                href={whatsappLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 rounded-lg border border-white/20 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+            <div className="mt-8 flex flex-wrap gap-4">
+              <Link
+                href="/nossos-servicos"
+                className="flex items-center gap-2 rounded-lg bg-[#d4af37] px-6 py-3 text-sm font-semibold text-neutral-950 transition-opacity hover:opacity-90"
               >
-                <MessageCircle className="h-4 w-4" /> Falar no WhatsApp
-              </a>
+                Ver serviços <ArrowRight className="h-4 w-4" />
+              </Link>
+              {whatsappLink && (
+                <a
+                  href={whatsappLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 rounded-lg border border-white/20 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+                >
+                  <MessageCircle className="h-4 w-4" /> Falar no WhatsApp
+                </a>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-col items-center gap-6 rounded-3xl border border-[#d4af37]/20 bg-white/5 p-8 text-center backdrop-blur-sm">
+            {settings?.logoData ? (
+              // eslint-disable-next-line @next/next/no-img-element -- data URI logo uploaded by the admin, no fixed dimensions
+              <img
+                src={settings.logoData}
+                alt={settings.name ?? "Logo"}
+                className="h-32 max-w-full object-contain drop-shadow-[0_0_40px_rgba(212,175,55,0.3)] md:h-44"
+              />
+            ) : (
+              <p className="text-lg font-semibold uppercase tracking-widest text-[#d4af37]">
+                {settings?.name ?? "Monteiro Assessoria Administrativa"}
+              </p>
             )}
+
+            <div className="w-full space-y-3 border-t border-white/10 pt-6">
+              <p className="text-xs font-semibold uppercase tracking-widest text-neutral-400">
+                Fale com a gente
+              </p>
+              {whatsappLink && (
+                <a
+                  href={whatsappLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 rounded-lg bg-[#d4af37] px-4 py-2.5 text-sm font-semibold text-neutral-950 transition-opacity hover:opacity-90"
+                >
+                  <MessageCircle className="h-4 w-4" /> {settings?.whatsapp ?? "WhatsApp"}
+                </a>
+              )}
+              {settings?.instagram && (
+                <a
+                  href={`https://instagram.com/${settings.instagram.replace(/^@/, "")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 rounded-lg border border-white/15 px-4 py-2.5 text-sm font-medium text-neutral-200 transition-colors hover:bg-white/10"
+                >
+                  <Camera className="h-4 w-4" /> {settings.instagram}
+                </a>
+              )}
+            </div>
           </div>
         </div>
       </section>
