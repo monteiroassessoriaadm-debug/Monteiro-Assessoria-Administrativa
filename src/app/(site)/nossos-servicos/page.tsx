@@ -41,7 +41,7 @@ export default async function NossosServicosPage() {
       </h1>
       <p className="mt-4 max-w-2xl text-neutral-400">
         Alguns dos serviços mais procurados — mas não é uma lista fechada. Se você tem uma
-        necessidade administrativa e não sabe nem por onde começar, fala com a gente.
+        necessidade administrativa e não sabe nem por onde começar, fale com a gente.
       </p>
 
       <div className="mt-12 space-y-12">

@@ -68,7 +68,7 @@ export function ContactForm({
           name="notes"
           rows={4}
           className={inputClass.replace("h-11", "py-2")}
-          placeholder="Conta pra gente o que você precisa"
+          placeholder="Conte pra gente o que você precisa"
         />
       </div>
 

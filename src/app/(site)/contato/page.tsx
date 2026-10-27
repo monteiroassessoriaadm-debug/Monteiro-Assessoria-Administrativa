@@ -26,7 +26,7 @@ export default async function ContatoPage({
       <p className="text-sm font-semibold uppercase tracking-widest text-[#d4af37]">Contato</p>
       <h1 className="mt-3 text-3xl font-bold text-white md:text-4xl">Vamos resolver isso juntos</h1>
       <p className="mt-4 max-w-xl text-neutral-400">
-        Preenche o formulário ou chama a gente direto no WhatsApp — o que for mais fácil pra você.
+        Preencha o formulário ou chame a gente direto no WhatsApp — o que for mais fácil pra você.
       </p>
 
       <div className="mt-10 grid gap-10 md:grid-cols-[1fr_1.3fr]">

@@ -68,7 +68,7 @@ export default async function SobrePage() {
         <div className="rounded-2xl border border-[#d4af37]/30 bg-gradient-to-br from-[#d4af37]/10 to-transparent p-10 text-center">
           <h2 className="text-2xl font-bold text-white">Quer saber se a gente resolve o seu caso?</h2>
           <p className="mx-auto mt-3 max-w-xl text-neutral-300">
-            Dá uma olhada nos serviços ou fala direto com a gente — sem compromisso.
+            Dê uma olhada nos serviços ou fale direto com a gente — sem compromisso.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-4">
             <Link
