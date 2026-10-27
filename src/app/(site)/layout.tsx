@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/session";
 import { onlyDigits } from "@/lib/utils";
+import { MobileNav } from "./mobile-nav";
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await prisma.companySettings.findFirst({
@@ -68,10 +69,14 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
           </nav>
           <Link
             href={session ? "/dashboard" : "/login"}
-            className="rounded-lg border border-[#d4af37]/40 px-4 py-2 text-sm font-medium text-[#d4af37] transition-colors hover:bg-[#d4af37]/10"
+            className="hidden rounded-lg border border-[#d4af37]/40 px-4 py-2 text-sm font-medium text-[#d4af37] transition-colors hover:bg-[#d4af37]/10 md:inline-flex"
           >
             {session ? "Ir para o CRM" : "Entrar"}
           </Link>
+          <MobileNav
+            crmHref={session ? "/dashboard" : "/login"}
+            crmLabel={session ? "Ir para o CRM" : "Entrar"}
+          />
         </div>
       </header>
 
