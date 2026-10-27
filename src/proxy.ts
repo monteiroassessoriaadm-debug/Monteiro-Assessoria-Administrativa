@@ -3,7 +3,15 @@ import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 
 const SESSION_COOKIE = "monteiro_session";
-const PUBLIC_PATHS = ["/login"];
+// Site público (institucional) — não exige login.
+const PUBLIC_PATHS = ["/login", "/nossos-servicos", "/contato"];
+// Só esses redirecionam para o dashboard quando o usuário já está logado.
+const REDIRECT_IF_AUTHENTICATED = ["/login"];
+
+function isPublicPath(pathname: string) {
+  if (pathname === "/") return true;
+  return PUBLIC_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+}
 
 async function hasValidSession(request: NextRequest) {
   const token = request.cookies.get(SESSION_COOKIE)?.value;
@@ -22,7 +30,7 @@ async function hasValidSession(request: NextRequest) {
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const isPublic = PUBLIC_PATHS.some((path) => pathname.startsWith(path));
+  const isPublic = isPublicPath(pathname);
   const authenticated = await hasValidSession(request);
 
   if (!isPublic && !authenticated) {
@@ -31,7 +39,10 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (isPublic && authenticated) {
+  if (
+    authenticated &&
+    REDIRECT_IF_AUTHENTICATED.some((path) => pathname === path || pathname.startsWith(`${path}/`))
+  ) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 

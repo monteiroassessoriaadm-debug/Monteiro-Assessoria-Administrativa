@@ -27,6 +27,7 @@ type ServiceDefaults = Partial<{
   defaultTermDays: string;
   checklistTemplate: string;
   defaultResponsibleId: string;
+  pricingMode: string;
   active: boolean;
 }>;
 
@@ -95,6 +96,14 @@ export function ServiceForm({
                 Configurável — pode ser ajustado por orçamento.
               </p>
             )}
+          </div>
+          <div>
+            <Label>Como mostrar o preço no site público</Label>
+            <Select name="pricingMode" defaultValue={defaults?.pricingMode ?? "FIXO"}>
+              <option value="FIXO">Preço fixo</option>
+              <option value="A_PARTIR_DE">A partir de (valor pode variar)</option>
+              <option value="ORCAMENTO">Sob orçamento (sem valor exibido)</option>
+            </Select>
           </div>
           <div>
             <Label>Prazo padrão (dias)</Label>

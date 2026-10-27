@@ -21,6 +21,7 @@ function extractServiceData(formData: FormData) {
     defaultTermDays: formData.get("defaultTermDays") || undefined,
     checklistTemplate: formData.get("checklistTemplate") || undefined,
     defaultResponsibleId: formData.get("defaultResponsibleId") || undefined,
+    pricingMode: formData.get("pricingMode") || undefined,
     active: formData.get("active") === "on",
   };
 }
@@ -60,6 +61,7 @@ export async function createServiceAction(
       defaultTermDays: data.defaultTermDays ? Number(data.defaultTermDays) : null,
       checklistTemplate: checklistToJson(data.checklistTemplate),
       defaultResponsibleId: data.defaultResponsibleId || null,
+      pricingMode: data.pricingMode,
       active: data.active,
     },
   });
@@ -96,6 +98,7 @@ export async function updateServiceAction(
       defaultTermDays: data.defaultTermDays ? Number(data.defaultTermDays) : null,
       checklistTemplate: checklistToJson(data.checklistTemplate),
       defaultResponsibleId: data.defaultResponsibleId || null,
+      pricingMode: data.pricingMode,
       active: data.active,
     },
   });

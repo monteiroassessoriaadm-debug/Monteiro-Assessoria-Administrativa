@@ -27,6 +27,9 @@ export async function updateCompanySettingsAction(
   const settings = await getOrCreateSettings();
   const name = String(formData.get("name") || "").trim();
   const slogan = String(formData.get("slogan") || "").trim();
+  const whatsapp = String(formData.get("whatsapp") || "").trim();
+  const instagram = String(formData.get("instagram") || "").trim();
+  const about = String(formData.get("about") || "").trim();
   const logoFile = formData.get("logo");
 
   let logoData: string | undefined;
@@ -46,6 +49,9 @@ export async function updateCompanySettingsAction(
     data: {
       name: name || settings.name,
       slogan: slogan || null,
+      whatsapp: whatsapp || null,
+      instagram: instagram || null,
+      about: about || null,
       ...(logoData ? { logoData } : {}),
     },
   });

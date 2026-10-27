@@ -134,6 +134,7 @@ export const serviceSchema = z.object({
   defaultTermDays: optionalIntString,
   checklistTemplate: z.string().optional(),
   defaultResponsibleId: z.string().optional(),
+  pricingMode: z.enum(["FIXO", "A_PARTIR_DE", "ORCAMENTO"]).default("FIXO"),
   active: z.boolean().default(true),
 });
 

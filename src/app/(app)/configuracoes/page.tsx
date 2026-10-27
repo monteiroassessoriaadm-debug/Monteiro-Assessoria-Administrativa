@@ -21,6 +21,9 @@ export default async function ConfiguracoesPage() {
         name={settings?.name ?? "Monteiro Assessoria Administrativa"}
         slogan={settings?.slogan ?? null}
         logoData={settings?.logoData ?? null}
+        whatsapp={settings?.whatsapp ?? null}
+        instagram={settings?.instagram ?? null}
+        about={settings?.about ?? null}
       />
     </div>
   );

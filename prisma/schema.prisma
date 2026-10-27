@@ -64,6 +64,9 @@ model CompanySettings {
   name      String   @default("Monteiro Assessoria Administrativa")
   slogan    String? // ex.: "A Monteiro Resolve" — cadastrado pelo admin, não fixo no código
   logoData  String? // logo enviada pelo admin (data URI), usada em contratos/orçamentos/PDFs
+  whatsapp  String? // número exibido no site público, cadastrado pelo admin
+  instagram String? // @ ou link exibido no site público, cadastrado pelo admin
+  about     String? // texto "sobre a empresa" do site público, cadastrado pelo admin
   updatedAt DateTime @updatedAt
 
   @@map("company_settings")
@@ -200,15 +203,22 @@ model Lead {
 
 // ---------- Catálogo de serviços (configurável, sem preços fixos no código) ----------
 
+enum PricingMode {
+  FIXO // mostra o defaultPrice normalmente
+  A_PARTIR_DE // mostra "a partir de R$ X" no site público
+  ORCAMENTO // mostra "sob orçamento" no site público, sem valor
+}
+
 model Service {
-  id                String   @id @default(cuid())
+  id                String      @id @default(cuid())
   name              String
   category          String?
   description       String?
   defaultPrice      Decimal? // configurável pelo admin
   defaultTermDays   Int? // prazo padrão em dias
   checklistTemplate String? // JSON com os itens padrão do checklist deste serviço
-  active            Boolean  @default(true)
+  pricingMode       PricingMode @default(FIXO) // como o preço aparece no site público
+  active            Boolean     @default(true)
 
   defaultResponsibleId String?
   defaultResponsible   User?   @relation("ServiceDefaultResponsible", fields: [defaultResponsibleId], references: [id])

@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { updateCompanySettingsAction, type SettingsFormState } from "./actions";
@@ -13,10 +14,16 @@ export function SettingsForm({
   name,
   slogan,
   logoData,
+  whatsapp,
+  instagram,
+  about,
 }: {
   name: string;
   slogan: string | null;
   logoData: string | null;
+  whatsapp: string | null;
+  instagram: string | null;
+  about: string | null;
 }) {
   const [state, formAction, pending] = useActionState(
     updateCompanySettingsAction,
@@ -59,6 +66,29 @@ export function SettingsForm({
               accept="image/*"
               className="block w-full text-sm text-slate-600 file:mr-4 file:rounded-lg file:border-0 file:bg-slate-900 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-slate-800"
             />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Site público</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-slate-500">
+            Usados nas páginas públicas do site (Home, Contato) e no botão de WhatsApp.
+          </p>
+          <div>
+            <Label>WhatsApp (com DDD)</Label>
+            <Input name="whatsapp" defaultValue={whatsapp ?? ""} placeholder="(94) 99236-2433" />
+          </div>
+          <div>
+            <Label>Instagram</Label>
+            <Input name="instagram" defaultValue={instagram ?? ""} placeholder="@monteiroassessoriaadm" />
+          </div>
+          <div>
+            <Label>Quem somos / sobre a empresa</Label>
+            <Textarea name="about" rows={4} defaultValue={about ?? ""} />
           </div>
         </CardContent>
       </Card>
