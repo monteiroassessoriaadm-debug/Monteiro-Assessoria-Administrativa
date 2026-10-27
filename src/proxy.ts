@@ -4,7 +4,7 @@ import { jwtVerify } from "jose";
 
 const SESSION_COOKIE = "monteiro_session";
 // Site público (institucional) — não exige login.
-const PUBLIC_PATHS = ["/login", "/nossos-servicos", "/contato"];
+const PUBLIC_PATHS = ["/login", "/sobre", "/nossos-servicos", "/contato"];
 // Só esses redirecionam para o dashboard quando o usuário já está logado.
 const REDIRECT_IF_AUTHENTICATED = ["/login"];
 

@@ -56,6 +56,9 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
             <Link href="/" className="hover:text-[#d4af37]">
               Início
             </Link>
+            <Link href="/sobre" className="hover:text-[#d4af37]">
+              Quem Somos
+            </Link>
             <Link href="/nossos-servicos" className="hover:text-[#d4af37]">
               Serviços
             </Link>

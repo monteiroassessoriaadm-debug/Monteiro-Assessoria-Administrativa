@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { MessageCircle, ArrowRight, ShieldCheck, Clock, HandHeart, Camera } from "lucide-react";
+import { MessageCircle, ArrowRight, Camera } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { onlyDigits } from "@/lib/utils";
 import { iconForCategory } from "./site-icons";
@@ -97,7 +97,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Quem somos */}
+      {/* Quem somos (teaser) */}
       {settings?.about && (
         <section className="border-t border-white/10 bg-black/40">
           <div className="mx-auto max-w-6xl px-5 py-16">
@@ -107,41 +107,15 @@ export default async function HomePage() {
             <p className="mt-4 max-w-3xl text-lg leading-relaxed text-neutral-200">
               {settings.about}
             </p>
+            <Link
+              href="/sobre"
+              className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-[#d4af37] hover:underline"
+            >
+              Saiba mais sobre a Monteiro <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
         </section>
       )}
-
-      {/* Diferenciais */}
-      <section className="mx-auto max-w-6xl px-5 py-16">
-        <div className="grid gap-6 md:grid-cols-3">
-          {[
-            {
-              icon: Clock,
-              title: "Rápido e sem burocracia",
-              text: "Processos simples resolvidos em poucos dias, sem você precisar entender de leis ou formulários.",
-            },
-            {
-              icon: HandHeart,
-              title: "Atenção individual",
-              text: "Cada caso é diferente — tratamos o seu com atenção, do mais simples ao mais complexo.",
-            },
-            {
-              icon: ShieldCheck,
-              title: "Não achou o que precisa?",
-              text: "A gente resolve muito mais do que uma lista de serviços mostra. Se tem dúvida, é só perguntar.",
-            },
-          ].map((item) => (
-            <div
-              key={item.title}
-              className="rounded-2xl border border-white/10 bg-white/5 p-6"
-            >
-              <item.icon className="h-8 w-8 text-[#d4af37]" />
-              <h3 className="mt-4 text-base font-semibold text-white">{item.title}</h3>
-              <p className="mt-2 text-sm text-neutral-400">{item.text}</p>
-            </div>
-          ))}
-        </div>
-      </section>
 
       {/* Categorias de serviço */}
       {categories.length > 0 && (
