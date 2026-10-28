@@ -52,6 +52,7 @@ model User {
   mediaContentsCreated        MediaContent[]      @relation("MediaContentCreatedBy")
   whatsappTemplatesCreated    WhatsAppTemplate[]  @relation("WhatsAppTemplateCreatedBy")
   whatsappMessagesCreated     WhatsAppMessage[]   @relation("WhatsAppMessageCreatedBy")
+  instagramMetricsCreated     InstagramMetric[]   @relation("InstagramMetricCreatedBy")
 
   @@map("users")
 }
@@ -797,4 +798,30 @@ model WhatsAppMessage {
   @@index([clientId])
   @@index([sentAt])
   @@map("whatsapp_messages")
+}
+
+// ---------- Instagram (métricas manuais para acompanhar crescimento) ----------
+// Sem integração com a API do Instagram/Meta — a Bia/admin registra os
+// números periodicamente (seguidores, interações, alcance) para alimentar
+// os gráficos de evolução e apoiar decisões de estratégia de conteúdo.
+
+model InstagramMetric {
+  id            String   @id @default(cuid())
+  date          DateTime
+  followers     Int
+  posts         Int      @default(0)
+  likes         Int      @default(0)
+  comments      Int      @default(0)
+  shares        Int      @default(0)
+  reach         Int      @default(0)
+  profileVisits Int      @default(0)
+  notes         String? // o que foi feito no período (campanha, conteúdo, estratégia)
+
+  createdById String?
+  createdBy   User?    @relation("InstagramMetricCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([date])
+  @@map("instagram_metrics")
 }

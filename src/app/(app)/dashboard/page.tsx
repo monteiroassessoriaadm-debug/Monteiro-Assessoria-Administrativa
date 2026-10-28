@@ -22,6 +22,7 @@ import {
   Sparkles,
   RotateCcw,
   FileDown,
+  Camera,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { StatCard, SectionTitle } from "@/components/dashboard/stat-card";
@@ -202,6 +203,16 @@ export default async function DashboardPage() {
         },
       }),
     ]);
+
+  const lastTwoInstagramMetrics = await prisma.instagramMetric.findMany({
+    orderBy: { date: "desc" },
+    take: 2,
+  });
+  const latestInstagramMetric = lastTwoInstagramMetrics[0] ?? null;
+  const instagramFollowerGrowth =
+    lastTwoInstagramMetrics.length === 2
+      ? lastTwoInstagramMetrics[0].followers - lastTwoInstagramMetrics[1].followers
+      : null;
 
   const responsibleNameById = Object.fromEntries(responsibleUsers.map((u) => [u.id, u.name]));
 
@@ -515,6 +526,17 @@ export default async function DashboardPage() {
             icon={AlertTriangle}
             tone="red"
             href="/midia?overdue=1"
+          />
+          <StatCard
+            label="Seguidores no Instagram"
+            value={latestInstagramMetric ? latestInstagramMetric.followers : "-"}
+            icon={Camera}
+            tone={
+              instagramFollowerGrowth !== null && instagramFollowerGrowth < 0
+                ? "red"
+                : "blue"
+            }
+            href="/instagram"
           />
         </div>
       </section>

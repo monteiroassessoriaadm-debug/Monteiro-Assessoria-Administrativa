@@ -407,6 +407,28 @@ export const mediaContentSchema = z.object({
 
 export type MediaContentFormValues = z.infer<typeof mediaContentSchema>;
 
+const requiredIntString = z
+  .string()
+  .min(1, "Informe um valor.")
+  .refine((v) => /^\d+$/.test(v), "Informe um número inteiro válido.");
+
+export const instagramMetricSchema = z.object({
+  date: z.string().min(1, "Informe a data.").refine(
+    (v) => !Number.isNaN(Date.parse(v)),
+    "Data inválida.",
+  ),
+  followers: requiredIntString,
+  posts: optionalIntString,
+  likes: optionalIntString,
+  comments: optionalIntString,
+  shares: optionalIntString,
+  reach: optionalIntString,
+  profileVisits: optionalIntString,
+  notes: z.string().optional(),
+});
+
+export type InstagramMetricFormValues = z.infer<typeof instagramMetricSchema>;
+
 export const mediaContentApprovalSchema = z.object({
   approvalNotes: z.string().optional(),
 });

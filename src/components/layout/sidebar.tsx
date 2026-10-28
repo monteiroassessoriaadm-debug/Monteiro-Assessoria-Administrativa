@@ -26,6 +26,7 @@ import {
   MessageCircle,
   Sparkles,
   BarChart3,
+  Camera,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Role } from "@/generated/prisma/enums";
@@ -67,6 +68,7 @@ const navGroups: NavGroup[] = [
     items: [
       { href: "/servicos-abertos", label: "Serviços em andamento", icon: ClipboardList },
       { href: "/midia", label: "Mídia", icon: Megaphone },
+      { href: "/instagram", label: "Instagram", icon: Camera },
       { href: "/tarefas", label: "Tarefas", icon: CheckSquare },
       { href: "/agenda", label: "Agenda", icon: CalendarDays },
     ],
