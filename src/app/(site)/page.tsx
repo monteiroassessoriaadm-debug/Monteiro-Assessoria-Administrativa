@@ -3,6 +3,7 @@ import { MessageCircle, ArrowRight, Camera } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { onlyDigits } from "@/lib/utils";
 import { iconForCategory } from "./site-icons";
+import { CRIACAO_DE_SITES } from "./criacao-de-sites";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,9 @@ export default async function HomePage() {
     ? `https://wa.me/55${whatsappDigits}?text=${encodeURIComponent("Olá! Vi o site da Monteiro e queria saber mais.")}`
     : null;
 
-  const categories = [...new Set(services.map((s) => s.category).filter(Boolean))] as string[];
+  const categories = [
+    ...new Set([...services.map((s) => s.category), CRIACAO_DE_SITES.categoria].filter(Boolean)),
+  ] as string[];
 
   return (
     <div>
