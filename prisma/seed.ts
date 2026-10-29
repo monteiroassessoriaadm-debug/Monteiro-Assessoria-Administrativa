@@ -151,6 +151,32 @@ const DEFAULT_SERVICES = [
   { name: "Impressões", category: "Administrativo" },
   { name: "Consultoria / assessoria administrativa", category: "Consultoria" },
   { name: "Assessoria de mídia", category: "Mídia" },
+  // Criação de Sites: confecção (única) e manutenção mensal (opcional) são itens
+  // separados para poderem ser lançados e cobrados de forma independente.
+  {
+    name: "Criação de Sites — Confecção",
+    category: "Criação de Sites",
+    defaultPrice: 350,
+    pricingMode: "FIXO" as const,
+    description:
+      "Pagamento único. Site responsivo (feito para celular) com apresentação, serviços e preços, portfólio, redes sociais e pré-agendamento que envia a mensagem pronta para o WhatsApp do cliente, publicação na internet e QR Codes para divulgação.",
+    checklistTemplate: JSON.stringify([
+      "Briefing com o cliente (serviços, preços, fotos, redes sociais, endereço)",
+      "Montar o site",
+      "Testar o pré-agendamento no WhatsApp",
+      "Aprovação do cliente",
+      "Publicar na internet",
+      "Gerar e entregar os QR Codes",
+    ]),
+  },
+  {
+    name: "Criação de Sites — Manutenção mensal",
+    category: "Criação de Sites",
+    defaultPrice: 80,
+    pricingMode: "FIXO" as const,
+    description:
+      "Opcional, cobrança mensal. Atualização de preços, fotos, serviços, horários e textos, ajustes e melhorias.",
+  },
 ];
 
 async function main() {
