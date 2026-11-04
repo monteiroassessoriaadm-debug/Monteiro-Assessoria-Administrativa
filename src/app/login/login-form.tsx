@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 
 const initialState: LoginState = {};
 
-export function LoginForm() {
+export function LoginForm({ callbackUrl }: { callbackUrl?: string }) {
   const [state, formAction, pending] = useActionState(
     loginAction,
     initialState,
@@ -16,6 +16,7 @@ export function LoginForm() {
 
   return (
     <form action={formAction} className="space-y-4">
+      {callbackUrl && <input type="hidden" name="callbackUrl" value={callbackUrl} />}
       <div>
         <Label htmlFor="email">E-mail</Label>
         <Input

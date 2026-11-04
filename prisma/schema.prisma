@@ -28,31 +28,34 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  clientsCreated              Client[]            @relation("ClientCreatedBy")
-  leadsResponsible            Lead[]              @relation("LeadResponsible")
-  servicesDefault             Service[]           @relation("ServiceDefaultResponsible")
-  timelineEvents              TimelineEvent[]     @relation("TimelineCreatedBy")
-  quotesCreated               Quote[]             @relation("QuoteCreatedBy")
-  proposalsCreated            Proposal[]          @relation("ProposalCreatedBy")
-  prospectsResponsible        ProspectingEntry[]  @relation("ProspectResponsible")
-  templatesCreated            DocumentTemplate[]  @relation("TemplateCreatedBy")
-  documentsCreated            GeneratedDocument[] @relation("DocumentCreatedBy")
-  serviceInstancesResponsible ServiceInstance[]   @relation("ServiceInstanceResponsible")
-  serviceInstancesCreated     ServiceInstance[]   @relation("ServiceInstanceCreatedBy")
-  tasksAssigned               Task[]              @relation("TaskAssignedTo")
-  tasksCreated                Task[]              @relation("TaskCreatedBy")
-  eventsResponsible           CalendarEvent[]     @relation("EventResponsible")
-  eventsCreated               CalendarEvent[]     @relation("EventCreatedBy")
-  receivablesCreated          Receivable[]        @relation("ReceivableCreatedBy")
-  payablesCreated             Payable[]           @relation("PayableCreatedBy")
-  commissions                 Commission[]        @relation("CommissionUser")
-  commissionsCreated          Commission[]        @relation("CommissionCreatedBy")
-  mediaContentsResponsible    MediaContent[]      @relation("MediaContentResponsible")
-  mediaContentsApproved       MediaContent[]      @relation("MediaContentApprovedBy")
-  mediaContentsCreated        MediaContent[]      @relation("MediaContentCreatedBy")
-  whatsappTemplatesCreated    WhatsAppTemplate[]  @relation("WhatsAppTemplateCreatedBy")
-  whatsappMessagesCreated     WhatsAppMessage[]   @relation("WhatsAppMessageCreatedBy")
-  instagramMetricsCreated     InstagramMetric[]   @relation("InstagramMetricCreatedBy")
+  clientsCreated              Client[]                 @relation("ClientCreatedBy")
+  leadsResponsible            Lead[]                   @relation("LeadResponsible")
+  servicesDefault             Service[]                @relation("ServiceDefaultResponsible")
+  timelineEvents              TimelineEvent[]          @relation("TimelineCreatedBy")
+  quotesCreated               Quote[]                  @relation("QuoteCreatedBy")
+  proposalsCreated            Proposal[]               @relation("ProposalCreatedBy")
+  prospectsResponsible        ProspectingEntry[]       @relation("ProspectResponsible")
+  templatesCreated            DocumentTemplate[]       @relation("TemplateCreatedBy")
+  documentsCreated            GeneratedDocument[]      @relation("DocumentCreatedBy")
+  serviceInstancesResponsible ServiceInstance[]        @relation("ServiceInstanceResponsible")
+  serviceInstancesCreated     ServiceInstance[]        @relation("ServiceInstanceCreatedBy")
+  tasksAssigned               Task[]                   @relation("TaskAssignedTo")
+  tasksCreated                Task[]                   @relation("TaskCreatedBy")
+  eventsResponsible           CalendarEvent[]          @relation("EventResponsible")
+  eventsCreated               CalendarEvent[]          @relation("EventCreatedBy")
+  receivablesCreated          Receivable[]             @relation("ReceivableCreatedBy")
+  payablesCreated             Payable[]                @relation("PayableCreatedBy")
+  commissions                 Commission[]             @relation("CommissionUser")
+  commissionsCreated          Commission[]             @relation("CommissionCreatedBy")
+  mediaContentsResponsible    MediaContent[]           @relation("MediaContentResponsible")
+  mediaContentsApproved       MediaContent[]           @relation("MediaContentApprovedBy")
+  mediaContentsCreated        MediaContent[]           @relation("MediaContentCreatedBy")
+  whatsappTemplatesCreated    WhatsAppTemplate[]       @relation("WhatsAppTemplateCreatedBy")
+  whatsappMessagesCreated     WhatsAppMessage[]        @relation("WhatsAppMessageCreatedBy")
+  instagramMetricsCreated     InstagramMetric[]        @relation("InstagramMetricCreatedBy")
+  oauthAuthorizationCodes     OAuthAuthorizationCode[]
+  oauthTokens                 OAuthToken[]
+  mcpAuditLogs                McpAuditLog[]
 
   @@map("users")
 }
@@ -577,6 +580,12 @@ model FinancialAccount {
   type   String? // Caixa, Conta bancária, Conta PJ, Carteira digital... livre
   active Boolean @default(true)
 
+  // Saldo inicial da conta no momento do cadastro (ex.: saldo já existente no banco
+  // quando a empresa começou a usar o sistema) — não é receita, não entra em
+  // faturamento/contas a receber, só soma no saldo atual da conta.
+  openingBalance   Decimal?
+  openingBalanceAt DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -824,4 +833,79 @@ model InstagramMetric {
 
   @@index([date])
   @@map("instagram_metrics")
+}
+
+// ---------- Fase 8: Conector MCP (acesso do Claude ao CRM) ----------
+// Servidor MCP remoto (/api/mcp) protegido por OAuth 2.1 — cliente público +
+// PKCE + Dynamic Client Registration, nos moldes esperados por conectores
+// personalizados do claude.ai. Nenhum segredo de cliente é emitido; tokens
+// ficam guardados só como hash. O acesso é sempre amarrado a um usuário
+// (quem aprovou o consentimento), nunca anônimo.
+
+model OAuthClient {
+  id           String   @id @default(cuid())
+  clientId     String   @unique
+  redirectUris String[]
+  clientName   String?
+
+  createdAt DateTime @default(now())
+
+  authorizationCodes OAuthAuthorizationCode[]
+  tokens             OAuthToken[]
+
+  @@map("oauth_clients")
+}
+
+model OAuthAuthorizationCode {
+  id       String      @id @default(cuid())
+  codeHash String      @unique
+  clientId String
+  client   OAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  redirectUri         String
+  codeChallenge       String
+  codeChallengeMethod String
+
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([expiresAt])
+  @@map("oauth_authorization_codes")
+}
+
+model OAuthToken {
+  id       String      @id @default(cuid())
+  clientId String
+  client   OAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  accessTokenHash  String? @unique
+  refreshTokenHash String? @unique
+
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@map("oauth_tokens")
+}
+
+// Histórico das ações feitas pelo Claude via MCP — exibido em
+// Configurações e usado para carimbar "(via Claude)" na linha do tempo do cliente
+// quando a ação está ligada a um cliente.
+model McpAuditLog {
+  id      String  @id @default(cuid())
+  tool    String
+  summary String
+  userId  String?
+  user    User?   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("mcp_audit_logs")
 }

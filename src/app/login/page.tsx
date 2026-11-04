@@ -6,10 +6,15 @@ import { LoginForm } from "./login-form";
 // without a full rebuild.
 export const dynamic = "force-dynamic";
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ callbackUrl?: string }>;
+}) {
   const settings = await prisma.companySettings.findFirst({
     select: { name: true, slogan: true, logoData: true },
   });
+  const { callbackUrl } = await searchParams;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4">
@@ -42,7 +47,7 @@ export default async function LoginPage() {
           )}
         </div>
         <div className="rounded-2xl bg-white p-6 shadow-xl">
-          <LoginForm />
+          <LoginForm callbackUrl={callbackUrl} />
         </div>
       </div>
     </div>

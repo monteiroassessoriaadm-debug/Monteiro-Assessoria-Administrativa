@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatCurrencyBRL, formatDateBR } from "@/lib/utils";
+import { getAccountBalances } from "@/lib/account-balance";
 
 function startOfMonth(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), 1);
@@ -22,6 +23,11 @@ export default async function FluxoCaixaPage({
 }) {
   await requireRole(Role.ADMIN, Role.GESTOR);
   const { from, to } = await searchParams;
+
+  const accountBalances = await getAccountBalances();
+  const saldoAtualTotal = accountBalances
+    .filter((a) => a.active)
+    .reduce((sum, a) => sum + a.current, 0);
 
   const now = new Date();
   const rangeFrom = from ? new Date(from) : startOfMonth(now);
@@ -91,6 +97,41 @@ export default async function FluxoCaixaPage({
           Entradas e saídas realizadas no período, e previsão com base nos lançamentos pendentes.
         </p>
       </div>
+
+      <Card className="p-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p className="text-xs font-medium uppercase text-slate-500">
+              Saldo atual em caixa
+            </p>
+            <p
+              className={`mt-1 text-2xl font-bold ${
+                saldoAtualTotal >= 0 ? "text-green-600" : "text-red-600"
+              }`}
+            >
+              {formatCurrencyBRL(saldoAtualTotal)}
+            </p>
+            <p className="text-xs text-slate-400">
+              Saldo inicial de cada conta + recebido − pago, sem considerar o período
+              filtrado abaixo.
+            </p>
+          </div>
+          {accountBalances.length > 0 && (
+            <div className="flex flex-wrap gap-4">
+              {accountBalances
+                .filter((a) => a.active)
+                .map((a) => (
+                  <div key={a.accountId} className="text-right">
+                    <p className="text-xs text-slate-500">{a.name}</p>
+                    <p className="text-sm font-semibold text-slate-700">
+                      {formatCurrencyBRL(a.current)}
+                    </p>
+                  </div>
+                ))}
+            </div>
+          )}
+        </div>
+      </Card>
 
       <form className="flex flex-wrap items-end gap-3">
         <div>
