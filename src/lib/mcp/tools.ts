@@ -67,6 +67,79 @@ async function resolveClientId(nameOrId: string | undefined): Promise<
   };
 }
 
+/** Resolve um cliente OU um lead (já convertido) a partir de nome/ID — usado onde o chamador pode informar qualquer um dos dois. */
+async function resolveClientOrLeadToClientId(identifier: string): Promise<
+  { ok: true; clientId: string } | { ok: false; error: string }
+> {
+  const clientById = await prisma.client.findUnique({ where: { id: identifier } });
+  if (clientById) return { ok: true, clientId: clientById.id };
+
+  const leadById = await prisma.lead.findUnique({ where: { id: identifier } });
+  if (leadById) {
+    if (leadById.clientId) return { ok: true, clientId: leadById.clientId };
+    return {
+      ok: false,
+      error: `O lead "${leadById.name}" ainda não foi convertido em cliente. Use converter_lead_em_cliente primeiro.`,
+    };
+  }
+
+  const [clientMatches, leadMatches] = await Promise.all([
+    prisma.client.findMany({
+      where: {
+        OR: [
+          { fullName: { contains: identifier, mode: "insensitive" } },
+          { tradeName: { contains: identifier, mode: "insensitive" } },
+          { legalName: { contains: identifier, mode: "insensitive" } },
+        ],
+      },
+      take: 5,
+    }),
+    prisma.lead.findMany({
+      where: { name: { contains: identifier, mode: "insensitive" } },
+      take: 5,
+    }),
+  ]);
+
+  const total = clientMatches.length + leadMatches.length;
+  if (total === 0) {
+    return { ok: false, error: `Nenhum cliente ou lead encontrado para "${identifier}".` };
+  }
+  if (total > 1) {
+    return {
+      ok: false,
+      error: `Mais de um resultado para "${identifier}" entre clientes e leads. Seja mais específico ou use o ID.`,
+    };
+  }
+  if (clientMatches.length === 1) return { ok: true, clientId: clientMatches[0].id };
+
+  const lead = leadMatches[0];
+  if (lead.clientId) return { ok: true, clientId: lead.clientId };
+  return {
+    ok: false,
+    error: `O lead "${lead.name}" ainda não foi convertido em cliente. Use converter_lead_em_cliente primeiro.`,
+  };
+}
+
+/** Resolve um serviço do catálogo por nome/ID. Nunca erra por "não encontrado" — só por ambiguidade — já que o texto pode ser livre. */
+async function resolveServiceId(nameOrId: string | undefined): Promise<
+  { ok: true; serviceId: string | null } | { ok: false; error: string }
+> {
+  if (!nameOrId) return { ok: true, serviceId: null };
+  const byId = await prisma.service.findUnique({ where: { id: nameOrId } });
+  if (byId) return { ok: true, serviceId: byId.id };
+
+  const matches = await prisma.service.findMany({
+    where: { name: { contains: nameOrId, mode: "insensitive" } },
+    take: 5,
+  });
+  if (matches.length === 1) return { ok: true, serviceId: matches[0].id };
+  if (matches.length === 0) return { ok: true, serviceId: null };
+  return {
+    ok: false,
+    error: `Mais de um serviço do catálogo encontrado para "${nameOrId}": ${matches.map((m) => m.name).join(", ")}. Seja mais específico.`,
+  };
+}
+
 export function registerCrmTools(server: McpServer, ctx: Ctx) {
   // ---------- resumo_do_dia ----------
   server.registerTool(
@@ -717,6 +790,387 @@ export function registerCrmTools(server: McpServer, ctx: Ctx) {
       });
 
       return textResult({ ok: true, id: client.id });
+    },
+  );
+
+  // ---------- Leads: criação e conversão ----------
+  const LEAD_STAGES = [
+    "NOVO_LEAD",
+    "PRIMEIRO_CONTATO",
+    "EM_ATENDIMENTO",
+    "INTERESSADO",
+    "ORCAMENTO_ENVIADO",
+    "NEGOCIACAO",
+    "CONTRATADO",
+    "PERDIDO",
+  ] as const;
+
+  server.registerTool(
+    "criar_lead",
+    {
+      title: "Criar lead",
+      description: "Cria um novo lead (potencial cliente) no funil comercial.",
+      inputSchema: {
+        nome: z.string().min(1),
+        whatsapp: z.string().optional(),
+        origem: z.string().optional().describe("De onde veio o lead (indicação, Instagram, site...)"),
+        interesse: z.string().optional().describe("Nome ou ID do serviço de interesse, no catálogo"),
+        etapa: z.enum(LEAD_STAGES).optional(),
+        proximo_contato: z.string().optional().describe("Data (YYYY-MM-DD)"),
+        observacoes: z.string().optional(),
+      },
+    },
+    async ({ nome, whatsapp, origem, interesse, etapa, proximo_contato, observacoes }) => {
+      const serviceResolution = await resolveServiceId(interesse);
+      if (!serviceResolution.ok) return errorResult(serviceResolution.error);
+
+      const lead = await prisma.lead.create({
+        data: {
+          name: nome,
+          whatsapp: whatsapp || null,
+          origin: origem || null,
+          serviceInterestId: serviceResolution.serviceId,
+          stage: etapa ?? "NOVO_LEAD",
+          nextContactDate: proximo_contato ? new Date(proximo_contato) : null,
+          notes: observacoes || null,
+        },
+      });
+
+      await logMcpAction({
+        tool: "criar_lead",
+        summary: `Lead criado: ${nome}`,
+        userId: ctx.userId,
+      });
+
+      return textResult({ ok: true, id: lead.id });
+    },
+  );
+
+  server.registerTool(
+    "converter_lead_em_cliente",
+    {
+      title: "Converter lead em cliente",
+      description: "Cria um cliente a partir de um lead existente e liga os dois cadastros.",
+      inputSchema: {
+        lead_id: z.string(),
+        tipo: z.enum(["PF", "PJ"]),
+      },
+    },
+    async ({ lead_id, tipo }) => {
+      const lead = await prisma.lead.findUnique({ where: { id: lead_id } });
+      if (!lead) return errorResult(`Lead "${lead_id}" não encontrado.`);
+      if (lead.clientId) {
+        return errorResult(`Esse lead já foi convertido (cliente ${lead.clientId}).`);
+      }
+
+      const client = await prisma.client.create({
+        data: {
+          type: tipo,
+          fullName: tipo === "PF" ? lead.name : null,
+          tradeName: tipo === "PJ" ? lead.name : null,
+          whatsapp: lead.whatsapp || null,
+          phone: lead.phone || null,
+          instagram: lead.instagram || null,
+          createdById: ctx.userId,
+        },
+      });
+
+      await prisma.lead.update({ where: { id: lead_id }, data: { clientId: client.id } });
+
+      await addTimelineEvent({
+        clientId: client.id,
+        type: "LEAD_CONVERTIDO",
+        description: `Cliente convertido a partir do lead "${lead.name}" (via Claude)`,
+        createdById: ctx.userId,
+      });
+      await logMcpAction({
+        tool: "converter_lead_em_cliente",
+        summary: `Lead "${lead.name}" convertido em cliente`,
+        userId: ctx.userId,
+      });
+
+      return textResult({ ok: true, clienteId: client.id });
+    },
+  );
+
+  // ---------- Contas a receber/pagar pendentes ----------
+  server.registerTool(
+    "criar_conta_receber",
+    {
+      title: "Criar conta a receber",
+      description: "Cria um lançamento pendente de contas a receber (não mexe no saldo até ser marcado como recebido).",
+      inputSchema: {
+        descricao: z.string().min(1),
+        valor: z.number().positive(),
+        vencimento: z.string().optional().describe("Data de vencimento (YYYY-MM-DD)"),
+        cliente: z.string().min(1).describe("Nome ou ID do cliente"),
+        conta: z.string().optional().describe("Nome ou ID da conta prevista"),
+      },
+    },
+    async ({ descricao, valor, vencimento, cliente, conta }) => {
+      const clientResolution = await resolveClientId(cliente);
+      if (!clientResolution.ok) return errorResult(clientResolution.error);
+      if (!clientResolution.clientId) return errorResult(`Cliente "${cliente}" é obrigatório.`);
+
+      const accountResolution = await resolveAccountId(conta);
+      if (!accountResolution.ok) return errorResult(accountResolution.error);
+
+      const count = await prisma.receivable.count();
+      const receivable = await prisma.receivable.create({
+        data: {
+          number: count + 1,
+          clientId: clientResolution.clientId,
+          description: descricao,
+          amount: valor.toFixed(2),
+          dueDate: vencimento ? new Date(vencimento) : null,
+          accountId: accountResolution.accountId,
+          createdById: ctx.userId,
+        },
+      });
+
+      await logMcpAction({
+        tool: "criar_conta_receber",
+        summary: `Conta a receber #${receivable.number} criada: ${descricao} (${formatCurrencyBRL(valor)})`,
+        userId: ctx.userId,
+      });
+      await logClientTimelineViaClaude({
+        clientId: clientResolution.clientId,
+        type: "CONTA_A_RECEBER_CRIADA",
+        description: `Conta a receber #${receivable.number} criada`,
+        userId: ctx.userId,
+      });
+
+      return textResult({ ok: true, id: receivable.id, numero: receivable.number });
+    },
+  );
+
+  server.registerTool(
+    "criar_conta_pagar",
+    {
+      title: "Criar conta a pagar",
+      description: "Cria um lançamento pendente de contas a pagar (não mexe no saldo até ser marcado como pago).",
+      inputSchema: {
+        descricao: z.string().min(1),
+        valor: z.number().positive(),
+        vencimento: z.string().optional().describe("Data de vencimento (YYYY-MM-DD)"),
+        fornecedor: z.string().optional(),
+        conta: z.string().optional().describe("Nome ou ID da conta prevista"),
+      },
+    },
+    async ({ descricao, valor, vencimento, fornecedor, conta }) => {
+      const accountResolution = await resolveAccountId(conta);
+      if (!accountResolution.ok) return errorResult(accountResolution.error);
+
+      const count = await prisma.payable.count();
+      const payable = await prisma.payable.create({
+        data: {
+          number: count + 1,
+          description: descricao,
+          supplier: fornecedor || null,
+          amount: valor.toFixed(2),
+          dueDate: vencimento ? new Date(vencimento) : null,
+          accountId: accountResolution.accountId,
+        },
+      });
+
+      await logMcpAction({
+        tool: "criar_conta_pagar",
+        summary: `Conta a pagar #${payable.number} criada: ${descricao} (${formatCurrencyBRL(valor)})`,
+        userId: ctx.userId,
+      });
+
+      return textResult({ ok: true, id: payable.id, numero: payable.number });
+    },
+  );
+
+  // ---------- Serviços ----------
+  server.registerTool(
+    "registrar_servico",
+    {
+      title: "Registrar serviço",
+      description: "Registra um serviço para um cliente no módulo de Serviços em andamento.",
+      inputSchema: {
+        cliente: z.string().min(1).describe("Nome ou ID do cliente"),
+        servico: z.string().min(1).describe("Nome do serviço (do catálogo ou livre)"),
+        valor: z.number().positive(),
+        status: z.enum(["EM_ANDAMENTO", "CONCLUIDO"]),
+        prazo: z.string().optional().describe("Prazo de entrega (YYYY-MM-DD)"),
+      },
+    },
+    async ({ cliente, servico, valor, status, prazo }) => {
+      const clientResolution = await resolveClientId(cliente);
+      if (!clientResolution.ok) return errorResult(clientResolution.error);
+      if (!clientResolution.clientId) return errorResult(`Cliente "${cliente}" é obrigatório.`);
+
+      const serviceResolution = await resolveServiceId(servico);
+      if (!serviceResolution.ok) return errorResult(serviceResolution.error);
+
+      const serviceRecord = serviceResolution.serviceId
+        ? await prisma.service.findUnique({ where: { id: serviceResolution.serviceId } })
+        : null;
+
+      const count = await prisma.serviceInstance.count();
+      const now = new Date();
+      const instance = await prisma.serviceInstance.create({
+        data: {
+          number: count + 1,
+          title: serviceRecord?.name ?? servico,
+          clientId: clientResolution.clientId,
+          serviceId: serviceResolution.serviceId,
+          price: valor.toFixed(2),
+          status,
+          dueDate: prazo ? new Date(prazo) : null,
+          deliveredAt: status === "CONCLUIDO" ? now : null,
+          responsibleId: serviceRecord?.defaultResponsibleId ?? null,
+          createdById: ctx.userId,
+        },
+      });
+
+      await logMcpAction({
+        tool: "registrar_servico",
+        summary: `Serviço "${instance.title}" registrado (${status})`,
+        userId: ctx.userId,
+      });
+      await logClientTimelineViaClaude({
+        clientId: clientResolution.clientId,
+        type: "SERVICO_ABERTO",
+        description: `Serviço "${instance.title}" registrado`,
+        userId: ctx.userId,
+      });
+
+      return textResult({ ok: true, id: instance.id, numero: instance.number });
+    },
+  );
+
+  server.registerTool(
+    "listar_servicos_catalogo",
+    {
+      title: "Listar catálogo de serviços",
+      description: "Lista os serviços ativos do catálogo, com nome e preço (ou regra de preço).",
+      inputSchema: {},
+    },
+    async () => {
+      const services = await prisma.service.findMany({
+        where: { active: true },
+        orderBy: { name: "asc" },
+      });
+
+      return textResult(
+        services.map((s) => {
+          const price = s.defaultPrice ? formatCurrencyBRL(Number(s.defaultPrice)) : null;
+          const precoExibido =
+            s.pricingMode === "ORCAMENTO"
+              ? "Sob orçamento"
+              : s.pricingMode === "A_PARTIR_DE"
+                ? price
+                  ? `A partir de ${price}`
+                  : "Sob orçamento"
+                : (price ?? "Sob orçamento");
+          return {
+            id: s.id,
+            nome: s.name,
+            categoria: s.category,
+            preco: precoExibido,
+          };
+        }),
+      );
+    },
+  );
+
+  // ---------- Orçamentos ----------
+  server.registerTool(
+    "criar_orcamento",
+    {
+      title: "Criar orçamento",
+      description: "Cria um orçamento (rascunho) para um cliente ou lead já convertido, com os itens informados.",
+      inputSchema: {
+        cliente: z.string().min(1).describe("Nome ou ID do cliente ou de um lead já convertido"),
+        itens: z
+          .array(
+            z.object({
+              servico: z.string().min(1).describe("Nome do serviço (do catálogo ou livre)"),
+              valor: z.number().positive(),
+            }),
+          )
+          .min(1),
+        validade: z.string().optional().describe("Data de validade (YYYY-MM-DD)"),
+      },
+    },
+    async ({ cliente, itens, validade }) => {
+      const clientResolution = await resolveClientOrLeadToClientId(cliente);
+      if (!clientResolution.ok) return errorResult(clientResolution.error);
+
+      const resolvedItems: { serviceId: string | null; description: string; unitPrice: string }[] = [];
+      for (const item of itens) {
+        const serviceResolution = await resolveServiceId(item.servico);
+        if (!serviceResolution.ok) return errorResult(serviceResolution.error);
+        const serviceRecord = serviceResolution.serviceId
+          ? await prisma.service.findUnique({ where: { id: serviceResolution.serviceId } })
+          : null;
+        resolvedItems.push({
+          serviceId: serviceResolution.serviceId,
+          description: serviceRecord?.name ?? item.servico,
+          unitPrice: item.valor.toFixed(2),
+        });
+      }
+
+      const count = await prisma.quote.count();
+      const total = itens.reduce((sum, i) => sum + i.valor, 0);
+      const quote = await prisma.quote.create({
+        data: {
+          number: count + 1,
+          clientId: clientResolution.clientId,
+          validUntil: validade ? new Date(validade) : null,
+          createdById: ctx.userId,
+          items: { create: resolvedItems.map((i) => ({ ...i, quantity: 1 })) },
+        },
+      });
+
+      await logMcpAction({
+        tool: "criar_orcamento",
+        summary: `Orçamento #${quote.number} criado (${formatCurrencyBRL(total)})`,
+        userId: ctx.userId,
+      });
+      await logClientTimelineViaClaude({
+        clientId: clientResolution.clientId,
+        type: "ORCAMENTO_CRIADO",
+        description: `Orçamento #${quote.number} criado (${formatCurrencyBRL(total)})`,
+        userId: ctx.userId,
+      });
+
+      return textResult({ ok: true, id: quote.id, numero: quote.number });
+    },
+  );
+
+  server.registerTool(
+    "listar_orcamentos",
+    {
+      title: "Listar orçamentos",
+      description: "Lista orçamentos, com filtro opcional por status.",
+      inputSchema: {
+        status: z
+          .enum(["RASCUNHO", "ENVIADO", "VISUALIZADO", "EM_NEGOCIACAO", "APROVADO", "RECUSADO", "EXPIRADO"])
+          .optional(),
+      },
+    },
+    async ({ status }) => {
+      const quotes = await prisma.quote.findMany({
+        where: { status: status ?? undefined },
+        include: { client: true, items: true },
+        orderBy: { createdAt: "desc" },
+        take: 100,
+      });
+
+      return textResult(
+        quotes.map((q) => ({
+          id: q.id,
+          numero: q.number,
+          cliente: displayClientName(q.client),
+          status: q.status,
+          validade: formatDateBR(q.validUntil),
+          total: formatCurrencyBRL(q.items.reduce((sum, i) => sum + i.quantity * Number(i.unitPrice), 0)),
+        })),
+      );
     },
   );
 }
