@@ -3,6 +3,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { findValidAccessToken } from "@/lib/oauth";
 import { registerCrmTools } from "@/lib/mcp/tools";
+import { registerExtraCrmTools } from "@/lib/mcp/tools-extra";
 
 export const runtime = "nodejs";
 
@@ -30,6 +31,7 @@ async function handle(request: NextRequest): Promise<Response> {
 
   const server = new McpServer({ name: "monteiro-crm", version: "1.0.0" });
   registerCrmTools(server, { userId: tokenRecord.userId });
+  registerExtraCrmTools(server, { userId: tokenRecord.userId });
 
   const transport = new WebStandardStreamableHTTPServerTransport({
     sessionIdGenerator: undefined,

@@ -11,12 +11,12 @@ import { logMcpAction, logClientTimelineViaClaude } from "@/lib/mcp/audit";
 
 type Ctx = { userId: string };
 
-function textResult(data: unknown): CallToolResult {
+export function textResult(data: unknown): CallToolResult {
   const text = typeof data === "string" ? data : JSON.stringify(data, null, 2);
   return { content: [{ type: "text", text }] };
 }
 
-function errorResult(message: string): CallToolResult {
+export function errorResult(message: string): CallToolResult {
   return { content: [{ type: "text", text: message }], isError: true };
 }
 
@@ -40,7 +40,7 @@ async function resolveAccountId(nameOrId: string | undefined): Promise<
   };
 }
 
-async function resolveClientId(nameOrId: string | undefined): Promise<
+export async function resolveClientId(nameOrId: string | undefined): Promise<
   { ok: true; clientId: string | null } | { ok: false; error: string }
 > {
   if (!nameOrId) return { ok: true, clientId: null };
@@ -68,7 +68,7 @@ async function resolveClientId(nameOrId: string | undefined): Promise<
 }
 
 /** Resolve um cliente OU um lead (já convertido) a partir de nome/ID — usado onde o chamador pode informar qualquer um dos dois. */
-async function resolveClientOrLeadToClientId(identifier: string): Promise<
+export async function resolveClientOrLeadToClientId(identifier: string): Promise<
   { ok: true; clientId: string } | { ok: false; error: string }
 > {
   const clientById = await prisma.client.findUnique({ where: { id: identifier } });
@@ -121,7 +121,7 @@ async function resolveClientOrLeadToClientId(identifier: string): Promise<
 }
 
 /** Resolve um serviço do catálogo por nome/ID. Nunca erra por "não encontrado" — só por ambiguidade — já que o texto pode ser livre. */
-async function resolveServiceId(nameOrId: string | undefined): Promise<
+export async function resolveServiceId(nameOrId: string | undefined): Promise<
   { ok: true; serviceId: string | null } | { ok: false; error: string }
 > {
   if (!nameOrId) return { ok: true, serviceId: null };
@@ -147,7 +147,7 @@ export function registerCrmTools(server: McpServer, ctx: Ctx) {
     {
       title: "Resumo do dia",
       description:
-        "Visão geral do CRM agora: saldo por conta, contas a receber/pagar pendentes e vencidas, tarefas atrasadas/hoje/próximas e leads com follow-up vencido.",
+        "Visão geral do CRM agora: saldo por conta, contas a receber/pagar pendentes e vencidas, tarefas atrasadas/hoje/próximas, leads com follow-up vencido, agenda de hoje e conteúdos de mídia dos próximos 7 dias.",
       inputSchema: {},
     },
     async () => {
@@ -207,7 +207,11 @@ export function registerCrmTools(server: McpServer, ctx: Ctx) {
         }),
       ]);
 
+      const { agendaEConteudosResumo } = await import("@/lib/mcp/tools-extra");
+      const extra = await agendaEConteudosResumo();
+
       return textResult({
+        ...extra,
         saldoPorConta: balances.map((b) => ({
           conta: b.name,
           saldoAtual: b.current,
