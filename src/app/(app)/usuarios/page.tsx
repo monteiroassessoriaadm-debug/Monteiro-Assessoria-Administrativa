@@ -6,6 +6,7 @@ import { Role } from "@/generated/prisma/enums";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { TableCard, TableCardList } from "@/components/ui/table-card";
 
 const roleLabels: Record<string, string> = {
   ADMIN: "Administrador",
@@ -37,7 +38,7 @@ export default async function UsuariosPage() {
         </Link>
       </div>
 
-      <Card className="overflow-hidden">
+      <Card className="hidden overflow-hidden md:block">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
             <tr>
@@ -73,6 +74,24 @@ export default async function UsuariosPage() {
           </tbody>
         </table>
       </Card>
+
+      <TableCardList>
+        {users.map((u) => (
+          <TableCard
+            key={u.id}
+            href={`/usuarios/${u.id}/editar`}
+            title={u.name}
+            subtitle={u.email}
+            fields={[
+              { label: "Papel", value: <Badge tone="blue">{roleLabels[u.role]}</Badge> },
+              {
+                label: "Status",
+                value: <Badge tone={u.active ? "green" : "slate"}>{u.active ? "Ativo" : "Inativo"}</Badge>,
+              },
+            ]}
+          />
+        ))}
+      </TableCardList>
     </div>
   );
 }

@@ -52,7 +52,7 @@ export default async function ClienteDetailPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-xl font-bold text-slate-900">{name}</h1>
@@ -67,7 +67,7 @@ export default async function ClienteDetailPage({
             Cliente desde {formatDateBR(client.createdAt)}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Link href={`/orcamentos/novo?clientId=${client.id}`}>
             <Button variant="outline">
               <FileText className="h-4 w-4" /> Orçamento
@@ -102,13 +102,13 @@ export default async function ClienteDetailPage({
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <div className="col-span-2 space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Dados cadastrais</CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+            <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
               {client.type === "PF" ? (
                 <>
                   <Field label="Nome completo" value={client.fullName} />
@@ -148,7 +148,7 @@ export default async function ClienteDetailPage({
             <CardHeader>
               <CardTitle>Endereço</CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+            <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
               <Field
                 label="Endereço"
                 value={
@@ -169,7 +169,7 @@ export default async function ClienteDetailPage({
             <CardHeader>
               <CardTitle>Contato</CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+            <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
               <Field label="Telefone" value={client.phone} />
               <Field label="WhatsApp" value={client.whatsapp} />
               <Field label="E-mail" value={client.email} />

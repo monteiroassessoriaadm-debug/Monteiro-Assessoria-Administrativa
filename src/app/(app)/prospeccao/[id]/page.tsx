@@ -32,7 +32,7 @@ export default async function ProspeccaoDetailPage({
 
   return (
     <div className="max-w-3xl space-y-6">
-      <div className="flex items-start justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-xl font-bold text-slate-900">{prospect.name}</h1>
@@ -46,7 +46,7 @@ export default async function ProspeccaoDetailPage({
             Registrado em {formatDateBR(prospect.createdAt)}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Link href={`/prospeccao/${prospect.id}/editar`}>
             <Button variant="outline">
               <Pencil className="h-4 w-4" /> Editar
@@ -70,7 +70,7 @@ export default async function ProspeccaoDetailPage({
         <CardHeader>
           <CardTitle>Dados</CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
           <Field label="Segmento" value={prospect.segment} />
           <Field label="Cidade" value={prospect.city} />
           <Field label="Contato" value={prospect.contactName} />

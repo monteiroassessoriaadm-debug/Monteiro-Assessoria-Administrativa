@@ -40,7 +40,7 @@ export function MediaContentForm({
           <CardTitle>Conteúdo de mídia</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label>Cliente *</Label>
               <Select name="clientId" defaultValue={defaultValues?.clientId ?? ""}>
@@ -76,7 +76,7 @@ export function MediaContentForm({
               <p className="mt-1 text-xs text-red-600">{state.fieldErrors.title}</p>
             )}
           </div>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
               <Label>Tipo</Label>
               <Input

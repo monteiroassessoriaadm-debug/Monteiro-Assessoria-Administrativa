@@ -28,7 +28,7 @@ export default async function MediaContentDetailPage({
 
   return (
     <div className="max-w-3xl space-y-6">
-      <div className="flex items-start justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-xl font-bold text-slate-900">
@@ -61,7 +61,7 @@ export default async function MediaContentDetailPage({
         <CardHeader>
           <CardTitle>Dados do conteúdo</CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
           <Field label="Tipo" value={content.type} />
           <Field label="Plataforma" value={content.platform} />
           <Field label="Responsável" value={content.responsible?.name} />

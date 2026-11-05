@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { TableCard, TableCardList, TableCardEmpty } from "@/components/ui/table-card";
 import { formatCurrencyBRL, formatDateBR } from "@/lib/utils";
 import { displayClientName } from "@/lib/client-display";
 import { serviceInstanceStatusLabels, serviceInstanceStatusTone } from "@/lib/lead-labels";
@@ -50,7 +51,7 @@ export default async function ServicosAbertosPage({
         </p>
       </div>
 
-      <form className="flex gap-3">
+      <form className="flex flex-wrap gap-3">
         <select
           name="status"
           defaultValue={status ?? ""}
@@ -68,7 +69,7 @@ export default async function ServicosAbertosPage({
         </Button>
       </form>
 
-      <Card className="overflow-hidden">
+      <Card className="hidden overflow-hidden md:block">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
             <tr>
@@ -124,6 +125,47 @@ export default async function ServicosAbertosPage({
           </tbody>
         </table>
       </Card>
+
+      <TableCardList>
+        {instances.map((s) => {
+          const overdue =
+            s.dueDate && s.dueDate < today && s.status !== "CONCLUIDO" && s.status !== "CANCELADO";
+          return (
+            <TableCard
+              key={s.id}
+              href={`/servicos-abertos/${s.id}`}
+              title={`#${s.number} — ${s.title}`}
+              subtitle={displayClientName(s.client)}
+              fields={[
+                { label: "Responsável", value: s.responsible?.name ?? "-" },
+                { label: "Valor", value: s.price ? formatCurrencyBRL(s.price.toString()) : "-" },
+                {
+                  label: "Prazo",
+                  value: (
+                    <span className={overdue ? "font-medium text-red-600" : undefined}>
+                      {formatDateBR(s.dueDate)}
+                      {overdue ? " (atrasado)" : ""}
+                    </span>
+                  ),
+                },
+                {
+                  label: "Status",
+                  value: (
+                    <Badge tone={serviceInstanceStatusTone[s.status]}>
+                      {serviceInstanceStatusLabels[s.status]}
+                    </Badge>
+                  ),
+                },
+              ]}
+            />
+          );
+        })}
+        {instances.length === 0 && (
+          <TableCardEmpty>
+            Nenhum serviço aberto ainda. Aprove um orçamento ou proposta para abrir o primeiro.
+          </TableCardEmpty>
+        )}
+      </TableCardList>
     </div>
   );
 }

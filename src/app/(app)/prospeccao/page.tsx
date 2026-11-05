@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { TableCard, TableCardList, TableCardEmpty } from "@/components/ui/table-card";
 import { formatDateBR } from "@/lib/utils";
 
 export default async function ProspeccaoPage() {
@@ -29,7 +30,7 @@ export default async function ProspeccaoPage() {
         </Link>
       </div>
 
-      <Card className="overflow-hidden">
+      <Card className="hidden overflow-hidden md:block">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
             <tr>
@@ -81,6 +82,33 @@ export default async function ProspeccaoPage() {
           </tbody>
         </table>
       </Card>
+
+      <TableCardList>
+        {prospects.map((p) => (
+          <TableCard
+            key={p.id}
+            href={`/prospeccao/${p.id}`}
+            title={p.name}
+            subtitle={[p.segment, p.city].filter(Boolean).join(" · ") || undefined}
+            fields={[
+              { label: "Serviço potencial", value: p.potentialService?.name ?? "-" },
+              { label: "Responsável", value: p.responsible?.name ?? "-" },
+              { label: "Próximo contato", value: formatDateBR(p.nextContactDate) },
+              {
+                label: "Status",
+                value: p.convertedLeadId ? (
+                  <Badge tone="green">Convertido em lead</Badge>
+                ) : (
+                  <Badge tone="slate">Em prospecção</Badge>
+                ),
+              },
+            ]}
+          />
+        ))}
+        {prospects.length === 0 && (
+          <TableCardEmpty>Nenhum registro de prospecção ainda.</TableCardEmpty>
+        )}
+      </TableCardList>
     </div>
   );
 }

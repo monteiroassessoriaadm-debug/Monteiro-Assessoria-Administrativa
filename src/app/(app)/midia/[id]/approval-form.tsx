@@ -21,7 +21,7 @@ export function MediaContentApprovalForm({ contentId }: { contentId: string }) {
             <Label>Observações (opcional)</Label>
             <Textarea name="approvalNotes" rows={2} />
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button formAction={approve} type="submit">
               Aprovar
             </Button>

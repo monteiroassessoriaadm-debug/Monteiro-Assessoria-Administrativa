@@ -6,6 +6,7 @@ import { Role } from "@/generated/prisma/enums";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { TableCard, TableCardList, TableCardEmpty } from "@/components/ui/table-card";
 import { ToggleWhatsAppTemplateActiveButton } from "./toggle-active-button";
 
 export default async function WhatsAppModelosPage() {
@@ -32,7 +33,7 @@ export default async function WhatsAppModelosPage() {
         </Link>
       </div>
 
-      <Card className="overflow-hidden">
+      <Card className="hidden overflow-hidden md:block">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
             <tr>
@@ -74,6 +75,34 @@ export default async function WhatsAppModelosPage() {
           </tbody>
         </table>
       </Card>
+
+      <TableCardList>
+        {templates.map((t) => (
+          <TableCard
+            key={t.id}
+            title={t.name}
+            subtitle={t.category ?? undefined}
+            fields={[
+              {
+                label: "Status",
+                value: <Badge tone={t.active ? "green" : "slate"}>{t.active ? "Ativo" : "Inativo"}</Badge>,
+              },
+            ]}
+            actions={
+              <div className="flex w-full items-center gap-2">
+                <Link
+                  href={`/whatsapp/modelos/${t.id}/editar`}
+                  className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                >
+                  <Pencil className="h-4 w-4" /> Editar
+                </Link>
+                <ToggleWhatsAppTemplateActiveButton templateId={t.id} active={t.active} />
+              </div>
+            }
+          />
+        ))}
+        {templates.length === 0 && <TableCardEmpty>Nenhum modelo cadastrado ainda.</TableCardEmpty>}
+      </TableCardList>
     </div>
   );
 }

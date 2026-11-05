@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { TableCard, TableCardList, TableCardEmpty } from "@/components/ui/table-card";
 import { formatCurrencyBRL, formatDateBR } from "@/lib/utils";
 import { displayClientName } from "@/lib/client-display";
 import { quoteStatusLabels, quoteStatusTone } from "@/lib/lead-labels";
@@ -44,7 +45,7 @@ export default async function OrcamentosPage({
         </Link>
       </div>
 
-      <form className="flex gap-3">
+      <form className="flex flex-wrap gap-3">
         <select
           name="status"
           defaultValue={status ?? ""}
@@ -62,7 +63,7 @@ export default async function OrcamentosPage({
         </Button>
       </form>
 
-      <Card className="overflow-hidden">
+      <Card className="hidden overflow-hidden md:block">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
             <tr>
@@ -115,6 +116,29 @@ export default async function OrcamentosPage({
           </tbody>
         </table>
       </Card>
+
+      <TableCardList>
+        {quotes.map((q) => {
+          const total = q.items.reduce((sum, i) => sum + i.quantity * Number(i.unitPrice), 0);
+          return (
+            <TableCard
+              key={q.id}
+              href={`/orcamentos/${q.id}`}
+              title={`#${q.number} — ${displayClientName(q.client)}`}
+              subtitle={formatCurrencyBRL(total)}
+              fields={[
+                {
+                  label: "Status",
+                  value: <Badge tone={quoteStatusTone[q.status]}>{quoteStatusLabels[q.status]}</Badge>,
+                },
+                { label: "Validade", value: formatDateBR(q.validUntil) },
+                { label: "Criado em", value: formatDateBR(q.createdAt) },
+              ]}
+            />
+          );
+        })}
+        {quotes.length === 0 && <TableCardEmpty>Nenhum orçamento encontrado.</TableCardEmpty>}
+      </TableCardList>
     </div>
   );
 }

@@ -56,7 +56,7 @@ export default async function ContasAReceberPage({
         </Link>
       </div>
 
-      <form className="flex gap-3">
+      <form className="flex flex-wrap gap-3">
         <select
           name="status"
           defaultValue={status ?? ""}

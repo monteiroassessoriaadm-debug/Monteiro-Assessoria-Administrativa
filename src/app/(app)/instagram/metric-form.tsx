@@ -41,7 +41,7 @@ export function InstagramMetricForm({
         <CardHeader>
           <CardTitle>Registro de métricas</CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-4">
+        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <Label>Data *</Label>
             <Input type="date" name="date" defaultValue={defaults?.date} />

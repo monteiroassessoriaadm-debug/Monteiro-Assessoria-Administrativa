@@ -50,7 +50,7 @@ export function ProposalForm({
         <CardHeader>
           <CardTitle>Cliente e serviço</CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-4">
+        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <Label>Cliente *</Label>
             <Select name="clientId" defaultValue={defaults?.clientId ?? ""}>
@@ -109,7 +109,7 @@ export function ProposalForm({
         <CardHeader>
           <CardTitle>Investimento e prazo</CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-4">
+        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <Label>Investimento (R$)</Label>
             <Input

@@ -40,7 +40,7 @@ export function TaskForm({
             <Label>Descrição</Label>
             <Textarea name="description" rows={3} />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label>Responsável</Label>
               <Select name="assignedToId" defaultValue={defaultAssignedToId ?? ""}>

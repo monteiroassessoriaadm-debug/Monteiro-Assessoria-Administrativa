@@ -70,7 +70,7 @@ export default async function TarefasPage({
       </div>
 
       {!showAllOverdue && isAdmin && users.length > 0 && (
-        <form className="flex gap-3">
+        <form className="flex flex-wrap gap-3">
           <select
             name="assignedTo"
             defaultValue={targetUserId}

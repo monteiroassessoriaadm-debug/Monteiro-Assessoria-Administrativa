@@ -385,7 +385,7 @@ export default async function DashboardPage() {
 
       <section>
         <SectionTitle>Comercial</SectionTitle>
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-4">
           <StatCard
             label="Leads novos"
             value={leadsNovos}
@@ -454,7 +454,7 @@ export default async function DashboardPage() {
 
       <section>
         <SectionTitle>Operacional</SectionTitle>
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-4">
           <StatCard
             label="Serviços em andamento"
             value={servicosEmAndamento}
@@ -505,7 +505,7 @@ export default async function DashboardPage() {
 
       <section>
         <SectionTitle>Bia / Mídia</SectionTitle>
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-4">
           <StatCard
             label="Aguardando aprovação"
             value={conteudosAguardandoAprovacao}
@@ -544,7 +544,7 @@ export default async function DashboardPage() {
       {financeiro && (
         <section>
           <SectionTitle>Financeiro</SectionTitle>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-4">
             <StatCard
               label="A receber (pendente)"
               value={formatCurrencyBRL(financeiro.pendenteReceber)}
@@ -579,7 +579,7 @@ export default async function DashboardPage() {
 
       <section>
         <SectionTitle>Equipe</SectionTitle>
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-4">
           <StatCard
             label="Administradores ativos"
             value={roleCounts.ADMIN ?? 0}
@@ -627,7 +627,7 @@ export default async function DashboardPage() {
 
       <section>
         <SectionTitle>Clientes</SectionTitle>
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-4">
           <StatCard
             label="Clientes ativos"
             value={clientesAtivos}
