@@ -1,7 +1,6 @@
 import { requireSession } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
-import { Sidebar } from "@/components/layout/sidebar";
-import { Topbar } from "@/components/layout/topbar";
+import { AppShell } from "@/components/layout/app-shell";
 
 export default async function AppLayout({
   children,
@@ -14,12 +13,13 @@ export default async function AppLayout({
   });
 
   return (
-    <div className="flex min-h-screen bg-slate-100">
-      <Sidebar role={session.role} companyName={settings?.name} logoData={settings?.logoData} />
-      <div className="flex min-h-screen flex-1 flex-col">
-        <Topbar name={session.name} role={session.role} />
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
-      </div>
-    </div>
+    <AppShell
+      role={session.role}
+      companyName={settings?.name}
+      logoData={settings?.logoData}
+      name={session.name}
+    >
+      {children}
+    </AppShell>
   );
 }

@@ -79,7 +79,7 @@ export default async function OrcamentoDetailPage({
           </CardHeader>
           <CardContent>
             {quote.serviceInstances.length === 0 ? (
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-sm text-slate-500">
                   Nenhum serviço aberto ainda a partir deste orçamento.
                 </p>

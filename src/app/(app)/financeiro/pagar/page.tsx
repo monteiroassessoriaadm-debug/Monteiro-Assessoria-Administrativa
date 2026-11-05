@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { TableCard, TableCardList, TableCardEmpty } from "@/components/ui/table-card";
 import { formatCurrencyBRL, formatDateBR } from "@/lib/utils";
 import { payableStatusLabels, payableStatusTone } from "@/lib/lead-labels";
 import { PayableStatusActions } from "./status-actions";
@@ -36,7 +37,7 @@ export default async function ContasAPagarPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Contas a pagar</h1>
           <p className="text-sm text-slate-500">
@@ -69,7 +70,7 @@ export default async function ContasAPagarPage({
         </Button>
       </form>
 
-      <Card className="overflow-hidden">
+      <Card className="hidden overflow-hidden md:block">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
             <tr>
@@ -114,6 +115,38 @@ export default async function ContasAPagarPage({
           </tbody>
         </table>
       </Card>
+
+      <TableCardList>
+        {payables.map((p) => {
+          const overdue = p.status === "PENDENTE" && p.dueDate && p.dueDate < today;
+          return (
+            <TableCard
+              key={p.id}
+              title={p.description}
+              subtitle={p.supplier ?? undefined}
+              fields={[
+                { label: "Valor", value: formatCurrencyBRL(p.amount.toString()) },
+                {
+                  label: "Vencimento",
+                  value: (
+                    <span className={overdue ? "font-medium text-red-600" : undefined}>
+                      {formatDateBR(p.dueDate)}
+                      {overdue ? " (vencida)" : ""}
+                    </span>
+                  ),
+                },
+                { label: "Conta", value: p.account?.name ?? "-" },
+                {
+                  label: "Status",
+                  value: <Badge tone={payableStatusTone[p.status]}>{payableStatusLabels[p.status]}</Badge>,
+                },
+              ]}
+              actions={<PayableStatusActions payableId={p.id} status={p.status} />}
+            />
+          );
+        })}
+        {payables.length === 0 && <TableCardEmpty>Nenhuma conta a pagar ainda.</TableCardEmpty>}
+      </TableCardList>
     </div>
   );
 }

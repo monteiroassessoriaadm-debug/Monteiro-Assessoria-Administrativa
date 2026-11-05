@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { TableCard, TableCardList, TableCardEmpty } from "@/components/ui/table-card";
 import { onlyDigits, maskPhone } from "@/lib/utils";
 import { displayClientName, displayClientDocument } from "@/lib/client-display";
 
@@ -43,7 +44,7 @@ export default async function ClientesPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Clientes</h1>
           <p className="text-sm text-slate-500">
@@ -57,8 +58,8 @@ export default async function ClientesPage({
         </Link>
       </div>
 
-      <form className="flex gap-3">
-        <div className="relative max-w-sm flex-1">
+      <form className="flex flex-wrap gap-3">
+        <div className="relative w-full max-w-sm flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <Input
             name="q"
@@ -81,7 +82,7 @@ export default async function ClientesPage({
         </Button>
       </form>
 
-      <Card className="overflow-hidden">
+      <Card className="hidden overflow-hidden md:block">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
             <tr>
@@ -131,6 +132,31 @@ export default async function ClientesPage({
           </tbody>
         </table>
       </Card>
+
+      <TableCardList>
+        {clients.map((c) => (
+          <TableCard
+            key={c.id}
+            href={`/clientes/${c.id}`}
+            title={displayClientName(c)}
+            subtitle={c.type === "PF" ? "Pessoa Física" : "Pessoa Jurídica"}
+            fields={[
+              { label: "Documento", value: displayClientDocument(c) },
+              { label: "WhatsApp", value: c.whatsapp ?? "-" },
+              { label: "Cidade", value: c.addressCity ?? "-" },
+              {
+                label: "Status",
+                value: (
+                  <Badge tone={c.status === "ATIVO" ? "green" : "slate"}>
+                    {c.status === "ATIVO" ? "Ativo" : "Inativo"}
+                  </Badge>
+                ),
+              },
+            ]}
+          />
+        ))}
+        {clients.length === 0 && <TableCardEmpty>Nenhum cliente encontrado.</TableCardEmpty>}
+      </TableCardList>
     </div>
   );
 }

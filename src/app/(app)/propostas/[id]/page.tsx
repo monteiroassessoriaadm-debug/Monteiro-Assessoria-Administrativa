@@ -74,7 +74,7 @@ export default async function PropostaDetailPage({
           </CardHeader>
           <CardContent>
             {proposal.serviceInstances.length === 0 ? (
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-sm text-slate-500">
                   Nenhum serviço aberto ainda a partir desta proposta.
                 </p>

@@ -31,7 +31,7 @@ export default async function LeadsPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Leads</h1>
           <p className="text-sm text-slate-500">

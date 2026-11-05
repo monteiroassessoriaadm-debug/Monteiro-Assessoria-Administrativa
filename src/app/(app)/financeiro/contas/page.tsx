@@ -4,6 +4,7 @@ import { requireRole } from "@/lib/permissions";
 import { Role } from "@/generated/prisma/enums";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { TableCard, TableCardList, TableCardEmpty } from "@/components/ui/table-card";
 import { formatCurrencyBRL } from "@/lib/utils";
 import { getAccountBalances } from "@/lib/account-balance";
 import { AccountForm } from "./account-form";
@@ -34,7 +35,7 @@ export default async function ContasFinanceirasPage() {
         </CardContent>
       </Card>
 
-      <Card className="overflow-hidden">
+      <Card className="hidden overflow-hidden md:block">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
             <tr>
@@ -85,6 +86,42 @@ export default async function ContasFinanceirasPage() {
           </tbody>
         </table>
       </Card>
+
+      <TableCardList>
+        {balances.map((a) => (
+          <TableCard
+            key={a.accountId}
+            title={a.name}
+            subtitle={a.type ?? undefined}
+            fields={[
+              {
+                label: "Saldo atual",
+                value: (
+                  <span className={a.current >= 0 ? "text-green-600" : "text-red-600"}>
+                    {formatCurrencyBRL(a.current)}
+                  </span>
+                ),
+              },
+              {
+                label: "Status",
+                value: <Badge tone={a.active ? "green" : "slate"}>{a.active ? "Ativa" : "Inativa"}</Badge>,
+              },
+            ]}
+            actions={
+              <div className="flex w-full items-center gap-2">
+                <Link
+                  href={`/financeiro/contas/${a.accountId}/editar`}
+                  className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                >
+                  <Pencil className="h-4 w-4" /> Editar
+                </Link>
+                <ToggleAccountActiveButton accountId={a.accountId} active={a.active} />
+              </div>
+            }
+          />
+        ))}
+        {balances.length === 0 && <TableCardEmpty>Nenhuma conta cadastrada ainda.</TableCardEmpty>}
+      </TableCardList>
     </div>
   );
 }

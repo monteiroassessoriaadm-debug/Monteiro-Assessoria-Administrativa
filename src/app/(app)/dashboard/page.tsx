@@ -276,7 +276,7 @@ export default async function DashboardPage() {
               <Link
                 key={q.id}
                 href={`/orcamentos/${q.id}`}
-                className="flex items-center justify-between rounded-lg bg-white px-3 py-2 text-sm hover:bg-slate-50"
+                className="flex flex-col gap-1 rounded-lg bg-white px-3 py-2 text-sm hover:bg-slate-50 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
               >
                 <span>
                   Orçamento #{q.number} de {displayClientName(q.client)} enviado em{" "}
@@ -289,7 +289,7 @@ export default async function DashboardPage() {
               <Link
                 key={l.id}
                 href={`/leads/${l.id}`}
-                className="flex items-center justify-between rounded-lg bg-white px-3 py-2 text-sm hover:bg-slate-50"
+                className="flex flex-col gap-1 rounded-lg bg-white px-3 py-2 text-sm hover:bg-slate-50 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
               >
                 <span>
                   Lead {l.name} — retorno previsto para {formatDateBR(l.nextContactDate)}
@@ -301,7 +301,7 @@ export default async function DashboardPage() {
               <Link
                 key={s.id}
                 href={`/servicos-abertos/${s.id}`}
-                className="flex items-center justify-between rounded-lg bg-white px-3 py-2 text-sm hover:bg-slate-50"
+                className="flex flex-col gap-1 rounded-lg bg-white px-3 py-2 text-sm hover:bg-slate-50 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
               >
                 <span>
                   Serviço &quot;{s.title}&quot; de {displayClientName(s.client)} — prazo era{" "}

@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
+import { TableCard, TableCardList, TableCardEmpty } from "@/components/ui/table-card";
 import { formatCurrencyBRL, formatDateBR } from "@/lib/utils";
 import { displayClientName } from "@/lib/client-display";
 import {
@@ -50,7 +51,7 @@ export default async function ComissoesPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Comissões e pagamentos</h1>
           <p className="text-sm text-slate-500">
@@ -102,7 +103,7 @@ export default async function ComissoesPage({
         </Button>
       </form>
 
-      <Card className="overflow-hidden">
+      <Card className="hidden overflow-hidden md:block">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
             <tr>
@@ -145,6 +146,31 @@ export default async function ComissoesPage({
           </tbody>
         </table>
       </Card>
+
+      <TableCardList>
+        {commissions.map((c) => (
+          <TableCard
+            key={c.id}
+            title={c.user.name}
+            subtitle={commissionCategoryLabels[c.category]}
+            fields={[
+              { label: "Cliente", value: c.client ? displayClientName(c.client) : "-" },
+              { label: "Valor", value: formatCurrencyBRL(c.amount.toString()) },
+              { label: "Data", value: formatDateBR(c.date) },
+              {
+                label: "Status",
+                value: (
+                  <Badge tone={commissionStatusTone[c.status]}>
+                    {commissionStatusLabels[c.status]}
+                  </Badge>
+                ),
+              },
+            ]}
+            actions={<CommissionStatusActions commissionId={c.id} status={c.status} />}
+          />
+        ))}
+        {commissions.length === 0 && <TableCardEmpty>Nenhum lançamento ainda.</TableCardEmpty>}
+      </TableCardList>
     </div>
   );
 }

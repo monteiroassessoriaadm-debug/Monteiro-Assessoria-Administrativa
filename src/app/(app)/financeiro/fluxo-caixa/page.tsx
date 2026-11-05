@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatCurrencyBRL, formatDateBR } from "@/lib/utils";
 import { getAccountBalances } from "@/lib/account-balance";
+import { TableCard, TableCardList, TableCardEmpty } from "@/components/ui/table-card";
 
 function startOfMonth(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), 1);
@@ -185,7 +186,7 @@ export default async function FluxoCaixaPage({
         </Card>
       </div>
 
-      <Card className="overflow-hidden">
+      <Card className="hidden overflow-hidden md:block">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
             <tr>
@@ -224,6 +225,27 @@ export default async function FluxoCaixaPage({
           </tbody>
         </table>
       </Card>
+
+      <TableCardList>
+        {movements.map((m, i) => (
+          <TableCard
+            key={i}
+            title={m.description}
+            subtitle={formatDateBR(m.date)}
+            fields={[
+              {
+                label: m.type === "entrada" ? "Entrada" : "Saída",
+                value: (
+                  <span className={m.type === "entrada" ? "text-green-600" : "text-red-600"}>
+                    {m.type === "entrada" ? "+" : "-"} {formatCurrencyBRL(m.amount)}
+                  </span>
+                ),
+              },
+            ]}
+          />
+        ))}
+        {movements.length === 0 && <TableCardEmpty>Nenhuma movimentação no período.</TableCardEmpty>}
+      </TableCardList>
     </div>
   );
 }
