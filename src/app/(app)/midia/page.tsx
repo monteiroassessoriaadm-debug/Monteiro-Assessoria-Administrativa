@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { TableCard, TableCardList, TableCardEmpty } from "@/components/ui/table-card";
 import { formatDateBR } from "@/lib/utils";
+import { brTodayRange } from "@/lib/br-time";
 import { displayClientName } from "@/lib/client-display";
 import { mediaContentStatusLabels, mediaContentStatusTone } from "@/lib/lead-labels";
 
@@ -18,8 +19,7 @@ export default async function MidiaPage({
   const { status, responsibleId, overdue: overdueParam } = await searchParams;
   const activeStatuses = ["IDEIA", "EM_PRODUCAO", "AGUARDANDO_APROVACAO", "APROVADO"];
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const { start: today } = brTodayRange();
 
   const [contents, users] = await Promise.all([
     prisma.mediaContent.findMany({

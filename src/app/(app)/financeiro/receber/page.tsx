@@ -8,6 +8,7 @@ import { TableCard, TableCardList, TableCardEmpty } from "@/components/ui/table-
 import { formatCurrencyBRL, formatDateBR } from "@/lib/utils";
 import { displayClientName } from "@/lib/client-display";
 import { receivableStatusLabels, receivableStatusTone } from "@/lib/lead-labels";
+import { brTodayRange } from "@/lib/br-time";
 import { ReceivableStatusActions } from "./status-actions";
 
 export default async function ContasAReceberPage({
@@ -17,8 +18,7 @@ export default async function ContasAReceberPage({
 }) {
   const { status, overdue: overdueParam } = await searchParams;
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const { start: today } = brTodayRange();
 
   const receivables = await prisma.receivable.findMany({
     where: {
@@ -60,7 +60,7 @@ export default async function ContasAReceberPage({
         <select
           name="status"
           defaultValue={status ?? ""}
-          className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm"
+          className="h-11 min-w-0 max-w-full rounded-lg border border-slate-300 bg-white px-3 text-base md:h-10 md:text-sm"
         >
           <option value="">Todos os status</option>
           {Object.entries(receivableStatusLabels).map(([value, label]) => (
@@ -104,11 +104,16 @@ export default async function ContasAReceberPage({
                   <td className="px-4 py-3 text-slate-600">{r.account?.name ?? "-"}</td>
                   <td className="px-4 py-3">
                     <Badge tone={receivableStatusTone[r.status]}>
-                      {receivableStatusLabels[r.status]}
+                      {r.reversedAt ? "Estornado" : receivableStatusLabels[r.status]}
                     </Badge>
                   </td>
                   <td className="px-4 py-3">
-                    <ReceivableStatusActions receivableId={r.id} status={r.status} />
+                    <ReceivableStatusActions
+                      receivableId={r.id}
+                      status={r.status}
+                      reversed={Boolean(r.reversedAt)}
+                      isReversal={Boolean(r.reversesPayableId)}
+                    />
                   </td>
                 </tr>
               );
@@ -148,12 +153,19 @@ export default async function ContasAReceberPage({
                   label: "Status",
                   value: (
                     <Badge tone={receivableStatusTone[r.status]}>
-                      {receivableStatusLabels[r.status]}
+                      {r.reversedAt ? "Estornado" : receivableStatusLabels[r.status]}
                     </Badge>
                   ),
                 },
               ]}
-              actions={<ReceivableStatusActions receivableId={r.id} status={r.status} />}
+              actions={
+                <ReceivableStatusActions
+                  receivableId={r.id}
+                  status={r.status}
+                  reversed={Boolean(r.reversedAt)}
+                  isReversal={Boolean(r.reversesPayableId)}
+                />
+              }
             />
           );
         })}

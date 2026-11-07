@@ -13,9 +13,10 @@ const variants: Record<Variant, string> = {
 };
 
 const sizes: Record<Size, string> = {
-  sm: "h-8 px-3 text-sm",
-  md: "h-10 px-4 text-sm",
-  lg: "h-11 px-5 text-base",
+  // No celular todo botão tem ao menos 44px de altura, para o toque.
+  sm: "min-h-11 px-3 text-sm md:min-h-0 md:h-8",
+  md: "min-h-11 px-4 text-sm md:min-h-0 md:h-10",
+  lg: "min-h-11 px-5 text-base",
 };
 
 export const Button = forwardRef<

@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { isDateOnly } from "@/lib/br-time";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -32,7 +33,19 @@ export function formatCompactNumber(value: number) {
 export function formatDateBR(date: Date | string | null | undefined) {
   if (!date) return "-";
   const d = typeof date === "string" ? new Date(date) : date;
-  return new Intl.DateTimeFormat("pt-BR").format(d);
+  // Campo "só o dia" já é o dia certo; instante real é convertido para Brasília.
+  return new Intl.DateTimeFormat("pt-BR", { timeZone: isDateOnly(d) ? "UTC" : "America/Sao_Paulo" }).format(d);
+}
+
+/** Instante real (createdAt, histórico) no horário de Brasília. */
+export function formatInstantBR(date: Date | string | null | undefined) {
+  if (!date) return "-";
+  const d = typeof date === "string" ? new Date(date) : date;
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+    timeZone: "America/Sao_Paulo",
+  }).format(d);
 }
 
 export function formatDateTimeBR(date: Date | string | null | undefined) {

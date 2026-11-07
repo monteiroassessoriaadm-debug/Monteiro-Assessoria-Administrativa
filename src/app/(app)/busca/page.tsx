@@ -36,7 +36,7 @@ function ResultSection({
           <Link
             key={item.id}
             href={item.href}
-            className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2 text-sm hover:bg-slate-50"
+            className="flex min-h-11 items-center justify-between gap-2 rounded-lg border border-slate-100 px-3 py-2 text-sm hover:bg-slate-50 md:min-h-0"
           >
             <div>
               <p className="font-medium text-slate-900">{item.title}</p>

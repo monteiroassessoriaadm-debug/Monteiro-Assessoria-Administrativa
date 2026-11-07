@@ -94,7 +94,7 @@ export default async function LeadDetailPage({
             label="Último contato"
             value={formatDateTimeBR(lead.lastContactDate)}
           />
-          <div className="col-span-2">
+          <div className="sm:col-span-2">
             <Field label="Observações" value={lead.notes} />
           </div>
         </CardContent>

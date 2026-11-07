@@ -120,7 +120,7 @@ export default async function ServicosPage() {
                 <div className="flex w-full items-center gap-2">
                   <Link
                     href={`/servicos/${s.id}/editar`}
-                    className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                    className="inline-flex min-h-11 flex-1 items-center justify-center gap-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
                   >
                     <Pencil className="h-4 w-4" /> Editar
                   </Link>

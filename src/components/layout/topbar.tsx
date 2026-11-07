@@ -27,7 +27,7 @@ export function Topbar({
           type="button"
           onClick={onMenuClick}
           aria-label="Abrir menu"
-          className="shrink-0 rounded-lg p-2.5 text-slate-600 hover:bg-slate-100 md:hidden"
+          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 md:hidden"
         >
           <Menu className="h-5 w-5" />
         </button>
@@ -49,7 +49,7 @@ export function Topbar({
         <form action={logoutAction}>
           <button
             type="submit"
-            className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 md:py-1.5"
+            className="min-h-11 rounded-lg border border-slate-200 px-3 text-sm text-slate-600 hover:bg-slate-50 md:min-h-0 md:py-1.5"
           >
             Sair
           </button>

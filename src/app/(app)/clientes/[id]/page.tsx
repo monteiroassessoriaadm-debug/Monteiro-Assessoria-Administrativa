@@ -103,7 +103,7 @@ export default async function ClienteDetailPage({
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div className="col-span-2 space-y-6">
+        <div className="sm:col-span-2 space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Dados cadastrais</CardTitle>
@@ -174,7 +174,7 @@ export default async function ClienteDetailPage({
               <Field label="WhatsApp" value={client.whatsapp} />
               <Field label="E-mail" value={client.email} />
               <Field label="Instagram" value={client.instagram} />
-              <div className="col-span-2">
+              <div className="sm:col-span-2">
                 <Field label="Observações" value={client.notes} />
               </div>
             </CardContent>
@@ -194,7 +194,7 @@ export default async function ClienteDetailPage({
                   <Link
                     key={s.id}
                     href={`/servicos-abertos/${s.id}`}
-                    className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2 text-sm hover:bg-slate-50"
+                    className="flex min-h-11 items-center justify-between gap-2 rounded-lg border border-slate-100 px-3 py-2 text-sm hover:bg-slate-50 md:min-h-0"
                   >
                     <span>
                       #{s.number} — {s.title}
@@ -220,7 +220,7 @@ export default async function ClienteDetailPage({
                   <Link
                     key={m.id}
                     href={`/midia/${m.id}`}
-                    className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2 text-sm hover:bg-slate-50"
+                    className="flex min-h-11 items-center justify-between gap-2 rounded-lg border border-slate-100 px-3 py-2 text-sm hover:bg-slate-50 md:min-h-0"
                   >
                     <span>
                       #{m.number} — {m.title}
@@ -249,7 +249,7 @@ export default async function ClienteDetailPage({
                     <Link
                       key={q.id}
                       href={`/orcamentos/${q.id}`}
-                      className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2 text-sm hover:bg-slate-50"
+                      className="flex min-h-11 items-center justify-between gap-2 rounded-lg border border-slate-100 px-3 py-2 text-sm hover:bg-slate-50 md:min-h-0"
                     >
                       <span>Orçamento #{q.number}</span>
                       <Badge tone={quoteStatusTone[q.status]}>
@@ -261,7 +261,7 @@ export default async function ClienteDetailPage({
                     <Link
                       key={p.id}
                       href={`/propostas/${p.id}`}
-                      className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2 text-sm hover:bg-slate-50"
+                      className="flex min-h-11 items-center justify-between gap-2 rounded-lg border border-slate-100 px-3 py-2 text-sm hover:bg-slate-50 md:min-h-0"
                     >
                       <span>Proposta #{p.number}</span>
                       <Badge tone={proposalStatusTone[p.status]}>
@@ -273,7 +273,7 @@ export default async function ClienteDetailPage({
                     <Link
                       key={d.id}
                       href={`/documentos/${d.id}`}
-                      className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2 text-sm hover:bg-slate-50"
+                      className="flex min-h-11 items-center justify-between gap-2 rounded-lg border border-slate-100 px-3 py-2 text-sm hover:bg-slate-50 md:min-h-0"
                     >
                       <span>{d.title}</span>
                       <Badge tone={documentStatusTone[d.status]}>

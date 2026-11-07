@@ -1,24 +1,38 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import {
   markProposalSentAction,
   approveProposalAction,
   rejectProposalAction,
   expireProposalAction,
+  cancelProposalAction,
 } from "../actions";
 
-const actionsByStatus: Record<
-  string,
-  { label: string; action: (id: string) => Promise<void>; variant?: "primary" | "outline" | "danger" }[]
-> = {
-  RASCUNHO: [{ label: "Marcar como enviada", action: markProposalSentAction }],
+type ProposalAction = {
+  label: string;
+  action: (id: string) => Promise<void | string | null>;
+  variant?: "primary" | "outline" | "danger";
+  confirm?: string;
+};
+
+const CANCEL: ProposalAction = {
+  label: "Cancelar proposta",
+  action: cancelProposalAction,
+  variant: "danger",
+  confirm: "Cancelar esta proposta? O registro continua no histórico.",
+};
+
+const actionsByStatus: Record<string, ProposalAction[]> = {
+  RASCUNHO: [{ label: "Marcar como enviada", action: markProposalSentAction }, CANCEL],
   ENVIADA: [
     { label: "Aprovar", action: approveProposalAction },
     { label: "Recusar", action: rejectProposalAction, variant: "danger" },
     { label: "Marcar como expirada", action: expireProposalAction, variant: "outline" },
+    CANCEL,
   ],
+  APROVADA: [CANCEL],
 };
 
 export function ProposalStatusActions({
@@ -29,6 +43,7 @@ export function ProposalStatusActions({
   status: string;
 }) {
   const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
   const actions = actionsByStatus[status] ?? [];
 
   if (actions.length === 0) return null;
@@ -41,11 +56,18 @@ export function ProposalStatusActions({
           variant={a.variant ?? "primary"}
           size="sm"
           disabled={pending}
-          onClick={() => startTransition(() => a.action(proposalId))}
+          onClick={() => {
+            if (a.confirm && !window.confirm(a.confirm)) return;
+            startTransition(async () => {
+              const result = await a.action(proposalId);
+              setError(typeof result === "string" ? result : null);
+            });
+          }}
         >
           {a.label}
         </Button>
       ))}
+      {error && <p className="w-full text-xs text-red-600">{error}</p>}
     </div>
   );
 }

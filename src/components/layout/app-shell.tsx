@@ -31,7 +31,7 @@ export function AppShell({
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-100">
+    <div className="flex min-h-dvh bg-slate-100">
       <Sidebar
         role={role}
         companyName={companyName}
@@ -39,9 +39,10 @@ export function AppShell({
         mobileOpen={mobileNavOpen}
         onClose={() => setMobileNavOpen(false)}
       />
-      <div className="flex min-h-screen min-w-0 flex-1 flex-col overflow-x-hidden">
+      <div className="flex min-h-dvh min-w-0 flex-1 flex-col">
         <Topbar name={name} role={role} onMenuClick={() => setMobileNavOpen(true)} />
-        <main className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-6">
+        {/* Sem overflow-x-hidden: esconder a sobra cortaria o conteúdo em vez de resolver. */}
+        <main className="min-w-0 flex-1 p-4 md:p-6">
           {children}
         </main>
       </div>

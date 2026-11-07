@@ -57,7 +57,7 @@ export default async function LeadsPage({
         <select
           name="stage"
           defaultValue={stage ?? ""}
-          className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm"
+          className="h-11 min-w-0 max-w-full rounded-lg border border-slate-300 bg-white px-3 text-base md:h-10 md:text-sm"
         >
           <option value="">Todas as etapas</option>
           {Object.entries(stageLabels).map(([value, label]) => (
@@ -69,7 +69,7 @@ export default async function LeadsPage({
         <select
           name="temperature"
           defaultValue={temperature ?? ""}
-          className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm"
+          className="h-11 min-w-0 max-w-full rounded-lg border border-slate-300 bg-white px-3 text-base md:h-10 md:text-sm"
         >
           <option value="">Todas as temperaturas</option>
           <option value="FRIO">🔴 Frio</option>

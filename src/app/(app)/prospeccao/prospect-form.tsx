@@ -50,7 +50,7 @@ export function ProspectForm({
           <CardTitle>Empresa ou pessoa potencial</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="col-span-2">
+          <div className="sm:col-span-2">
             <Label>Nome *</Label>
             <Input name="name" defaultValue={defaults?.name} />
             {fieldError("name") && (
@@ -115,11 +115,11 @@ export function ProspectForm({
             <Label>Próximo contato</Label>
             <Input type="date" name="nextContactDate" defaultValue={defaults?.nextContactDate} />
           </div>
-          <div className="col-span-2">
+          <div className="sm:col-span-2">
             <Label>Resultado do contato</Label>
             <Textarea name="result" rows={2} defaultValue={defaults?.result} />
           </div>
-          <div className="col-span-2">
+          <div className="sm:col-span-2">
             <Label>Observações</Label>
             <Textarea name="notes" rows={2} defaultValue={defaults?.notes} />
           </div>

@@ -40,6 +40,7 @@ export const quoteStatusLabels: Record<string, string> = {
   APROVADO: "Aprovado",
   RECUSADO: "Recusado",
   EXPIRADO: "Expirado",
+  CANCELADO: "Cancelado",
 };
 
 export const quoteStatusTone: Record<
@@ -53,6 +54,7 @@ export const quoteStatusTone: Record<
   APROVADO: "green",
   RECUSADO: "red",
   EXPIRADO: "slate",
+  CANCELADO: "red",
 };
 
 export const proposalStatusLabels: Record<string, string> = {
@@ -61,6 +63,7 @@ export const proposalStatusLabels: Record<string, string> = {
   APROVADA: "Aprovada",
   RECUSADA: "Recusada",
   EXPIRADA: "Expirada",
+  CANCELADA: "Cancelada",
 };
 
 export const proposalStatusTone: Record<
@@ -72,6 +75,7 @@ export const proposalStatusTone: Record<
   APROVADA: "green",
   RECUSADA: "red",
   EXPIRADA: "slate",
+  CANCELADA: "red",
 };
 
 export const documentStatusLabels: Record<string, string> = {
@@ -147,11 +151,13 @@ export const commissionCategoryLabels: Record<string, string> = {
 export const commissionStatusLabels: Record<string, string> = {
   PENDENTE: "Pendente",
   PAGO: "Pago",
+  CANCELADO: "Cancelado",
 };
 
-export const commissionStatusTone: Record<string, "yellow" | "green"> = {
+export const commissionStatusTone: Record<string, "yellow" | "green" | "red"> = {
   PENDENTE: "yellow",
   PAGO: "green",
+  CANCELADO: "red",
 };
 
 export const mediaContentStatusLabels: Record<string, string> = {

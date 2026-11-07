@@ -101,7 +101,7 @@ export default async function ServicoAbertoDetailPage({
           />
           <Field label="Prazo" value={formatDateBR(instance.dueDate)} />
           <Field label="Entregue em" value={formatDateBR(instance.deliveredAt)} />
-          <div className="col-span-2">
+          <div className="sm:col-span-2">
             <Field label="Observações" value={instance.notes} />
           </div>
         </CardContent>

@@ -7,7 +7,7 @@ import { requireRole } from "@/lib/permissions";
 import { Role } from "@/generated/prisma/enums";
 import { addTimelineEvent } from "@/lib/timeline";
 import { commissionSchema } from "@/lib/validations";
-import { CommissionStatus } from "@/generated/prisma/enums";
+import { OperationError, cancelCommission, payCommission } from "@/lib/crm-operations";
 
 export type CommissionFormState = {
   error?: string;
@@ -68,16 +68,31 @@ export async function createCommissionAction(
   redirect("/financeiro/comissoes");
 }
 
-export async function markCommissionPaidAction(commissionId: string) {
-  await requireRole(Role.ADMIN, Role.GESTOR);
-  const commission = await prisma.commission.findUnique({ where: { id: commissionId } });
-  if (!commission) return;
-
-  await prisma.commission.update({
-    where: { id: commissionId },
-    data: { status: CommissionStatus.PAGO, paidAt: new Date() },
-  });
+/** Devolve a mensagem de erro para a tela, ou null se deu certo. */
+export async function markCommissionPaidAction(commissionId: string): Promise<string | null> {
+  const session = await requireRole(Role.ADMIN, Role.GESTOR);
+  try {
+    await payCommission(commissionId, {}, { userId: session.userId, source: "usuário", tool: "tela: pagar comissão" });
+  } catch (e) {
+    if (e instanceof OperationError) return e.message;
+    throw e;
+  }
 
   revalidatePath("/financeiro/comissoes");
+  revalidatePath("/financeiro/pagar");
   revalidatePath("/financeiro/fluxo-caixa");
+  return null;
+}
+
+export async function cancelCommissionAction(commissionId: string): Promise<string | null> {
+  const session = await requireRole(Role.ADMIN, Role.GESTOR);
+  try {
+    await cancelCommission(commissionId, undefined, { userId: session.userId, source: "usuário", tool: "tela: cancelar comissão" });
+  } catch (e) {
+    if (e instanceof OperationError) return e.message;
+    throw e;
+  }
+
+  revalidatePath("/financeiro/comissoes");
+  return null;
 }

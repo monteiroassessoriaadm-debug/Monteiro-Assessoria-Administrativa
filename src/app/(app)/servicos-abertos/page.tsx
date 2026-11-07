@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TableCard, TableCardList, TableCardEmpty } from "@/components/ui/table-card";
 import { formatCurrencyBRL, formatDateBR } from "@/lib/utils";
+import { brTodayRange } from "@/lib/br-time";
 import { displayClientName } from "@/lib/client-display";
 import { serviceInstanceStatusLabels, serviceInstanceStatusTone } from "@/lib/lead-labels";
 
@@ -18,10 +19,7 @@ export default async function ServicosAbertosPage({
   const { status, overdue: overdueParam, due } = await searchParams;
   const statuses = status ? status.split(",") : [];
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const endOfToday = new Date(today);
-  endOfToday.setHours(23, 59, 59, 999);
+  const { start: today, end: endOfToday } = brTodayRange();
 
   const impliesActiveOnly = statuses.length === 0 && Boolean(overdueParam || due);
 
@@ -55,7 +53,7 @@ export default async function ServicosAbertosPage({
         <select
           name="status"
           defaultValue={status ?? ""}
-          className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm"
+          className="h-11 min-w-0 max-w-full rounded-lg border border-slate-300 bg-white px-3 text-base md:h-10 md:text-sm"
         >
           <option value="">Todos os status</option>
           {Object.entries(serviceInstanceStatusLabels).map(([value, label]) => (

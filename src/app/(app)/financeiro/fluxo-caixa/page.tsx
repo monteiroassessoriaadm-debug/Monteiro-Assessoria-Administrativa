@@ -46,7 +46,8 @@ export default async function FluxoCaixaPage({
         orderBy: { paidAt: "asc" },
       }),
       prisma.commission.findMany({
-        where: { status: "PAGO", paidAt: { gte: rangeFrom, lte: rangeTo } },
+        // Comissão com payableId já aparece como saída em contas a pagar; somar de novo duplicaria.
+        where: { status: "PAGO", payableId: null, paidAt: { gte: rangeFrom, lte: rangeTo } },
         include: { user: true },
         orderBy: { paidAt: "asc" },
       }),

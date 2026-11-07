@@ -86,7 +86,7 @@ export default async function PropostaDetailPage({
                   <Link
                     key={s.id}
                     href={`/servicos-abertos/${s.id}`}
-                    className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2 text-sm hover:bg-slate-50"
+                    className="flex min-h-11 items-center justify-between gap-2 rounded-lg border border-slate-100 px-3 py-2 text-sm hover:bg-slate-50 md:min-h-0"
                   >
                     <span>
                       #{s.number} — {s.title}
@@ -127,7 +127,7 @@ export default async function PropostaDetailPage({
           <Field label="Forma de pagamento" value={proposal.paymentTerms} />
           <Field label="Validade" value={formatDateBR(proposal.validUntil)} />
           <Field label="Criada por" value={proposal.createdBy?.name} />
-          <div className="col-span-2">
+          <div className="sm:col-span-2">
             <Field label="Observações" value={proposal.notes} />
           </div>
         </CardContent>

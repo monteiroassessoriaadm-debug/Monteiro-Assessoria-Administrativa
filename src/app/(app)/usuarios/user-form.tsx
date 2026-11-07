@@ -71,7 +71,7 @@ export function UserForm({
               <p className="mt-1 text-xs text-red-600">{fieldError("role")}</p>
             )}
           </div>
-          <label className="col-span-2 flex items-center gap-2 text-sm">
+          <label className="sm:col-span-2 flex items-center gap-2 text-sm">
             <input
               type="checkbox"
               name="active"

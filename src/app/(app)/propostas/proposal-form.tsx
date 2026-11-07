@@ -138,7 +138,7 @@ export function ProposalForm({
               <p className="mt-1 text-xs text-red-600">{fieldError("validUntil")}</p>
             )}
           </div>
-          <div className="col-span-2">
+          <div className="sm:col-span-2">
             <Label>Observações</Label>
             <Textarea name="notes" rows={2} defaultValue={defaults?.notes} />
           </div>

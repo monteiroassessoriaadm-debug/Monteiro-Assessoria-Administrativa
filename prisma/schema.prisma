@@ -266,6 +266,7 @@ enum QuoteStatus {
   APROVADO
   RECUSADO
   EXPIRADO
+  CANCELADO
 }
 
 model Quote {
@@ -316,6 +317,7 @@ enum ProposalStatus {
   APROVADA
   RECUSADA
   EXPIRADA
+  CANCELADA
 }
 
 model Proposal {
@@ -622,6 +624,13 @@ model Receivable {
   status        ReceivableStatus  @default(PENDENTE)
   notes         String?
 
+  category     String? // categoria financeira — livre
+  businessLine String? // linha de negócio (assessoria, sites, educação...) — só para consulta, nunca muda a meta
+
+  // Estorno: nada se apaga. O lançamento original ganha reversedAt e o inverso aponta para ele.
+  reversedAt        DateTime?
+  reversesPayableId String? // preenchido quando esta entrada é o estorno de uma saída (não conta como faturamento)
+
   createdById String?
   createdBy   User?    @relation("ReceivableCreatedBy", fields: [createdById], references: [id])
   createdAt   DateTime @default(now())
@@ -653,6 +662,9 @@ model Payable {
   status    PayableStatus     @default(PENDENTE)
   notes     String?
 
+  reversedAt           DateTime?
+  reversesReceivableId String? // preenchido quando esta saída é o estorno de uma entrada (abate do faturamento)
+
   createdById String?
   createdBy   User?    @relation("PayableCreatedBy", fields: [createdById], references: [id])
   createdAt   DateTime @default(now())
@@ -674,6 +686,7 @@ enum CommissionCategory {
 enum CommissionStatus {
   PENDENTE
   PAGO
+  CANCELADO
 }
 
 model Commission {
@@ -694,6 +707,7 @@ model Commission {
   date       DateTime           @default(now())
   paidAt     DateTime?
   notes      String?
+  payableId  String?            @unique // saída no caixa gerada ao pagar; sem ela, a comissão paga é histórico antigo
 
   createdById String?
   createdBy   User?    @relation("CommissionCreatedBy", fields: [createdById], references: [id])
@@ -904,8 +918,53 @@ model McpAuditLog {
   userId  String?
   user    User?   @relation(fields: [userId], references: [id])
 
+  entity   String? // ex.: Payable, Client — registros antigos ficam sem estes campos
+  entityId String?
+  oldValue Json?
+  newValue Json?
+  source   String  @default("Claude") // "Claude" ou "usuário"
+
   createdAt DateTime @default(now())
 
   @@index([createdAt])
+  @@index([entity, entityId])
   @@map("mcp_audit_logs")
+}
+
+// ---------- Metas ----------
+// A meta conta dinheiro recebido, de qualquer linha de negócio. Sem linha nesta
+// tabela, a meta mensal é o salário mínimo do ano e a semanal é calculada dela.
+
+enum GoalType {
+  MENSAL
+  SEMANAL
+}
+
+model Goal {
+  id          String   @id @default(cuid())
+  type        GoalType
+  periodStart DateTime // dia 1 do mês (MENSAL) ou segunda-feira (SEMANAL), à meia-noite UTC
+  periodEnd   DateTime
+  amount      Decimal? // valor definido à mão; vazio quando automatic = true
+  automatic   Boolean  @default(true)
+  notes       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([type, periodStart])
+  @@map("goals")
+}
+
+// Editável por ano na tela de Metas, para atualizar em janeiro sem mexer em código.
+model YearlyConfig {
+  id             String  @id @default(cuid())
+  year           Int     @unique
+  minimumWage    Decimal
+  meiAnnualLimit Decimal
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("yearly_configs")
 }

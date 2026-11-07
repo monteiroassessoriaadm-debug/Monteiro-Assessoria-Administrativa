@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/permissions";
 import { prospectSchema } from "@/lib/validations";
+import { OperationError, deleteProspect, mergeProspects } from "@/lib/crm-operations";
 
 export type ProspectFormState = {
   error?: string;
@@ -64,6 +65,31 @@ export async function createProspectAction(
 
   revalidatePath("/prospeccao");
   redirect(`/prospeccao/${prospect.id}`);
+}
+
+export async function deleteProspectAction(prospectId: string): Promise<string | null> {
+  const session = await requireSession();
+  try {
+    await deleteProspect(prospectId, { userId: session.userId, source: "usuário", tool: "tela: excluir prospecção" });
+  } catch (e) {
+    if (e instanceof OperationError) return e.message;
+    throw e;
+  }
+  revalidatePath("/prospeccao");
+  redirect("/prospeccao");
+}
+
+export async function mergeProspectAction(keepId: string, absorbId: string): Promise<string | null> {
+  const session = await requireSession();
+  try {
+    await mergeProspects(keepId, absorbId, {}, { userId: session.userId, source: "usuário", tool: "tela: mesclar prospecções" });
+  } catch (e) {
+    if (e instanceof OperationError) return e.message;
+    throw e;
+  }
+  revalidatePath("/prospeccao");
+  revalidatePath(`/prospeccao/${keepId}`);
+  return null;
 }
 
 export async function updateProspectAction(

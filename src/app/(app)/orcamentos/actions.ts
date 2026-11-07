@@ -8,6 +8,7 @@ import { addTimelineEvent } from "@/lib/timeline";
 import { quoteSchema } from "@/lib/validations";
 import { QuoteStatus } from "@/generated/prisma/enums";
 import { formatCurrencyBRL } from "@/lib/utils";
+import { OperationError, cancelQuote } from "@/lib/crm-operations";
 
 export type QuoteFormState = {
   error?: string;
@@ -180,4 +181,18 @@ export async function rejectQuoteAction(quoteId: string) {
 
 export async function expireQuoteAction(quoteId: string) {
   await setQuoteStatus(quoteId, QuoteStatus.EXPIRADO);
+}
+
+/** Devolve a mensagem de erro para a tela, ou null se deu certo. */
+export async function cancelQuoteAction(quoteId: string): Promise<string | null> {
+  const session = await requireSession();
+  try {
+    await cancelQuote(quoteId, undefined, { userId: session.userId, source: "usuário", tool: "tela: cancelar orçamento" });
+  } catch (e) {
+    if (e instanceof OperationError) return e.message;
+    throw e;
+  }
+  revalidatePath("/orcamentos");
+  revalidatePath(`/orcamentos/${quoteId}`);
+  return null;
 }

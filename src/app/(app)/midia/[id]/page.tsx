@@ -66,10 +66,10 @@ export default async function MediaContentDetailPage({
           <Field label="Plataforma" value={content.platform} />
           <Field label="Responsável" value={content.responsible?.name} />
           <Field label="Data prevista" value={formatDateBR(content.scheduledDate)} />
-          <div className="col-span-2">
+          <div className="sm:col-span-2">
             <Field label="Descrição / pauta" value={content.description} />
           </div>
-          <div className="col-span-2">
+          <div className="sm:col-span-2">
             <Field label="Observações" value={content.notes} />
           </div>
           {content.approvedAt && (
@@ -80,7 +80,7 @@ export default async function MediaContentDetailPage({
               />
               <Field label="Em" value={formatDateTimeBR(content.approvedAt)} />
               {content.approvalNotes && (
-                <div className="col-span-2">
+                <div className="sm:col-span-2">
                   <Field label="Observação da aprovação" value={content.approvalNotes} />
                 </div>
               )}

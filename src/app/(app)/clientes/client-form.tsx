@@ -113,7 +113,7 @@ export function ClientForm({
             <CardTitle>Dados pessoais</CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="col-span-2">
+            <div className="sm:col-span-2">
               <Label>Nome completo *</Label>
               <Input name="fullName" defaultValue={defaults?.fullName} />
               {fieldError("fullName") && (
@@ -223,7 +223,7 @@ export function ClientForm({
           <CardTitle>Endereço</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div className="col-span-2">
+          <div className="sm:col-span-2">
             <Label>Endereço</Label>
             <Input name="addressStreet" defaultValue={defaults?.addressStreet} />
           </div>
@@ -293,7 +293,7 @@ export function ClientForm({
             <Label>Instagram</Label>
             <Input name="instagram" defaultValue={defaults?.instagram} />
           </div>
-          <div className="col-span-2">
+          <div className="sm:col-span-2">
             <Label>Observações</Label>
             <Textarea name="notes" rows={3} defaultValue={defaults?.notes} />
           </div>

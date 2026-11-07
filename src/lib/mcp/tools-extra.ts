@@ -316,6 +316,10 @@ export function registerExtraCrmTools(server: McpServer, ctx: Ctx) {
         tool: "atualizar_evento_agenda",
         summary: `Agenda: "${updated.title}" atualizado para ${fmtWall(updated.startAt)}`,
         userId: ctx.userId,
+        entity: "CalendarEvent",
+        entityId: id,
+        oldValue: { title: event.title, type: event.type, startAt: event.startAt, endAt: event.endAt, clientId: event.clientId, notes: event.notes },
+        newValue: { title: updated.title, type: updated.type, startAt: updated.startAt, endAt: updated.endAt, clientId: updated.clientId, notes: updated.notes },
       });
       return textResult({ ok: true, id, titulo: updated.title, inicio: fmtWall(updated.startAt), fim: fmtWall(updated.endAt) });
     },
@@ -336,6 +340,10 @@ export function registerExtraCrmTools(server: McpServer, ctx: Ctx) {
         tool: "excluir_evento_agenda",
         summary: `Agenda: "${event.title}" (${fmtWall(event.startAt)}) excluído`,
         userId: ctx.userId,
+        entity: "CalendarEvent",
+        entityId: id,
+        oldValue: event,
+        newValue: null,
       });
       return textResult({ ok: true, excluido: event.title });
     },
@@ -537,7 +545,15 @@ export function registerExtraCrmTools(server: McpServer, ctx: Ctx) {
       }
 
       const resumo = status ? `status ${status}` : "dados alterados";
-      await logMcpAction({ tool: "atualizar_conteudo", summary: `Mídia: conteúdo #${content.number} — ${resumo}`, userId: ctx.userId });
+      await logMcpAction({
+        tool: "atualizar_conteudo",
+        summary: `Mídia: conteúdo #${content.number} — ${resumo}`,
+        userId: ctx.userId,
+        entity: "MediaContent",
+        entityId: id,
+        oldValue: { title: content.title, type: content.type, platform: content.platform, scheduledDate: content.scheduledDate, status: content.status, link: content.link },
+        newValue: { title: updated.title, type: updated.type, platform: updated.platform, scheduledDate: updated.scheduledDate, status: updated.status, link: updated.link },
+      });
       if (status) {
         await logClientTimelineViaClaude({
           clientId: content.clientId,
@@ -744,7 +760,15 @@ export function registerExtraCrmTools(server: McpServer, ctx: Ctx) {
           convertedLeadId: a.lead_id ?? undefined,
         },
       });
-      await logMcpAction({ tool: "atualizar_prospeccao", summary: `Prospecção: ${p.name} atualizada`, userId: ctx.userId });
+      await logMcpAction({
+        tool: "atualizar_prospeccao",
+        summary: `Prospecção: ${p.name} atualizada`,
+        userId: ctx.userId,
+        entity: "ProspectingEntry",
+        entityId: a.id,
+        oldValue: { contactDate: p.contactDate, nextContactDate: p.nextContactDate, result: p.result, notes: p.notes, convertedLeadId: p.convertedLeadId },
+        newValue: { contactDate, nextContactDate: next, result: a.resultado, notes: a.observacoes, convertedLeadId: a.lead_id },
+      });
       return textResult({ ok: true, id: a.id });
     },
   );
@@ -899,7 +923,15 @@ export function registerExtraCrmTools(server: McpServer, ctx: Ctx) {
           deliveredAt: status === "CONCLUIDO" ? new Date() : undefined,
         },
       });
-      await logMcpAction({ tool: "atualizar_servico", summary: `Serviço #${s.number} (${s.title}) → ${updated.status}`, userId: ctx.userId });
+      await logMcpAction({
+        tool: "atualizar_servico",
+        summary: `Serviço #${s.number} (${s.title}) → ${updated.status}`,
+        userId: ctx.userId,
+        entity: "ServiceInstance",
+        entityId: id,
+        oldValue: { status: s.status, dueDate: s.dueDate, notes: s.notes },
+        newValue: { status: updated.status, dueDate: updated.dueDate, notes: updated.notes },
+      });
       if (status) {
         await logClientTimelineViaClaude({ clientId: s.clientId, type: "SERVICO_STATUS", description: `Serviço "${s.title}" agora está ${status}`, userId: ctx.userId });
       }
@@ -939,7 +971,15 @@ export function registerExtraCrmTools(server: McpServer, ctx: Ctx) {
       if (!item) return errorResult(`Item "${item_id}" não encontrado.`);
       const done = feito ?? true;
       await prisma.checklistItem.update({ where: { id: item_id }, data: { done, doneAt: done ? new Date() : null } });
-      await logMcpAction({ tool: "marcar_checklist", summary: `Checklist: "${item.description}" ${done ? "feito" : "reaberto"}`, userId: ctx.userId });
+      await logMcpAction({
+        tool: "marcar_checklist",
+        summary: `Checklist: "${item.description}" ${done ? "feito" : "reaberto"}`,
+        userId: ctx.userId,
+        entity: "ChecklistItem",
+        entityId: item_id,
+        oldValue: { done: item.done },
+        newValue: { done },
+      });
       return textResult({ ok: true, item: item.description, feito: done });
     },
   );

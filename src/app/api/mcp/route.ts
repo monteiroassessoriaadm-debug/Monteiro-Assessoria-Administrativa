@@ -4,6 +4,7 @@ import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/
 import { findValidAccessToken } from "@/lib/oauth";
 import { registerCrmTools } from "@/lib/mcp/tools";
 import { registerExtraCrmTools } from "@/lib/mcp/tools-extra";
+import { registerFase1CrmTools } from "@/lib/mcp/tools-fase1";
 
 export const runtime = "nodejs";
 
@@ -32,6 +33,7 @@ async function handle(request: NextRequest): Promise<Response> {
   const server = new McpServer({ name: "monteiro-crm", version: "1.0.0" });
   registerCrmTools(server, { userId: tokenRecord.userId });
   registerExtraCrmTools(server, { userId: tokenRecord.userId });
+  registerFase1CrmTools(server, { userId: tokenRecord.userId });
 
   const transport = new WebStandardStreamableHTTPServerTransport({
     sessionIdGenerator: undefined,

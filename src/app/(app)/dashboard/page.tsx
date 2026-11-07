@@ -33,6 +33,9 @@ import { displayClientName } from "@/lib/client-display";
 import { getSession } from "@/lib/session";
 import { getMonthlyChartSeries } from "@/lib/dashboard-charts";
 import { MonthlyLineChart } from "@/components/dashboard/monthly-line-chart";
+import { GoalsSection } from "@/components/dashboard/goals-section";
+import { getGoalsProgress } from "@/lib/goals";
+import { brTodayRange } from "@/lib/br-time";
 
 const QUOTE_AWAITING_STATUSES = ["ENVIADO", "VISUALIZADO", "EM_NEGOCIACAO"] as const;
 const ACTIVE_SERVICE_STATUSES = ["ABERTO", "EM_ANDAMENTO", "EM_REVISAO"] as const;
@@ -44,10 +47,8 @@ export default async function DashboardPage() {
   const thirtyDaysAgo = daysAgo(30);
   const threeDaysAgo = daysAgo(3);
   const reactivationCutoff = daysAgo(REACTIVATION_DAYS);
-  const endOfToday = new Date();
-  endOfToday.setHours(23, 59, 59, 999);
-  const startOfToday = new Date();
-  startOfToday.setHours(0, 0, 0, 0);
+  const { start: startOfToday, end: endOfToday } = brTodayRange();
+  const goalsProgress = canSeeFinanceiro ? await getGoalsProgress() : null;
 
   const [
     leadsNovos,
@@ -264,6 +265,8 @@ export default async function DashboardPage() {
         </Link>
       </div>
 
+      {goalsProgress && <GoalsSection progress={goalsProgress} />}
+
       {followUpCount > 0 && (
         <Card className="border-amber-200 bg-amber-50">
           <CardHeader className="border-amber-100">
@@ -312,7 +315,7 @@ export default async function DashboardPage() {
             ))}
             <Link
               href="/assistente"
-              className="flex items-center gap-1 pt-1 text-sm font-medium text-amber-800 hover:underline"
+              className="flex min-h-11 items-center gap-1 pt-1 text-sm font-medium text-amber-800 hover:underline md:min-h-0"
             >
               <Sparkles className="h-3.5 w-3.5" /> Ver análise completa na Monteiro IA →
             </Link>

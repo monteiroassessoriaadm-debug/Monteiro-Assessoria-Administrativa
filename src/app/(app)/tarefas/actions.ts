@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/permissions";
 import { taskSchema } from "@/lib/validations";
 import { TaskStatus } from "@/generated/prisma/enums";
+import { OperationError, deleteTask, updateTask } from "@/lib/crm-operations";
 
 export type TaskFormState = {
   error?: string;
@@ -48,6 +49,38 @@ export async function createTaskAction(
 
   revalidatePath("/tarefas");
   redirect("/tarefas");
+}
+
+export async function updateTaskAction(
+  taskId: string,
+  _prevState: TaskFormState,
+  formData: FormData,
+): Promise<TaskFormState> {
+  const session = await requireSession();
+  try {
+    await updateTask(
+      taskId,
+      {
+        title: String(formData.get("title") ?? ""),
+        description: String(formData.get("description") ?? ""),
+        dueDate: String(formData.get("dueDate") ?? ""),
+        assignedToId: String(formData.get("assignedToId") ?? ""),
+      },
+      { userId: session.userId, source: "usuário", tool: "tela: editar tarefa" },
+    );
+  } catch (e) {
+    if (e instanceof OperationError) return { error: e.message };
+    throw e;
+  }
+
+  revalidatePath("/tarefas");
+  redirect("/tarefas");
+}
+
+export async function deleteTaskAction(taskId: string) {
+  const session = await requireSession();
+  await deleteTask(taskId, { userId: session.userId, source: "usuário", tool: "tela: excluir tarefa" });
+  revalidatePath("/tarefas");
 }
 
 export async function toggleTaskDoneAction(taskId: string) {

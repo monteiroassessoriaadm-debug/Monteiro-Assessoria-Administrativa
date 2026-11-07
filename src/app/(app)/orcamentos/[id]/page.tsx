@@ -92,7 +92,7 @@ export default async function OrcamentoDetailPage({
                   <Link
                     key={s.id}
                     href={`/servicos-abertos/${s.id}`}
-                    className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-100 px-3 py-2 text-sm hover:bg-slate-50"
+                    className="flex min-h-11 flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-100 px-3 py-2 text-sm hover:bg-slate-50 md:min-h-0"
                   >
                     <span>
                       #{s.number} — {s.title}

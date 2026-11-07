@@ -7,6 +7,7 @@ import { requireSession } from "@/lib/permissions";
 import { addTimelineEvent } from "@/lib/timeline";
 import { proposalSchema } from "@/lib/validations";
 import { ProposalStatus } from "@/generated/prisma/enums";
+import { OperationError, cancelProposal } from "@/lib/crm-operations";
 
 export type ProposalFormState = {
   error?: string;
@@ -156,4 +157,18 @@ export async function rejectProposalAction(proposalId: string) {
 
 export async function expireProposalAction(proposalId: string) {
   await setProposalStatus(proposalId, ProposalStatus.EXPIRADA);
+}
+
+/** Devolve a mensagem de erro para a tela, ou null se deu certo. */
+export async function cancelProposalAction(proposalId: string): Promise<string | null> {
+  const session = await requireSession();
+  try {
+    await cancelProposal(proposalId, undefined, { userId: session.userId, source: "usuário", tool: "tela: cancelar proposta" });
+  } catch (e) {
+    if (e instanceof OperationError) return e.message;
+    throw e;
+  }
+  revalidatePath("/propostas");
+  revalidatePath(`/propostas/${proposalId}`);
+  return null;
 }

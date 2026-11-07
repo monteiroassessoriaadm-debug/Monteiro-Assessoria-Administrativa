@@ -55,7 +55,7 @@ export function ServiceForm({
           <CardTitle>Serviço</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="col-span-2">
+          <div className="sm:col-span-2">
             <Label>Nome do serviço *</Label>
             <Input name="name" defaultValue={defaults?.name} />
             {fieldError("name") && (
@@ -117,11 +117,11 @@ export function ServiceForm({
               <p className="mt-1 text-xs text-red-600">{fieldError("defaultTermDays")}</p>
             )}
           </div>
-          <div className="col-span-2">
+          <div className="sm:col-span-2">
             <Label>Descrição</Label>
             <Textarea name="description" rows={2} defaultValue={defaults?.description} />
           </div>
-          <div className="col-span-2">
+          <div className="sm:col-span-2">
             <Label>Checklist padrão (um item por linha)</Label>
             <Textarea
               name="checklistTemplate"
@@ -130,7 +130,7 @@ export function ServiceForm({
               defaultValue={jsonToChecklistText(defaults?.checklistTemplate)}
             />
           </div>
-          <label className="col-span-2 flex items-center gap-2 text-sm">
+          <label className="sm:col-span-2 flex items-center gap-2 text-sm">
             <input
               type="checkbox"
               name="active"

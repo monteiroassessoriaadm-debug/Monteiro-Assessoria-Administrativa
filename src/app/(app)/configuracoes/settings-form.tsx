@@ -64,7 +64,7 @@ export function SettingsForm({
               type="file"
               name="logo"
               accept="image/*"
-              className="block w-full text-sm text-slate-600 file:mr-4 file:rounded-lg file:border-0 file:bg-slate-900 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-slate-800"
+              className="block min-h-11 w-full text-sm text-slate-600 file:mr-4 file:min-h-11 file:rounded-lg file:border-0 file:bg-slate-900 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-slate-800 md:min-h-0 md:file:min-h-0"
             />
           </div>
         </CardContent>

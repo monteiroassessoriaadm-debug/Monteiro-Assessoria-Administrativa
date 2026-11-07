@@ -232,7 +232,7 @@ export function QuoteForm({
             <Label>Forma de pagamento</Label>
             <Input name="paymentTerms" defaultValue={defaults?.paymentTerms} />
           </div>
-          <div className="col-span-2">
+          <div className="sm:col-span-2">
             <Label>Observações</Label>
             <Textarea name="notes" rows={3} defaultValue={defaults?.notes} />
           </div>

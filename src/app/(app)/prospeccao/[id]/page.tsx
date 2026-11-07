@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatDateBR } from "@/lib/utils";
+import { DeleteProspectButton, MergeProspects } from "./prospect-actions";
 
 export default async function ProspeccaoDetailPage({
   params,
@@ -20,6 +21,11 @@ export default async function ProspeccaoDetailPage({
   });
 
   if (!prospect) notFound();
+
+  const duplicates = await prisma.prospectingEntry.findMany({
+    where: { id: { not: prospect.id }, name: { equals: prospect.name, mode: "insensitive" } },
+    orderBy: { createdAt: "asc" },
+  });
 
   const convertUrl = `/leads/novo?${new URLSearchParams({
     fromProspect: prospect.id,
@@ -63,8 +69,17 @@ export default async function ProspeccaoDetailPage({
               </Button>
             </Link>
           )}
+          <DeleteProspectButton prospectId={prospect.id} />
         </div>
       </div>
+
+      <MergeProspects
+        keepId={prospect.id}
+        candidates={duplicates.map((d) => ({
+          id: d.id,
+          label: `${d.name} — registrada em ${formatDateBR(d.createdAt)}, próximo contato ${formatDateBR(d.nextContactDate)}`,
+        }))}
+      />
 
       <Card>
         <CardHeader>
@@ -80,10 +95,10 @@ export default async function ProspeccaoDetailPage({
           <Field label="Responsável" value={prospect.responsible?.name} />
           <Field label="Data do contato" value={formatDateBR(prospect.contactDate)} />
           <Field label="Próximo contato" value={formatDateBR(prospect.nextContactDate)} />
-          <div className="col-span-2">
+          <div className="sm:col-span-2">
             <Field label="Resultado do contato" value={prospect.result} />
           </div>
-          <div className="col-span-2">
+          <div className="sm:col-span-2">
             <Field label="Observações" value={prospect.notes} />
           </div>
         </CardContent>

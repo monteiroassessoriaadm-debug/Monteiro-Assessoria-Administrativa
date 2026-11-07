@@ -1,0 +1,7 @@
+# Publicação pela linha de comando: segredos locais e artefatos nunca sobem.
+.env
+.env.*
+!.env.example
+.next
+node_modules
+.claude

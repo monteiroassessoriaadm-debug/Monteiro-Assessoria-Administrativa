@@ -49,7 +49,7 @@ export default async function DocumentosPage({
         <select
           name="status"
           defaultValue={status ?? ""}
-          className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm"
+          className="h-11 min-w-0 max-w-full rounded-lg border border-slate-300 bg-white px-3 text-base md:h-10 md:text-sm"
         >
           <option value="">Todos os status</option>
           {Object.entries(documentStatusLabels).map(([value, label]) => (

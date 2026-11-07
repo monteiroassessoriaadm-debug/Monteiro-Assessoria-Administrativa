@@ -25,15 +25,15 @@ export function TableCard({
   const body = (
     <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
       <div className="min-w-0">
-        <p className="truncate text-base font-medium text-slate-900">{title}</p>
-        {subtitle && <p className="truncate text-sm text-slate-500">{subtitle}</p>}
+        <p className="break-words text-base font-medium text-slate-900">{title}</p>
+        {subtitle && <p className="break-words text-sm text-slate-500">{subtitle}</p>}
       </div>
       {fields && fields.length > 0 && (
         <dl className="mt-3 space-y-1.5 border-t border-slate-100 pt-3">
           {fields.map((f, i) => (
-            <div key={i} className="flex items-center justify-between gap-3 text-sm">
+            <div key={i} className="flex items-start justify-between gap-3 text-sm">
               <dt className="shrink-0 text-slate-500">{f.label}</dt>
-              <dd className="min-w-0 truncate text-right font-medium text-slate-900">
+              <dd className="min-w-0 break-words text-right font-medium text-slate-900">
                 {f.value}
               </dd>
             </div>

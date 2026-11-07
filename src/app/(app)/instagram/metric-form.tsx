@@ -90,7 +90,7 @@ export function InstagramMetricForm({
               defaultValue={defaults?.profileVisits}
             />
           </div>
-          <div className="col-span-2">
+          <div className="sm:col-span-2">
             <Label>Observações / estratégia do período</Label>
             <Textarea
               name="notes"

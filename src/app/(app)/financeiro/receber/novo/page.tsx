@@ -1,5 +1,5 @@
-import { prisma } from "@/lib/prisma";
 import { displayClientName } from "@/lib/client-display";
+import { ReceivableFormLoader } from "../form-data";
 import { ReceivableForm } from "../receivable-form";
 import { createReceivableAction } from "../actions";
 
@@ -9,19 +9,7 @@ export default async function NovaContaReceberPage({
   searchParams: Promise<{ clientId?: string }>;
 }) {
   const { clientId } = await searchParams;
-
-  const [clients, accounts] = await Promise.all([
-    prisma.client.findMany({
-      where: { status: "ATIVO" },
-      select: { id: true, type: true, fullName: true, legalName: true, tradeName: true },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.financialAccount.findMany({
-      where: { active: true },
-      select: { id: true, name: true },
-      orderBy: { name: "asc" },
-    }),
-  ]);
+  const { clients, accounts, businessLines } = await ReceivableFormLoader();
 
   return (
     <div className="max-w-2xl space-y-6">
@@ -32,6 +20,7 @@ export default async function NovaContaReceberPage({
         action={createReceivableAction}
         clients={clients.map((c) => ({ id: c.id, label: displayClientName(c) }))}
         accounts={accounts}
+        businessLines={businessLines}
         defaultClientId={clientId}
       />
     </div>

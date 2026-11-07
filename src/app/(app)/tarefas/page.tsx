@@ -6,7 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatDateBR } from "@/lib/utils";
 import { displayClientName } from "@/lib/client-display";
+import { brTodayRange } from "@/lib/br-time";
 import { ToggleTaskButton } from "./toggle-task-button";
+import { TaskRowActions } from "./task-row-actions";
 
 export default async function TarefasPage({
   searchParams,
@@ -35,10 +37,8 @@ export default async function TarefasPage({
     prisma.user.findUnique({ where: { id: targetUserId }, select: { name: true } }),
   ]);
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
+  const { start: today, end: endOfToday } = brTodayRange();
+  const tomorrow = new Date(endOfToday.getTime() + 1);
 
   const pending = tasks.filter((t) => t.status === "PENDENTE");
   const done = tasks.filter((t) => t.status === "CONCLUIDA");
@@ -74,7 +74,7 @@ export default async function TarefasPage({
           <select
             name="assignedTo"
             defaultValue={targetUserId}
-            className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm"
+            className="h-11 min-w-0 max-w-full rounded-lg border border-slate-300 bg-white px-3 text-base md:h-10 md:text-sm"
           >
             <option value={session.userId}>Minhas tarefas</option>
             {users
@@ -139,7 +139,7 @@ function TaskGroup({
               <div className="mt-0.5">
                 <ToggleTaskButton taskId={task.id} done={task.status === "CONCLUIDA"} />
               </div>
-              <div className="flex-1">
+              <div className="min-w-0 flex-1 break-words">
                 <p className={task.status === "CONCLUIDA" ? "text-sm text-slate-400 line-through" : "text-sm text-slate-800"}>
                   {task.title}
                 </p>
@@ -153,6 +153,7 @@ function TaskGroup({
                   <p className="mt-1 text-xs text-slate-500">{task.description}</p>
                 )}
               </div>
+              <TaskRowActions taskId={task.id} />
             </div>
           ))
         )}

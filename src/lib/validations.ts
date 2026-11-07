@@ -362,6 +362,8 @@ export const receivableSchema = z.object({
   dueDate: optionalDateString,
   accountId: z.string().optional(),
   paymentMethod: z.string().optional(),
+  category: z.string().optional(),
+  businessLine: z.string().optional(),
   notes: z.string().optional(),
 });
 

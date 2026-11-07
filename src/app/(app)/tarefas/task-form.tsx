@@ -14,11 +14,15 @@ export function TaskForm({
   users,
   clients,
   defaultAssignedToId,
+  defaults,
+  submitLabel = "Criar tarefa",
 }: {
   action: (prevState: TaskFormState, formData: FormData) => Promise<TaskFormState>;
   users: { id: string; name: string }[];
-  clients: { id: string; label: string }[];
+  clients?: { id: string; label: string }[];
   defaultAssignedToId?: string;
+  defaults?: { title: string; description: string; dueDate: string };
+  submitLabel?: string;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
 
@@ -31,14 +35,14 @@ export function TaskForm({
         <CardContent className="space-y-4">
           <div>
             <Label>Título *</Label>
-            <Input name="title" />
+            <Input name="title" defaultValue={defaults?.title} />
             {state.fieldErrors?.title && (
               <p className="mt-1 text-xs text-red-600">{state.fieldErrors.title}</p>
             )}
           </div>
           <div>
             <Label>Descrição</Label>
-            <Textarea name="description" rows={3} />
+            <Textarea name="description" rows={3} defaultValue={defaults?.description} />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -54,23 +58,25 @@ export function TaskForm({
             </div>
             <div>
               <Label>Prazo</Label>
-              <Input type="date" name="dueDate" />
+              <Input type="date" name="dueDate" defaultValue={defaults?.dueDate} />
               {state.fieldErrors?.dueDate && (
                 <p className="mt-1 text-xs text-red-600">{state.fieldErrors.dueDate}</p>
               )}
             </div>
           </div>
-          <div>
-            <Label>Cliente relacionado</Label>
-            <Select name="clientId" defaultValue="">
-              <option value="">Nenhum</option>
-              {clients.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.label}
-                </option>
-              ))}
-            </Select>
-          </div>
+          {clients && (
+            <div>
+              <Label>Cliente relacionado</Label>
+              <Select name="clientId" defaultValue="">
+                <option value="">Nenhum</option>
+                {clients.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.label}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -79,8 +85,8 @@ export function TaskForm({
       )}
 
       <div className="flex justify-end">
-        <Button type="submit" disabled={pending}>
-          {pending ? "Salvando..." : "Criar tarefa"}
+        <Button type="submit" disabled={pending} className="w-full sm:w-auto">
+          {pending ? "Salvando..." : submitLabel}
         </Button>
       </div>
     </form>

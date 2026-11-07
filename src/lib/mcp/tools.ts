@@ -8,6 +8,7 @@ import { displayClientName } from "@/lib/client-display";
 import { formatCurrencyBRL, formatDateBR } from "@/lib/utils";
 import { addTimelineEvent } from "@/lib/timeline";
 import { logMcpAction, logClientTimelineViaClaude } from "@/lib/mcp/audit";
+import { brTodayRange } from "@/lib/br-time";
 
 type Ctx = { userId: string };
 
@@ -20,7 +21,7 @@ export function errorResult(message: string): CallToolResult {
   return { content: [{ type: "text", text: message }], isError: true };
 }
 
-async function resolveAccountId(nameOrId: string | undefined): Promise<
+export async function resolveAccountId(nameOrId: string | undefined): Promise<
   { ok: true; accountId: string | null } | { ok: false; error: string }
 > {
   if (!nameOrId) return { ok: true, accountId: null };
@@ -147,15 +148,11 @@ export function registerCrmTools(server: McpServer, ctx: Ctx) {
     {
       title: "Resumo do dia",
       description:
-        "Visão geral do CRM agora: saldo por conta, contas a receber/pagar pendentes e vencidas, tarefas atrasadas/hoje/próximas, leads com follow-up vencido, agenda de hoje e conteúdos de mídia dos próximos 7 dias.",
+        "Visão geral do CRM agora: progresso das metas, saldo por conta, contas a receber/pagar pendentes e vencidas, tarefas atrasadas/hoje/próximas, leads com follow-up vencido, agenda de hoje e conteúdos de mídia dos próximos 7 dias.",
       inputSchema: {},
     },
     async () => {
-      const today = new Date();
-      const startOfToday = new Date(today);
-      startOfToday.setHours(0, 0, 0, 0);
-      const endOfToday = new Date(today);
-      endOfToday.setHours(23, 59, 59, 999);
+      const { start: startOfToday, end: endOfToday } = brTodayRange();
       const next7Days = new Date(endOfToday.getTime() + 7 * 24 * 60 * 60 * 1000);
 
       const [
@@ -209,8 +206,11 @@ export function registerCrmTools(server: McpServer, ctx: Ctx) {
 
       const { agendaEConteudosResumo } = await import("@/lib/mcp/tools-extra");
       const extra = await agendaEConteudosResumo();
+      const { getGoalsProgress } = await import("@/lib/goals");
+      const { goalsForTool } = await import("@/lib/mcp/tools-fase1");
 
       return textResult({
+        metas: goalsForTool(await getGoalsProgress()),
         ...extra,
         saldoPorConta: balances.map((b) => ({
           conta: b.name,
@@ -251,8 +251,7 @@ export function registerCrmTools(server: McpServer, ctx: Ctx) {
       },
     },
     async ({ status, vencidas }) => {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const { start: today } = brTodayRange();
       const receivables = await prisma.receivable.findMany({
         where: {
           status: status ?? undefined,
@@ -311,6 +310,10 @@ export function registerCrmTools(server: McpServer, ctx: Ctx) {
         tool: "marcar_recebido",
         summary: `Conta a receber #${receivable.number} (${receivable.description}) marcada como recebida`,
         userId: ctx.userId,
+        entity: "Receivable",
+        entityId: id,
+        oldValue: { status: receivable.status, receivedAt: receivable.receivedAt, accountId: receivable.accountId },
+        newValue: { status: "RECEBIDO", receivedAt, accountId: accountResolution.accountId ?? receivable.accountId },
       });
       if (receivable.clientId) {
         await logClientTimelineViaClaude({
@@ -337,8 +340,7 @@ export function registerCrmTools(server: McpServer, ctx: Ctx) {
       },
     },
     async ({ status, vencidas }) => {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const { start: today } = brTodayRange();
       const payables = await prisma.payable.findMany({
         where: {
           status: status ?? undefined,
@@ -398,6 +400,10 @@ export function registerCrmTools(server: McpServer, ctx: Ctx) {
         tool: "marcar_pago",
         summary: `Conta a pagar #${payable.number} (${payable.description}) marcada como paga`,
         userId: ctx.userId,
+        entity: "Payable",
+        entityId: id,
+        oldValue: { status: payable.status, paidAt: payable.paidAt, accountId: payable.accountId },
+        newValue: { status: "PAGO", paidAt, accountId: accountResolution.accountId ?? payable.accountId },
       });
 
       return textResult({ ok: true, id, status: "PAGO", pagoEm: formatDateBR(paidAt) });
@@ -496,11 +502,7 @@ export function registerCrmTools(server: McpServer, ctx: Ctx) {
       },
     },
     async ({ status, prazo }) => {
-      const today = new Date();
-      const startOfToday = new Date(today);
-      startOfToday.setHours(0, 0, 0, 0);
-      const endOfToday = new Date(today);
-      endOfToday.setHours(23, 59, 59, 999);
+      const { start: startOfToday, end: endOfToday } = brTodayRange();
 
       const dueDateFilter =
         prazo === "atrasadas"
@@ -596,6 +598,10 @@ export function registerCrmTools(server: McpServer, ctx: Ctx) {
         tool: "concluir_tarefa",
         summary: `Tarefa concluída: ${task.title}`,
         userId: ctx.userId,
+        entity: "Task",
+        entityId: id,
+        oldValue: { status: task.status },
+        newValue: { status: "CONCLUIDA" },
       });
       if (task.clientId) {
         await logClientTimelineViaClaude({
@@ -653,59 +659,6 @@ export function registerCrmTools(server: McpServer, ctx: Ctx) {
           whatsapp: l.whatsapp,
         })),
       );
-    },
-  );
-
-  server.registerTool(
-    "atualizar_lead",
-    {
-      title: "Atualizar lead",
-      description: "Atualiza a etapa do funil e/ou a data do próximo contato de um lead.",
-      inputSchema: {
-        id: z.string(),
-        etapa: z
-          .enum([
-            "NOVO_LEAD",
-            "PRIMEIRO_CONTATO",
-            "EM_ATENDIMENTO",
-            "INTERESSADO",
-            "ORCAMENTO_ENVIADO",
-            "NEGOCIACAO",
-            "CONTRATADO",
-            "PERDIDO",
-          ])
-          .optional(),
-        proximo_contato: z.string().optional().describe("Data (YYYY-MM-DD)"),
-      },
-    },
-    async ({ id, etapa, proximo_contato }) => {
-      const lead = await prisma.lead.findUnique({ where: { id } });
-      if (!lead) return errorResult(`Lead "${id}" não encontrado.`);
-
-      await prisma.lead.update({
-        where: { id },
-        data: {
-          stage: etapa ?? undefined,
-          nextContactDate: proximo_contato ? new Date(proximo_contato) : undefined,
-          lastContactDate: new Date(),
-        },
-      });
-
-      await logMcpAction({
-        tool: "atualizar_lead",
-        summary: `Lead "${lead.name}" atualizado${etapa ? ` para ${etapa}` : ""}`,
-        userId: ctx.userId,
-      });
-      if (lead.clientId) {
-        await logClientTimelineViaClaude({
-          clientId: lead.clientId,
-          type: "LEAD_ATUALIZADO",
-          description: `Lead "${lead.name}" atualizado`,
-          userId: ctx.userId,
-        });
-      }
-
-      return textResult({ ok: true, id });
     },
   );
 

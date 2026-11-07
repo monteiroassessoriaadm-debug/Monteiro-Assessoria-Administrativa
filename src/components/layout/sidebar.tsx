@@ -27,6 +27,8 @@ import {
   Sparkles,
   BarChart3,
   Camera,
+  Goal,
+  History,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -49,6 +51,7 @@ const navGroups: NavGroup[] = [
     label: "Visão geral",
     items: [
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/metas", label: "Metas", icon: Goal, roles: ["ADMIN", "GESTOR"] },
       { href: "/assistente", label: "Monteiro IA", icon: Sparkles },
     ],
   },
@@ -132,6 +135,7 @@ const navGroups: NavGroup[] = [
         icon: MessageCircle,
         roles: ["ADMIN", "GESTOR"],
       },
+      { href: "/historico", label: "Histórico", icon: History, roles: ["ADMIN", "GESTOR"] },
       {
         href: "/configuracoes",
         label: "Configurações",
@@ -169,8 +173,8 @@ export function Sidebar({
       )}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex h-screen w-72 max-w-[85vw] shrink-0 flex-col overflow-y-auto bg-slate-950 text-slate-200 transition-transform duration-200 ease-out",
-          "md:static md:z-auto md:w-60 md:max-w-none md:translate-x-0",
+          "fixed inset-y-0 left-0 z-50 flex h-dvh w-72 max-w-[85vw] shrink-0 flex-col overflow-y-auto bg-slate-950 text-slate-200 transition-transform duration-200 ease-out",
+          "md:sticky md:top-0 md:z-auto md:w-60 md:max-w-none md:translate-x-0",
           mobileOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
@@ -190,7 +194,7 @@ export function Sidebar({
             type="button"
             onClick={onClose}
             aria-label="Fechar menu"
-            className="rounded-lg p-2 text-slate-400 hover:bg-white/5 hover:text-white md:hidden"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-slate-400 hover:bg-white/5 hover:text-white md:hidden"
           >
             <X className="h-5 w-5" />
           </button>
@@ -217,7 +221,7 @@ export function Sidebar({
                         href={item.href}
                         onClick={onClose}
                         className={cn(
-                          "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors md:py-2",
+                          "flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors md:min-h-0 md:py-2",
                           active
                             ? "bg-white/10 text-white"
                             : "text-slate-400 hover:bg-white/5 hover:text-white",

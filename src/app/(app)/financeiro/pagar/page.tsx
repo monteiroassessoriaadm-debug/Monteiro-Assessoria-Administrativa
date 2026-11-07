@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { TableCard, TableCardList, TableCardEmpty } from "@/components/ui/table-card";
 import { formatCurrencyBRL, formatDateBR } from "@/lib/utils";
 import { payableStatusLabels, payableStatusTone } from "@/lib/lead-labels";
+import { brTodayRange } from "@/lib/br-time";
 import { PayableStatusActions } from "./status-actions";
 
 export default async function ContasAPagarPage({
@@ -23,8 +24,7 @@ export default async function ContasAPagarPage({
     take: 200,
   });
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const { start: today } = brTodayRange();
 
   const totals = payables.reduce(
     (acc, p) => {
@@ -56,7 +56,7 @@ export default async function ContasAPagarPage({
         <select
           name="status"
           defaultValue={status ?? ""}
-          className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm"
+          className="h-11 min-w-0 max-w-full rounded-lg border border-slate-300 bg-white px-3 text-base md:h-10 md:text-sm"
         >
           <option value="">Todos os status</option>
           {Object.entries(payableStatusLabels).map(([value, label]) => (
@@ -97,10 +97,17 @@ export default async function ContasAPagarPage({
                   </td>
                   <td className="px-4 py-3 text-slate-600">{p.account?.name ?? "-"}</td>
                   <td className="px-4 py-3">
-                    <Badge tone={payableStatusTone[p.status]}>{payableStatusLabels[p.status]}</Badge>
+                    <Badge tone={payableStatusTone[p.status]}>
+                      {p.reversedAt ? "Estornado" : payableStatusLabels[p.status]}
+                    </Badge>
                   </td>
                   <td className="px-4 py-3">
-                    <PayableStatusActions payableId={p.id} status={p.status} />
+                    <PayableStatusActions
+                      payableId={p.id}
+                      status={p.status}
+                      reversed={Boolean(p.reversedAt)}
+                      isReversal={Boolean(p.reversesReceivableId)}
+                    />
                   </td>
                 </tr>
               );
@@ -138,10 +145,21 @@ export default async function ContasAPagarPage({
                 { label: "Conta", value: p.account?.name ?? "-" },
                 {
                   label: "Status",
-                  value: <Badge tone={payableStatusTone[p.status]}>{payableStatusLabels[p.status]}</Badge>,
+                  value: (
+                    <Badge tone={payableStatusTone[p.status]}>
+                      {p.reversedAt ? "Estornado" : payableStatusLabels[p.status]}
+                    </Badge>
+                  ),
                 },
               ]}
-              actions={<PayableStatusActions payableId={p.id} status={p.status} />}
+              actions={
+                <PayableStatusActions
+                  payableId={p.id}
+                  status={p.status}
+                  reversed={Boolean(p.reversedAt)}
+                  isReversal={Boolean(p.reversesReceivableId)}
+                />
+              }
             />
           );
         })}

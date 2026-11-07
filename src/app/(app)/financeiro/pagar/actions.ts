@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/permissions";
 import { payableSchema } from "@/lib/validations";
 import { PayableStatus } from "@/generated/prisma/enums";
+import { OperationError, cancelPayable, reverseMovement, updatePayable } from "@/lib/crm-operations";
 
 export type PayableFormState = {
   error?: string;
@@ -55,24 +56,84 @@ export async function createPayableAction(
   redirect("/financeiro/pagar");
 }
 
-async function setPayableStatus(payableId: string, status: PayableStatus) {
+export async function updatePayableAction(
+  payableId: string,
+  _prevState: PayableFormState,
+  formData: FormData,
+): Promise<PayableFormState> {
+  const session = await requireSession();
+
+  // Conta já paga trava valor e vencimento: campo desabilitado não vem no formulário.
+  const amount = formData.get("amount") as string | null;
+  const dueDate = formData.get("dueDate") as string | null;
+  if (amount !== null && !/^\d+(\.\d{1,2})?$/.test(amount)) {
+    return { error: "Verifique os campos destacados.", fieldErrors: { amount: "Informe um valor numérico válido." } };
+  }
+
+  try {
+    await updatePayable(
+      payableId,
+      {
+        description: String(formData.get("description") ?? ""),
+        amount: amount === null ? undefined : Number(amount),
+        dueDate: dueDate === null ? undefined : dueDate,
+        supplier: String(formData.get("supplier") ?? ""),
+        category: String(formData.get("category") ?? ""),
+        accountId: String(formData.get("accountId") ?? ""),
+        notes: String(formData.get("notes") ?? ""),
+      },
+      { userId: session.userId, source: "usuário", tool: "tela: editar conta a pagar" },
+    );
+  } catch (e) {
+    if (e instanceof OperationError) return { error: e.message };
+    throw e;
+  }
+
+  revalidatePath("/financeiro/pagar");
+  revalidatePath("/financeiro/fluxo-caixa");
+  redirect("/financeiro/pagar");
+}
+
+async function refresh() {
+  revalidatePath("/financeiro/pagar");
+  revalidatePath("/financeiro/receber");
+  revalidatePath("/financeiro/fluxo-caixa");
+  revalidatePath("/dashboard");
+}
+
+export async function markPayablePaidAction(payableId: string) {
   await requireSession();
   const payable = await prisma.payable.findUnique({ where: { id: payableId } });
   if (!payable) return;
 
   await prisma.payable.update({
     where: { id: payableId },
-    data: { status, paidAt: status === PayableStatus.PAGO ? new Date() : null },
+    data: { status: PayableStatus.PAGO, paidAt: new Date() },
   });
-
-  revalidatePath("/financeiro/pagar");
-  revalidatePath("/financeiro/fluxo-caixa");
+  await refresh();
 }
 
-export async function markPayablePaidAction(payableId: string) {
-  await setPayableStatus(payableId, PayableStatus.PAGO);
+/** Devolve a mensagem de erro para a tela, ou null se deu certo. */
+export async function cancelPayableAction(payableId: string): Promise<string | null> {
+  const session = await requireSession();
+  try {
+    await cancelPayable(payableId, undefined, { userId: session.userId, source: "usuário", tool: "tela: cancelar conta a pagar" });
+  } catch (e) {
+    if (e instanceof OperationError) return e.message;
+    throw e;
+  }
+  await refresh();
+  return null;
 }
 
-export async function cancelPayableAction(payableId: string) {
-  await setPayableStatus(payableId, PayableStatus.CANCELADO);
+export async function reversePayableAction(payableId: string): Promise<string | null> {
+  const session = await requireSession();
+  try {
+    await reverseMovement("saida", payableId, {}, { userId: session.userId, source: "usuário", tool: "tela: estornar saída" });
+  } catch (e) {
+    if (e instanceof OperationError) return e.message;
+    throw e;
+  }
+  await refresh();
+  return null;
 }

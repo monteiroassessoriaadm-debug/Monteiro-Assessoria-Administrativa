@@ -57,7 +57,7 @@ export function LeadForm({
           <CardTitle>Dados do lead</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="col-span-2">
+          <div className="sm:col-span-2">
             <Label>Nome *</Label>
             <Input name="name" defaultValue={defaults?.name} />
             {fieldError("name") && (
