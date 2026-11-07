@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { StatCard, SectionTitle } from "@/components/dashboard/stat-card";
 import { MonthlyLineChart } from "@/components/dashboard/monthly-line-chart";
 import { formatDateBR, formatCompactNumber } from "@/lib/utils";
+import { TableCard, TableCardList, TableCardEmpty } from "@/components/ui/table-card";
 import { DeleteMetricButton } from "./delete-metric-button";
 
 export default async function InstagramPage() {
@@ -38,7 +39,7 @@ export default async function InstagramPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Instagram</h1>
           <p className="text-sm text-slate-500">
@@ -53,7 +54,7 @@ export default async function InstagramPage() {
       </div>
 
       <section>
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-4">
           <StatCard
             label="Seguidores (atual)"
             value={latest ? formatCompactNumber(latest.followers) : "-"}
@@ -125,7 +126,7 @@ export default async function InstagramPage() {
 
       <section>
         <SectionTitle>Histórico de registros</SectionTitle>
-        <Card className="overflow-hidden">
+        <Card className="hidden overflow-hidden md:block">
           <table className="w-full text-sm">
             <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
               <tr>
@@ -178,6 +179,38 @@ export default async function InstagramPage() {
             </tbody>
           </table>
         </Card>
+
+        <TableCardList>
+          {[...metrics].reverse().map((m) => (
+            <TableCard
+              key={m.id}
+              title={formatDateBR(m.date)}
+              subtitle={m.notes ?? undefined}
+              fields={[
+                { label: "Seguidores", value: formatCompactNumber(m.followers) },
+                { label: "Curtidas", value: formatCompactNumber(m.likes) },
+                { label: "Comentários", value: formatCompactNumber(m.comments) },
+                { label: "Alcance", value: formatCompactNumber(m.reach) },
+              ]}
+              actions={
+                <div className="flex w-full items-center gap-2">
+                  <Link
+                    href={`/instagram/${m.id}/editar`}
+                    className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                  >
+                    <Pencil className="h-4 w-4" /> Editar
+                  </Link>
+                  <DeleteMetricButton metricId={m.id} />
+                </div>
+              }
+            />
+          ))}
+          {metrics.length === 0 && (
+            <TableCardEmpty>
+              Nenhum registro ainda. Adicione o primeiro para começar a acompanhar o crescimento.
+            </TableCardEmpty>
+          )}
+        </TableCardList>
       </section>
     </div>
   );

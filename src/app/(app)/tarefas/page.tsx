@@ -49,7 +49,7 @@ export default async function TarefasPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-slate-900">
             {showAllOverdue
@@ -70,7 +70,7 @@ export default async function TarefasPage({
       </div>
 
       {!showAllOverdue && isAdmin && users.length > 0 && (
-        <form className="flex gap-3">
+        <form className="flex flex-wrap gap-3">
           <select
             name="assignedTo"
             defaultValue={targetUserId}

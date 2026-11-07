@@ -34,7 +34,7 @@ export default async function LeadDetailPage({
 
   return (
     <div className="max-w-3xl space-y-6">
-      <div className="flex items-start justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-xl font-bold text-slate-900">{lead.name}</h1>
@@ -44,7 +44,7 @@ export default async function LeadDetailPage({
             Lead criado em {formatDateBR(lead.createdAt)}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {!lead.clientId && lead.stage !== "PERDIDO" && (
             <MarkLostButton leadId={lead.id} />
           )}
@@ -78,7 +78,7 @@ export default async function LeadDetailPage({
         <CardHeader>
           <CardTitle>Dados do lead</CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
           <Field label="WhatsApp" value={lead.whatsapp} />
           <Field label="Telefone" value={lead.phone} />
           <Field label="Instagram" value={lead.instagram} />

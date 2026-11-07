@@ -25,7 +25,7 @@ export default async function ModelosPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Modelos de documentos</h1>
           <p className="text-sm text-slate-500">
@@ -45,7 +45,7 @@ export default async function ModelosPage() {
           const latest = versions[0];
           return (
             <Card key={baseId} className="overflow-hidden">
-              <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-5 py-3">
                 <div>
                   <p className="font-semibold text-slate-900">{latest.name}</p>
                   <p className="text-xs text-slate-500">{latest.category ?? "Sem categoria"}</p>
@@ -54,7 +54,7 @@ export default async function ModelosPage() {
                   {latest.active ? "Ativo" : "Inativo"}
                 </Badge>
               </div>
-              <table className="w-full text-sm">
+              <table className="hidden w-full text-sm md:table">
                 <tbody className="divide-y divide-slate-100">
                   {versions.map((v) => (
                     <tr key={v.id} className="hover:bg-slate-50">
@@ -79,6 +79,29 @@ export default async function ModelosPage() {
                   ))}
                 </tbody>
               </table>
+
+              <div className="divide-y divide-slate-100 md:hidden">
+                {versions.map((v) => (
+                  <div key={v.id} className="flex flex-col gap-2 px-5 py-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm text-slate-600">Versão {v.version}</span>
+                      <Badge tone={v.active ? "green" : "slate"}>
+                        {v.active ? "Ativo" : "Inativo"}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href={`/configuracoes/modelos/${v.id}/editar`}
+                        className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                      >
+                        <Pencil className="h-4 w-4" /> Editar
+                      </Link>
+                      <DuplicateTemplateButton templateId={v.id} />
+                      <ToggleTemplateActiveButton templateId={v.id} active={v.active} />
+                    </div>
+                  </div>
+                ))}
+              </div>
             </Card>
           );
         })}

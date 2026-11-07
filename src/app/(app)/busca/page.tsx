@@ -26,7 +26,7 @@ function ResultSection({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
+        <CardTitle className="flex flex-wrap items-center justify-between gap-3">
           <span>{title}</span>
           <Badge tone="slate">{items.length}</Badge>
         </CardTitle>

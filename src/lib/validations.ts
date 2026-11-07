@@ -347,6 +347,8 @@ export const financialAccountSchema = z.object({
   name: z.string().min(1, "Informe o nome da conta."),
   type: z.string().optional(),
   active: z.boolean().default(true),
+  openingBalance: optionalDecimalString,
+  openingBalanceAt: optionalDateString,
 });
 
 export type FinancialAccountFormValues = z.infer<typeof financialAccountSchema>;

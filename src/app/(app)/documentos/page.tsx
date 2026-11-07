@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { TableCard, TableCardList, TableCardEmpty } from "@/components/ui/table-card";
 import { formatDateBR } from "@/lib/utils";
 import { displayClientName } from "@/lib/client-display";
 import { documentStatusLabels, documentStatusTone } from "@/lib/lead-labels";
@@ -30,7 +31,7 @@ export default async function DocumentosPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Documentos</h1>
           <p className="text-sm text-slate-500">
@@ -44,7 +45,7 @@ export default async function DocumentosPage({
         </Link>
       </div>
 
-      <form className="flex gap-3">
+      <form className="flex flex-wrap gap-3">
         <select
           name="status"
           defaultValue={status ?? ""}
@@ -62,7 +63,7 @@ export default async function DocumentosPage({
         </Button>
       </form>
 
-      <Card className="overflow-hidden">
+      <Card className="hidden overflow-hidden md:block">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
             <tr>
@@ -105,6 +106,28 @@ export default async function DocumentosPage({
           </tbody>
         </table>
       </Card>
+
+      <TableCardList>
+        {documents.map((d) => (
+          <TableCard
+            key={d.id}
+            href={`/documentos/${d.id}`}
+            title={`#${d.number} — ${d.title}`}
+            subtitle={displayClientName(d.client)}
+            fields={[
+              { label: "Modelo", value: `${d.template.name} (v${d.template.version})` },
+              {
+                label: "Status",
+                value: (
+                  <Badge tone={documentStatusTone[d.status]}>{documentStatusLabels[d.status]}</Badge>
+                ),
+              },
+              { label: "Gerado em", value: formatDateBR(d.createdAt) },
+            ]}
+          />
+        ))}
+        {documents.length === 0 && <TableCardEmpty>Nenhum documento gerado ainda.</TableCardEmpty>}
+      </TableCardList>
     </div>
   );
 }

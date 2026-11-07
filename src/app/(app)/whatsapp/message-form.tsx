@@ -43,7 +43,7 @@ export function WhatsAppMessageForm({
             Registro manual — não há envio automático. Envie a mensagem pelo WhatsApp
             normalmente e registre aqui para manter o histórico no cadastro do cliente.
           </p>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label>Direção</Label>
               <Select name="direction" defaultValue="ENVIADA">

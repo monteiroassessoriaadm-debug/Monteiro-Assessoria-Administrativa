@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
+import { TableCard, TableCardList, TableCardEmpty } from "@/components/ui/table-card";
 import { formatDateBR } from "@/lib/utils";
 import { displayClientName } from "@/lib/client-display";
 import { mediaContentStatusLabels, mediaContentStatusTone } from "@/lib/lead-labels";
@@ -36,7 +37,7 @@ export default async function MidiaPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Calendário de conteúdo</h1>
           <p className="text-sm text-slate-500">
@@ -72,7 +73,7 @@ export default async function MidiaPage({
         </Button>
       </form>
 
-      <Card className="overflow-hidden">
+      <Card className="hidden overflow-hidden md:block">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
             <tr>
@@ -122,6 +123,43 @@ export default async function MidiaPage({
           </tbody>
         </table>
       </Card>
+
+      <TableCardList>
+        {contents.map((c) => {
+          const overdue =
+            c.scheduledDate && c.scheduledDate < today && activeStatuses.includes(c.status);
+          return (
+            <TableCard
+              key={c.id}
+              href={`/midia/${c.id}`}
+              title={`#${c.number} — ${c.title}`}
+              subtitle={displayClientName(c.client)}
+              fields={[
+                {
+                  label: "Data prevista",
+                  value: (
+                    <span className={overdue ? "font-medium text-red-600" : undefined}>
+                      {formatDateBR(c.scheduledDate)}
+                      {overdue ? " (atrasado)" : ""}
+                    </span>
+                  ),
+                },
+                { label: "Tipo / plataforma", value: [c.type, c.platform].filter(Boolean).join(" · ") || "-" },
+                { label: "Responsável", value: c.responsible?.name ?? "-" },
+                {
+                  label: "Status",
+                  value: (
+                    <Badge tone={mediaContentStatusTone[c.status]}>
+                      {mediaContentStatusLabels[c.status]}
+                    </Badge>
+                  ),
+                },
+              ]}
+            />
+          );
+        })}
+        {contents.length === 0 && <TableCardEmpty>Nenhum conteúdo cadastrado ainda.</TableCardEmpty>}
+      </TableCardList>
     </div>
   );
 }

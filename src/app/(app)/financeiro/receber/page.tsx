@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { TableCard, TableCardList, TableCardEmpty } from "@/components/ui/table-card";
 import { formatCurrencyBRL, formatDateBR } from "@/lib/utils";
 import { displayClientName } from "@/lib/client-display";
 import { receivableStatusLabels, receivableStatusTone } from "@/lib/lead-labels";
@@ -40,7 +41,7 @@ export default async function ContasAReceberPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Contas a receber</h1>
           <p className="text-sm text-slate-500">
@@ -55,7 +56,7 @@ export default async function ContasAReceberPage({
         </Link>
       </div>
 
-      <form className="flex gap-3">
+      <form className="flex flex-wrap gap-3">
         <select
           name="status"
           defaultValue={status ?? ""}
@@ -73,7 +74,7 @@ export default async function ContasAReceberPage({
         </Button>
       </form>
 
-      <Card className="overflow-hidden">
+      <Card className="hidden overflow-hidden md:block">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
             <tr>
@@ -122,6 +123,44 @@ export default async function ContasAReceberPage({
           </tbody>
         </table>
       </Card>
+
+      <TableCardList>
+        {receivables.map((r) => {
+          const overdue = r.status === "PENDENTE" && r.dueDate && r.dueDate < today;
+          return (
+            <TableCard
+              key={r.id}
+              title={r.description}
+              subtitle={r.client ? displayClientName(r.client) : undefined}
+              fields={[
+                { label: "Valor", value: formatCurrencyBRL(r.amount.toString()) },
+                {
+                  label: "Vencimento",
+                  value: (
+                    <span className={overdue ? "font-medium text-red-600" : undefined}>
+                      {formatDateBR(r.dueDate)}
+                      {overdue ? " (vencida)" : ""}
+                    </span>
+                  ),
+                },
+                { label: "Conta", value: r.account?.name ?? "-" },
+                {
+                  label: "Status",
+                  value: (
+                    <Badge tone={receivableStatusTone[r.status]}>
+                      {receivableStatusLabels[r.status]}
+                    </Badge>
+                  ),
+                },
+              ]}
+              actions={<ReceivableStatusActions receivableId={r.id} status={r.status} />}
+            />
+          );
+        })}
+        {receivables.length === 0 && (
+          <TableCardEmpty>Nenhuma conta a receber ainda.</TableCardEmpty>
+        )}
+      </TableCardList>
     </div>
   );
 }

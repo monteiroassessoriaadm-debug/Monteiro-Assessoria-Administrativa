@@ -36,7 +36,7 @@ export function ReceivableForm({
               <p className="mt-1 text-xs text-red-600">{state.fieldErrors.description}</p>
             )}
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label>Cliente</Label>
               <Select name="clientId" defaultValue={defaultClientId ?? ""}>

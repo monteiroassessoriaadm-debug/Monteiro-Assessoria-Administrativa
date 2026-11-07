@@ -49,7 +49,7 @@ export function ProspectForm({
         <CardHeader>
           <CardTitle>Empresa ou pessoa potencial</CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-4">
+        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="col-span-2">
             <Label>Nome *</Label>
             <Input name="name" defaultValue={defaults?.name} />
@@ -106,7 +106,7 @@ export function ProspectForm({
         <CardHeader>
           <CardTitle>Contato</CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-4">
+        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <Label>Data do contato</Label>
             <Input type="date" name="contactDate" defaultValue={defaults?.contactDate} />

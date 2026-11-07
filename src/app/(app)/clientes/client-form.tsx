@@ -72,7 +72,7 @@ export function ClientForm({
         <CardHeader>
           <CardTitle>Tipo de cadastro</CardTitle>
         </CardHeader>
-        <CardContent className="flex gap-6">
+        <CardContent className="flex flex-wrap items-center gap-4 sm:gap-6">
           <label className="flex items-center gap-2 text-sm">
             <input
               type="radio"
@@ -93,7 +93,7 @@ export function ClientForm({
             />
             Pessoa Jurídica
           </label>
-          <label className="ml-auto flex items-center gap-2 text-sm">
+          <label className="flex items-center gap-2 text-sm sm:ml-auto">
             <span>Status</span>
             <Select
               name="status"
@@ -112,7 +112,7 @@ export function ClientForm({
           <CardHeader>
             <CardTitle>Dados pessoais</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-4">
+          <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="col-span-2">
               <Label>Nome completo *</Label>
               <Input name="fullName" defaultValue={defaults?.fullName} />
@@ -159,7 +159,7 @@ export function ClientForm({
           <CardHeader>
             <CardTitle>Dados da empresa</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-4">
+          <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label>Razão social *</Label>
               <Input name="legalName" defaultValue={defaults?.legalName} />
@@ -222,7 +222,7 @@ export function ClientForm({
         <CardHeader>
           <CardTitle>Endereço</CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-3 gap-4">
+        <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="col-span-2">
             <Label>Endereço</Label>
             <Input name="addressStreet" defaultValue={defaults?.addressStreet} />
@@ -264,7 +264,7 @@ export function ClientForm({
         <CardHeader>
           <CardTitle>Contato</CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-4">
+        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <Label>Telefone</Label>
             <Input

@@ -56,7 +56,7 @@ export function LeadForm({
         <CardHeader>
           <CardTitle>Dados do lead</CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-4">
+        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="col-span-2">
             <Label>Nome *</Label>
             <Input name="name" defaultValue={defaults?.name} />
@@ -128,7 +128,7 @@ export function LeadForm({
         <CardHeader>
           <CardTitle>Funil</CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-3 gap-4">
+        <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
             <Label>Temperatura</Label>
             <Select name="temperature" defaultValue={defaults?.temperature ?? "MORNO"}>

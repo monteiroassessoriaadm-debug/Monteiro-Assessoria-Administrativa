@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { TableCard, TableCardList, TableCardEmpty } from "@/components/ui/table-card";
 import { formatCurrencyBRL } from "@/lib/utils";
 import { getSession } from "@/lib/session";
 import { ToggleActiveButton } from "./toggle-active-button";
@@ -19,7 +20,7 @@ export default async function ServicosPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-slate-900">
             Catálogo de serviços
@@ -37,7 +38,7 @@ export default async function ServicosPage() {
         )}
       </div>
 
-      <Card className="overflow-hidden">
+      <Card className="hidden overflow-hidden md:block">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
             <tr>
@@ -95,6 +96,42 @@ export default async function ServicosPage() {
           </tbody>
         </table>
       </Card>
+
+      <TableCardList>
+        {services.map((s) => (
+          <TableCard
+            key={s.id}
+            title={s.name}
+            subtitle={s.category ?? undefined}
+            fields={[
+              {
+                label: "Preço padrão",
+                value: s.defaultPrice ? formatCurrencyBRL(s.defaultPrice.toString()) : "-",
+              },
+              { label: "Prazo padrão", value: s.defaultTermDays ? `${s.defaultTermDays} dias` : "-" },
+              { label: "Responsável padrão", value: s.defaultResponsible?.name ?? "-" },
+              {
+                label: "Status",
+                value: <Badge tone={s.active ? "green" : "slate"}>{s.active ? "Ativo" : "Inativo"}</Badge>,
+              },
+            ]}
+            actions={
+              canManage ? (
+                <div className="flex w-full items-center gap-2">
+                  <Link
+                    href={`/servicos/${s.id}/editar`}
+                    className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                  >
+                    <Pencil className="h-4 w-4" /> Editar
+                  </Link>
+                  <ToggleActiveButton serviceId={s.id} active={s.active} />
+                </div>
+              ) : undefined
+            }
+          />
+        ))}
+        {services.length === 0 && <TableCardEmpty>Nenhum serviço cadastrado ainda.</TableCardEmpty>}
+      </TableCardList>
     </div>
   );
 }

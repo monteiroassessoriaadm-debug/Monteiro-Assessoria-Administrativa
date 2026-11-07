@@ -276,7 +276,7 @@ export default async function DashboardPage() {
               <Link
                 key={q.id}
                 href={`/orcamentos/${q.id}`}
-                className="flex items-center justify-between rounded-lg bg-white px-3 py-2 text-sm hover:bg-slate-50"
+                className="flex flex-col gap-1 rounded-lg bg-white px-3 py-2 text-sm hover:bg-slate-50 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
               >
                 <span>
                   Orçamento #{q.number} de {displayClientName(q.client)} enviado em{" "}
@@ -289,7 +289,7 @@ export default async function DashboardPage() {
               <Link
                 key={l.id}
                 href={`/leads/${l.id}`}
-                className="flex items-center justify-between rounded-lg bg-white px-3 py-2 text-sm hover:bg-slate-50"
+                className="flex flex-col gap-1 rounded-lg bg-white px-3 py-2 text-sm hover:bg-slate-50 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
               >
                 <span>
                   Lead {l.name} — retorno previsto para {formatDateBR(l.nextContactDate)}
@@ -301,7 +301,7 @@ export default async function DashboardPage() {
               <Link
                 key={s.id}
                 href={`/servicos-abertos/${s.id}`}
-                className="flex items-center justify-between rounded-lg bg-white px-3 py-2 text-sm hover:bg-slate-50"
+                className="flex flex-col gap-1 rounded-lg bg-white px-3 py-2 text-sm hover:bg-slate-50 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
               >
                 <span>
                   Serviço &quot;{s.title}&quot; de {displayClientName(s.client)} — prazo era{" "}
@@ -385,7 +385,7 @@ export default async function DashboardPage() {
 
       <section>
         <SectionTitle>Comercial</SectionTitle>
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-4">
           <StatCard
             label="Leads novos"
             value={leadsNovos}
@@ -454,7 +454,7 @@ export default async function DashboardPage() {
 
       <section>
         <SectionTitle>Operacional</SectionTitle>
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-4">
           <StatCard
             label="Serviços em andamento"
             value={servicosEmAndamento}
@@ -505,7 +505,7 @@ export default async function DashboardPage() {
 
       <section>
         <SectionTitle>Bia / Mídia</SectionTitle>
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-4">
           <StatCard
             label="Aguardando aprovação"
             value={conteudosAguardandoAprovacao}
@@ -544,7 +544,7 @@ export default async function DashboardPage() {
       {financeiro && (
         <section>
           <SectionTitle>Financeiro</SectionTitle>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-4">
             <StatCard
               label="A receber (pendente)"
               value={formatCurrencyBRL(financeiro.pendenteReceber)}
@@ -579,7 +579,7 @@ export default async function DashboardPage() {
 
       <section>
         <SectionTitle>Equipe</SectionTitle>
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-4">
           <StatCard
             label="Administradores ativos"
             value={roleCounts.ADMIN ?? 0}
@@ -627,7 +627,7 @@ export default async function DashboardPage() {
 
       <section>
         <SectionTitle>Clientes</SectionTitle>
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-4">
           <StatCard
             label="Clientes ativos"
             value={clientesAtivos}

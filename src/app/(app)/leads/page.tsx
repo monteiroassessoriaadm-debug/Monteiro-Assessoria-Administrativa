@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { TableCard, TableCardList, TableCardEmpty } from "@/components/ui/table-card";
 import { formatDateBR } from "@/lib/utils";
 import { stageLabels, temperatureTone, temperatureLabel } from "@/lib/lead-labels";
 
@@ -31,14 +32,14 @@ export default async function LeadsPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Leads</h1>
           <p className="text-sm text-slate-500">
             Prospecção → Atendimento → Qualificação.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Link href="/funil">
             <Button variant="outline">
               <Kanban className="h-4 w-4" /> Ver funil
@@ -52,7 +53,7 @@ export default async function LeadsPage({
         </div>
       </div>
 
-      <form className="flex gap-3">
+      <form className="flex flex-wrap gap-3">
         <select
           name="stage"
           defaultValue={stage ?? ""}
@@ -80,7 +81,7 @@ export default async function LeadsPage({
         </Button>
       </form>
 
-      <Card className="overflow-hidden">
+      <Card className="hidden overflow-hidden md:block">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
             <tr>
@@ -136,6 +137,32 @@ export default async function LeadsPage({
           </tbody>
         </table>
       </Card>
+
+      <TableCardList>
+        {leads.map((lead) => (
+          <TableCard
+            key={lead.id}
+            href={`/leads/${lead.id}`}
+            title={lead.name}
+            subtitle={lead.whatsapp ?? lead.phone ?? undefined}
+            fields={[
+              { label: "Serviço de interesse", value: lead.serviceInterest?.name ?? "-" },
+              { label: "Responsável", value: lead.responsible?.name ?? "-" },
+              {
+                label: "Temperatura",
+                value: (
+                  <Badge tone={temperatureTone[lead.temperature]}>
+                    {temperatureLabel[lead.temperature]}
+                  </Badge>
+                ),
+              },
+              { label: "Etapa", value: stageLabels[lead.stage] },
+              { label: "Próximo contato", value: formatDateBR(lead.nextContactDate) },
+            ]}
+          />
+        ))}
+        {leads.length === 0 && <TableCardEmpty>Nenhum lead encontrado.</TableCardEmpty>}
+      </TableCardList>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { TableCard, TableCardList, TableCardEmpty } from "@/components/ui/table-card";
 import { formatDateTimeBR } from "@/lib/utils";
 import { displayClientName } from "@/lib/client-display";
 import { calendarEventTypeLabels } from "@/lib/lead-labels";
@@ -28,7 +29,7 @@ export default async function AgendaPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Agenda</h1>
           <p className="text-sm text-slate-500">
@@ -42,7 +43,7 @@ export default async function AgendaPage({
         </Link>
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <Link href="/agenda">
           <Button variant={showPast ? "outline" : "primary"} size="sm">
             Próximos
@@ -55,7 +56,7 @@ export default async function AgendaPage({
         </Link>
       </div>
 
-      <Card className="overflow-hidden">
+      <Card className="hidden overflow-hidden md:block">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
             <tr>
@@ -94,6 +95,25 @@ export default async function AgendaPage({
           </tbody>
         </table>
       </Card>
+
+      <TableCardList>
+        {events.map((e) => (
+          <TableCard
+            key={e.id}
+            title={e.title}
+            subtitle={formatDateTimeBR(e.startAt)}
+            fields={[
+              { label: "Tipo", value: <Badge tone="blue">{calendarEventTypeLabels[e.type]}</Badge> },
+              { label: "Cliente", value: e.client ? displayClientName(e.client) : "-" },
+              { label: "Responsável", value: e.responsible?.name ?? "-" },
+            ]}
+            actions={<DeleteEventButton eventId={e.id} />}
+          />
+        ))}
+        {events.length === 0 && (
+          <TableCardEmpty>Nenhum evento {showPast ? "passado" : "agendado"}.</TableCardEmpty>
+        )}
+      </TableCardList>
     </div>
   );
 }

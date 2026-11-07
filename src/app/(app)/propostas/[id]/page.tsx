@@ -27,7 +27,7 @@ export default async function PropostaDetailPage({
 
   return (
     <div className="max-w-3xl space-y-6">
-      <div className="flex items-start justify-between">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-xl font-bold text-slate-900">
@@ -44,7 +44,7 @@ export default async function PropostaDetailPage({
             — criada em {formatDateBR(proposal.createdAt)}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <a href={`/propostas/${proposal.id}/pdf`} target="_blank" rel="noreferrer">
             <Button variant="outline">
               <Download className="h-4 w-4" /> PDF
@@ -74,7 +74,7 @@ export default async function PropostaDetailPage({
           </CardHeader>
           <CardContent>
             {proposal.serviceInstances.length === 0 ? (
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-sm text-slate-500">
                   Nenhum serviço aberto ainda a partir desta proposta.
                 </p>
@@ -118,7 +118,7 @@ export default async function PropostaDetailPage({
         <CardHeader>
           <CardTitle>Investimento e condições</CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
           <Field
             label="Investimento"
             value={proposal.investment ? formatCurrencyBRL(proposal.investment.toString()) : null}

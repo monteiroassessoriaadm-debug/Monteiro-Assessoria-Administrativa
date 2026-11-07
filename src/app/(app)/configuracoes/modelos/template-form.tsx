@@ -79,7 +79,7 @@ export function TemplateForm({
         <CardHeader>
           <CardTitle>Modelo</CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-4">
+        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <Label>Nome do modelo *</Label>
             <Input name="name" defaultValue={defaults?.name} placeholder="Contrato de Prestação de Serviços" />
@@ -109,8 +109,8 @@ export function TemplateForm({
             </p>
           )}
           {fields.map((field) => (
-            <div key={field.rowKey} className="grid grid-cols-12 items-end gap-2 rounded-lg border border-slate-200 p-3">
-              <div className="col-span-3">
+            <div key={field.rowKey} className="grid grid-cols-1 gap-2 rounded-lg border border-slate-200 p-3 sm:grid-cols-12 sm:items-end">
+              <div className="sm:col-span-3">
                 <Label>Chave</Label>
                 <Input
                   value={field.key}
@@ -118,7 +118,7 @@ export function TemplateForm({
                   placeholder="VALOR_TOTAL"
                 />
               </div>
-              <div className="col-span-4">
+              <div className="sm:col-span-4">
                 <Label>Rótulo (exibido no formulário)</Label>
                 <Input
                   value={field.label}
@@ -126,7 +126,7 @@ export function TemplateForm({
                   placeholder="Valor total"
                 />
               </div>
-              <div className="col-span-2">
+              <div className="sm:col-span-2">
                 <Label>Tipo</Label>
                 <Select
                   value={field.type}
@@ -138,7 +138,7 @@ export function TemplateForm({
                   <option value="date">Data</option>
                 </Select>
               </div>
-              <div className="col-span-2 flex items-center gap-2 pb-2">
+              <div className="flex items-center gap-2 pb-2 sm:col-span-2">
                 <input
                   type="checkbox"
                   checked={field.required}
@@ -146,7 +146,7 @@ export function TemplateForm({
                 />
                 <span className="text-sm text-slate-600">Obrigatório</span>
               </div>
-              <div className="col-span-1 flex justify-end">
+              <div className="flex justify-end sm:col-span-1">
                 <Button
                   type="button"
                   variant="ghost"

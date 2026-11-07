@@ -4,7 +4,16 @@ import { jwtVerify } from "jose";
 
 const SESSION_COOKIE = "monteiro_session";
 // Site público (institucional) — não exige login.
-const PUBLIC_PATHS = ["/login", "/sobre", "/nossos-servicos", "/contato"];
+// As rotas .well-known/oauth-* também ficam públicas: são metadados de
+// descoberta do conector MCP, lidos pelo claude.ai antes de qualquer login.
+const PUBLIC_PATHS = [
+  "/login",
+  "/sobre",
+  "/nossos-servicos",
+  "/contato",
+  "/.well-known/oauth-authorization-server",
+  "/.well-known/oauth-protected-resource",
+];
 // Só esses redirecionam para o dashboard quando o usuário já está logado.
 const REDIRECT_IF_AUTHENTICATED = ["/login"];
 
@@ -35,7 +44,7 @@ export async function proxy(request: NextRequest) {
 
   if (!isPublic && !authenticated) {
     const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("callbackUrl", pathname);
+    loginUrl.searchParams.set("callbackUrl", pathname + request.nextUrl.search);
     return NextResponse.redirect(loginUrl);
   }
 

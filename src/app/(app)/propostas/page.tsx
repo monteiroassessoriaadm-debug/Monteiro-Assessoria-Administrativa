@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { TableCard, TableCardList, TableCardEmpty } from "@/components/ui/table-card";
 import { formatDateBR } from "@/lib/utils";
 import { displayClientName } from "@/lib/client-display";
 import { proposalStatusLabels, proposalStatusTone } from "@/lib/lead-labels";
@@ -24,7 +25,7 @@ export default async function PropostasPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Propostas</h1>
           <p className="text-sm text-slate-500">
@@ -38,7 +39,7 @@ export default async function PropostasPage({
         </Link>
       </div>
 
-      <form className="flex gap-3">
+      <form className="flex flex-wrap gap-3">
         <select
           name="status"
           defaultValue={status ?? ""}
@@ -56,7 +57,7 @@ export default async function PropostasPage({
         </Button>
       </form>
 
-      <Card className="overflow-hidden">
+      <Card className="hidden overflow-hidden md:block">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
             <tr>
@@ -95,6 +96,25 @@ export default async function PropostasPage({
           </tbody>
         </table>
       </Card>
+
+      <TableCardList>
+        {proposals.map((p) => (
+          <TableCard
+            key={p.id}
+            href={`/propostas/${p.id}`}
+            title={`#${p.number} — ${displayClientName(p.client)}`}
+            subtitle={p.demand}
+            fields={[
+              {
+                label: "Status",
+                value: <Badge tone={proposalStatusTone[p.status]}>{proposalStatusLabels[p.status]}</Badge>,
+              },
+              { label: "Criada em", value: formatDateBR(p.createdAt) },
+            ]}
+          />
+        ))}
+        {proposals.length === 0 && <TableCardEmpty>Nenhuma proposta encontrada.</TableCardEmpty>}
+      </TableCardList>
     </div>
   );
 }

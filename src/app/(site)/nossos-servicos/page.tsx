@@ -30,6 +30,8 @@ export default async function NossosServicosPage() {
   const services = allServices.filter((s) => !isCriacaoDeSites(s.name));
   const confeccao = allServices.find((s) => s.name === CRIACAO_DE_SITES.nomeConfeccao);
   const manutencao = allServices.find((s) => s.name === CRIACAO_DE_SITES.nomeManutencao);
+  // "Solicitar" aponta pro item da confecção ou, se ainda não existir, pro item genérico
+  const servicoSolicitar = confeccao ?? allServices.find((s) => isCriacaoDeSites(s.name));
   const precoConfeccao = formatCurrencyBRL(
     confeccao?.defaultPrice?.toString() ?? CRIACAO_DE_SITES.precoConfeccao,
   );
@@ -107,7 +109,7 @@ export default async function NossosServicosPage() {
                   <ExternalLink className="h-3 w-3" />
                 </a>
                 <Link
-                  href={confeccao ? `/contato?servico=${confeccao.id}` : "/contato"}
+                  href={servicoSolicitar ? `/contato?servico=${servicoSolicitar.id}` : "/contato"}
                   className="flex items-center gap-1 text-xs font-medium text-neutral-300 hover:text-[#d4af37]"
                 >
                   Solicitar <ArrowRight className="h-3 w-3" />

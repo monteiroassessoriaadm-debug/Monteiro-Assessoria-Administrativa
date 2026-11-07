@@ -26,7 +26,7 @@ function Section({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center justify-between">
+        <CardTitle className="flex flex-wrap items-center justify-between gap-3">
           <span>{title}</span>
           <Badge tone={insights.length > 0 ? "yellow" : "green"}>
             {insights.length} {insights.length === 1 ? "item" : "itens"}
@@ -41,7 +41,7 @@ function Section({
             <Link
               key={i.id}
               href={i.href}
-              className="flex items-center justify-between gap-4 rounded-lg border border-slate-100 px-3 py-2 text-sm hover:bg-slate-50"
+              className="flex flex-col gap-1 rounded-lg border border-slate-100 px-3 py-2 text-sm hover:bg-slate-50 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
             >
               <span className="text-slate-700">{i.text}</span>
               <span className="shrink-0 text-blue-600">{i.cta} →</span>

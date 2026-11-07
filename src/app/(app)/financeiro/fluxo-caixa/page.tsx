@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatCurrencyBRL, formatDateBR } from "@/lib/utils";
+import { getAccountBalances } from "@/lib/account-balance";
+import { TableCard, TableCardList, TableCardEmpty } from "@/components/ui/table-card";
 
 function startOfMonth(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), 1);
@@ -22,6 +24,11 @@ export default async function FluxoCaixaPage({
 }) {
   await requireRole(Role.ADMIN, Role.GESTOR);
   const { from, to } = await searchParams;
+
+  const accountBalances = await getAccountBalances();
+  const saldoAtualTotal = accountBalances
+    .filter((a) => a.active)
+    .reduce((sum, a) => sum + a.current, 0);
 
   const now = new Date();
   const rangeFrom = from ? new Date(from) : startOfMonth(now);
@@ -92,6 +99,41 @@ export default async function FluxoCaixaPage({
         </p>
       </div>
 
+      <Card className="p-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p className="text-xs font-medium uppercase text-slate-500">
+              Saldo atual em caixa
+            </p>
+            <p
+              className={`mt-1 text-2xl font-bold ${
+                saldoAtualTotal >= 0 ? "text-green-600" : "text-red-600"
+              }`}
+            >
+              {formatCurrencyBRL(saldoAtualTotal)}
+            </p>
+            <p className="text-xs text-slate-400">
+              Saldo inicial de cada conta + recebido − pago, sem considerar o período
+              filtrado abaixo.
+            </p>
+          </div>
+          {accountBalances.length > 0 && (
+            <div className="flex flex-wrap gap-4">
+              {accountBalances
+                .filter((a) => a.active)
+                .map((a) => (
+                  <div key={a.accountId} className="text-right">
+                    <p className="text-xs text-slate-500">{a.name}</p>
+                    <p className="text-sm font-semibold text-slate-700">
+                      {formatCurrencyBRL(a.current)}
+                    </p>
+                  </div>
+                ))}
+            </div>
+          )}
+        </div>
+      </Card>
+
       <form className="flex flex-wrap items-end gap-3">
         <div>
           <Label>De</Label>
@@ -144,7 +186,7 @@ export default async function FluxoCaixaPage({
         </Card>
       </div>
 
-      <Card className="overflow-hidden">
+      <Card className="hidden overflow-hidden md:block">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
             <tr>
@@ -183,6 +225,27 @@ export default async function FluxoCaixaPage({
           </tbody>
         </table>
       </Card>
+
+      <TableCardList>
+        {movements.map((m, i) => (
+          <TableCard
+            key={i}
+            title={m.description}
+            subtitle={formatDateBR(m.date)}
+            fields={[
+              {
+                label: m.type === "entrada" ? "Entrada" : "Saída",
+                value: (
+                  <span className={m.type === "entrada" ? "text-green-600" : "text-red-600"}>
+                    {m.type === "entrada" ? "+" : "-"} {formatCurrencyBRL(m.amount)}
+                  </span>
+                ),
+              },
+            ]}
+          />
+        ))}
+        {movements.length === 0 && <TableCardEmpty>Nenhuma movimentação no período.</TableCardEmpty>}
+      </TableCardList>
     </div>
   );
 }

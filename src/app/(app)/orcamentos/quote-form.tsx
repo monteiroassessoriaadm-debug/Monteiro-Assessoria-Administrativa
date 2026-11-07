@@ -110,7 +110,7 @@ export function QuoteForm({
         <CardHeader>
           <CardTitle>Cliente</CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-4">
+        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <Label>Cliente *</Label>
             <Select name="clientId" defaultValue={defaults?.clientId ?? ""}>
@@ -140,9 +140,9 @@ export function QuoteForm({
           {items.map((item, idx) => (
             <div
               key={item.key}
-              className="grid grid-cols-12 items-end gap-2 rounded-lg border border-slate-200 p-3"
+              className="grid grid-cols-1 gap-2 rounded-lg border border-slate-200 p-3 sm:grid-cols-12 sm:items-end"
             >
-              <div className="col-span-3">
+              <div className="sm:col-span-3">
                 <Label>Serviço</Label>
                 <Select
                   value={item.serviceId}
@@ -156,42 +156,44 @@ export function QuoteForm({
                   ))}
                 </Select>
               </div>
-              <div className="col-span-4">
+              <div className="sm:col-span-4">
                 <Label>Descrição</Label>
                 <Input
                   value={item.description}
                   onChange={(e) => updateItem(item.key, { description: e.target.value })}
                 />
               </div>
-              <div className="col-span-1">
-                <Label>Qtd.</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  value={item.quantity}
-                  onChange={(e) => updateItem(item.key, { quantity: e.target.value })}
-                />
+              <div className="grid grid-cols-3 gap-2 sm:contents">
+                <div className="sm:col-span-1">
+                  <Label>Qtd.</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={item.quantity}
+                    onChange={(e) => updateItem(item.key, { quantity: e.target.value })}
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <Label>Valor unit. (R$)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={item.unitPrice}
+                    onChange={(e) => updateItem(item.key, { unitPrice: e.target.value })}
+                  />
+                </div>
+                <div className="sm:col-span-1">
+                  <Label>Prazo (d)</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={item.termDays}
+                    onChange={(e) => updateItem(item.key, { termDays: e.target.value })}
+                  />
+                </div>
               </div>
-              <div className="col-span-2">
-                <Label>Valor unit. (R$)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={item.unitPrice}
-                  onChange={(e) => updateItem(item.key, { unitPrice: e.target.value })}
-                />
-              </div>
-              <div className="col-span-1">
-                <Label>Prazo (d)</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  value={item.termDays}
-                  onChange={(e) => updateItem(item.key, { termDays: e.target.value })}
-                />
-              </div>
-              <div className="col-span-1 flex justify-end">
+              <div className="flex justify-end sm:col-span-1">
                 <Button
                   type="button"
                   variant="ghost"
@@ -225,7 +227,7 @@ export function QuoteForm({
         <CardHeader>
           <CardTitle>Condições</CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-4">
+        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <Label>Forma de pagamento</Label>
             <Input name="paymentTerms" defaultValue={defaults?.paymentTerms} />
