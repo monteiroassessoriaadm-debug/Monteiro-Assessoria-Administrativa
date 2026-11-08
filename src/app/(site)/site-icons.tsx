@@ -5,6 +5,7 @@ import {
   Briefcase,
   Laptop,
   GraduationCap,
+  Globe,
   type LucideIcon,
 } from "lucide-react";
 
@@ -19,6 +20,8 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
   "prestacao de servicos": GraduationCap,
   "acadêmico": GraduationCap,
   academico: GraduationCap,
+  "criação de sites": Globe,
+  "criacao de sites": Globe,
 };
 
 export function iconForCategory(category: string | null | undefined): LucideIcon {
