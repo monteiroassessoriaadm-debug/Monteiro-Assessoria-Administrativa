@@ -28,6 +28,7 @@ export async function createCommissionAction(
     percentage: formData.get("percentage") || undefined,
     amount: formData.get("amount") || "",
     date: formData.get("date") || undefined,
+    accountId: formData.get("accountId") || undefined,
     notes: formData.get("notes") || undefined,
   });
 
@@ -49,6 +50,7 @@ export async function createCommissionAction(
       percentage: data.percentage || null,
       amount: data.amount,
       date: data.date ? new Date(data.date) : new Date(),
+      accountId: data.accountId || null,
       notes: data.notes || null,
       createdById: session.userId,
     },

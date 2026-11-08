@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Plus, Pencil } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { ActiveFilter } from "@/components/ui/active-filter";
 import { requireRole } from "@/lib/permissions";
 import { Role } from "@/generated/prisma/enums";
 import { Card } from "@/components/ui/card";
@@ -14,10 +15,17 @@ const roleLabels: Record<string, string> = {
   BIA: "Bia / Mídia",
 };
 
-export default async function UsuariosPage() {
+export default async function UsuariosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ papel?: string }>;
+}) {
   await requireRole(Role.ADMIN);
+  const { papel } = await searchParams;
+  const role = papel && papel in roleLabels ? (papel as Role) : null;
 
   const users = await prisma.user.findMany({
+    where: role ? { role, active: true } : undefined,
     select: { id: true, name: true, email: true, role: true, active: true },
     orderBy: { name: "asc" },
   });
@@ -38,7 +46,9 @@ export default async function UsuariosPage() {
         </Link>
       </div>
 
-      <Card className="hidden overflow-hidden md:block">
+      <ActiveFilter label={role ? `${roleLabels[role]} ativos` : null} clearHref="/usuarios" />
+
+      <Card className="table-scroll hidden overflow-x-auto md:block">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
             <tr>

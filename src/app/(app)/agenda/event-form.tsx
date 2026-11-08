@@ -14,10 +14,22 @@ export function EventForm({
   action,
   users,
   clients,
+  defaults,
+  submitLabel = "Criar evento",
 }: {
   action: (prevState: CalendarEventFormState, formData: FormData) => Promise<CalendarEventFormState>;
   users: { id: string; name: string }[];
   clients: { id: string; label: string }[];
+  defaults?: {
+    title: string;
+    type: string;
+    responsibleId: string;
+    startAt: string;
+    endAt: string;
+    clientId: string;
+    notes: string;
+  };
+  submitLabel?: string;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
 
@@ -30,7 +42,7 @@ export function EventForm({
         <CardContent className="space-y-4">
           <div>
             <Label>Título *</Label>
-            <Input name="title" />
+            <Input name="title" defaultValue={defaults?.title} />
             {state.fieldErrors?.title && (
               <p className="mt-1 text-xs text-red-600">{state.fieldErrors.title}</p>
             )}
@@ -38,7 +50,7 @@ export function EventForm({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label>Tipo *</Label>
-              <Select name="type" defaultValue="ATENDIMENTO">
+              <Select name="type" defaultValue={defaults?.type ?? "ATENDIMENTO"}>
                 {Object.entries(calendarEventTypeLabels).map(([value, label]) => (
                   <option key={value} value={value}>
                     {label}
@@ -48,7 +60,7 @@ export function EventForm({
             </div>
             <div>
               <Label>Responsável</Label>
-              <Select name="responsibleId" defaultValue="">
+              <Select name="responsibleId" defaultValue={defaults?.responsibleId ?? ""}>
                 <option value="">Não definido</option>
                 {users.map((u) => (
                   <option key={u.id} value={u.id}>
@@ -59,19 +71,19 @@ export function EventForm({
             </div>
             <div>
               <Label>Início *</Label>
-              <Input type="datetime-local" name="startAt" />
+              <Input type="datetime-local" name="startAt" defaultValue={defaults?.startAt} />
               {state.fieldErrors?.startAt && (
                 <p className="mt-1 text-xs text-red-600">{state.fieldErrors.startAt}</p>
               )}
             </div>
             <div>
               <Label>Término</Label>
-              <Input type="datetime-local" name="endAt" />
+              <Input type="datetime-local" name="endAt" defaultValue={defaults?.endAt} />
             </div>
           </div>
           <div>
             <Label>Cliente relacionado</Label>
-            <Select name="clientId" defaultValue="">
+            <Select name="clientId" defaultValue={defaults?.clientId ?? ""}>
               <option value="">Nenhum</option>
               {clients.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -82,7 +94,7 @@ export function EventForm({
           </div>
           <div>
             <Label>Observações</Label>
-            <Textarea name="notes" rows={3} />
+            <Textarea name="notes" rows={3} defaultValue={defaults?.notes} />
           </div>
         </CardContent>
       </Card>
@@ -92,8 +104,8 @@ export function EventForm({
       )}
 
       <div className="flex justify-end">
-        <Button type="submit" disabled={pending}>
-          {pending ? "Salvando..." : "Criar evento"}
+        <Button type="submit" disabled={pending} className="w-full sm:w-auto">
+          {pending ? "Salvando..." : submitLabel}
         </Button>
       </div>
     </form>

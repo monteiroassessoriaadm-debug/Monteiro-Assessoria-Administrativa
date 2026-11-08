@@ -1,28 +1,37 @@
 import Link from "next/link";
 import { Plus, Search } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { FilterDrawer } from "@/components/ui/filter-drawer";
+import { ActiveFilter } from "@/components/ui/active-filter";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TableCard, TableCardList, TableCardEmpty } from "@/components/ui/table-card";
-import { onlyDigits, maskPhone } from "@/lib/utils";
+import { daysAgo, onlyDigits, maskPhone } from "@/lib/utils";
+
+const REACTIVATION_DAYS = 90;
 import { displayClientName, displayClientDocument } from "@/lib/client-display";
 
 export default async function ClientesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; status?: string }>;
+  searchParams: Promise<{ q?: string; status?: string; novos?: string; reativacao?: string }>;
 }) {
-  const { q, status } = await searchParams;
+  const { q, status, novos, reativacao } = await searchParams;
+  const newDays = Number(novos) > 0 ? Number(novos) : null;
+  const reactivationCutoff = daysAgo(REACTIVATION_DAYS);
   const qDigits = q ? onlyDigits(q) : "";
   // Telefone/WhatsApp são salvos já mascarados (ex.: "(11) 93333-2222"), então
   // buscar pelos dígitos puros não bate — reaplicamos a máscara do formulário.
   const qMaskedPhone = qDigits.length >= 8 ? maskPhone(qDigits) : null;
 
-  const clients = await prisma.client.findMany({
+  const found = await prisma.client.findMany({
     where: {
       ...(status ? { status: status as "ATIVO" | "INATIVO" } : {}),
+      ...(newDays ? { createdAt: { gte: daysAgo(newDays) } } : {}),
+      // Mesma regra do cartão do dashboard: ativo, cadastrado há tempo e sem atividade recente.
+      ...(reativacao ? { status: "ATIVO" as const, createdAt: { lte: reactivationCutoff } } : {}),
       ...(q
         ? {
             OR: [
@@ -38,9 +47,13 @@ export default async function ClientesPage({
           }
         : {}),
     },
+    include: { timelineEvents: { orderBy: { createdAt: "desc" }, take: 1 } },
     orderBy: { createdAt: "desc" },
-    take: 100,
+    take: reativacao ? 300 : 100,
   });
+  const clients = reativacao
+    ? found.filter((c) => (c.timelineEvents[0]?.createdAt ?? c.createdAt) <= reactivationCutoff)
+    : found;
 
   return (
     <div className="space-y-6">
@@ -58,6 +71,7 @@ export default async function ClientesPage({
         </Link>
       </div>
 
+      <FilterDrawer label="Buscar e filtrar">
       <form className="flex flex-wrap gap-3">
         <div className="relative w-full max-w-sm flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -81,8 +95,23 @@ export default async function ClientesPage({
           Filtrar
         </Button>
       </form>
+      </FilterDrawer>
 
-      <Card className="hidden overflow-hidden md:block">
+      <ActiveFilter
+        label={
+          [
+            status === "ATIVO" ? "clientes ativos" : status === "INATIVO" ? "clientes inativos" : null,
+            newDays ? `novos nos últimos ${newDays} dias` : null,
+            reativacao ? `para reativação (sem atividade há ${REACTIVATION_DAYS} dias)` : null,
+            q ? `busca por "${q}"` : null,
+          ]
+            .filter(Boolean)
+            .join(" · ") || null
+        }
+        clearHref="/clientes"
+      />
+
+      <Card className="table-scroll hidden overflow-x-auto md:block">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
             <tr>

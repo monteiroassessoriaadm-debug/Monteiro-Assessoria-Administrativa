@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { FilterDrawer } from "@/components/ui/filter-drawer";
+import { ActiveFilter, statusLabel, statusList } from "@/components/ui/active-filter";
+import { queryRange } from "@/lib/br-time";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TableCard, TableCardList, TableCardEmpty } from "@/components/ui/table-card";
-import { formatCurrencyBRL, formatDateBR } from "@/lib/utils";
+import { daysAgo, formatCurrencyBRL, formatDateBR } from "@/lib/utils";
 import { displayClientName } from "@/lib/client-display";
 import { receivableStatusLabels, receivableStatusTone } from "@/lib/lead-labels";
 import { brTodayRange } from "@/lib/br-time";
@@ -14,16 +17,20 @@ import { ReceivableStatusActions } from "./status-actions";
 export default async function ContasAReceberPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; overdue?: string }>;
+  searchParams: Promise<{ status?: string; overdue?: string; dias?: string; de?: string; ate?: string }>;
 }) {
-  const { status, overdue: overdueParam } = await searchParams;
+  const { status, overdue: overdueParam, dias, de, ate } = await searchParams;
+  const statuses = statusList(status);
+  const days = Number(dias) > 0 ? Number(dias) : null;
 
   const { start: today } = brTodayRange();
 
   const receivables = await prisma.receivable.findMany({
     where: {
-      status: status ? (status as never) : overdueParam ? "PENDENTE" : undefined,
+      status: statuses.length ? { in: statuses as never[] } : overdueParam ? "PENDENTE" : undefined,
       ...(overdueParam ? { dueDate: { lt: today } } : {}),
+      ...(days ? { receivedAt: { gte: daysAgo(days) } } : {}),
+      ...(de && ate ? { receivedAt: queryRange(de, ate) } : {}),
     },
     include: { client: true, account: true },
     orderBy: [{ status: "asc" }, { dueDate: "asc" }],
@@ -56,6 +63,7 @@ export default async function ContasAReceberPage({
         </Link>
       </div>
 
+      <FilterDrawer>
       <form className="flex flex-wrap gap-3">
         <select
           name="status"
@@ -73,8 +81,23 @@ export default async function ContasAReceberPage({
           Filtrar
         </Button>
       </form>
+      </FilterDrawer>
 
-      <Card className="hidden overflow-hidden md:block">
+      <ActiveFilter
+        label={
+          [
+            statuses.length ? statusLabel(statuses, receivableStatusLabels) : null,
+            overdueParam ? "vencidas" : null,
+            days ? `últimos ${days} dias` : null,
+            de && ate ? `de ${formatDateBR(new Date(de))} a ${formatDateBR(new Date(ate))}` : null,
+          ]
+            .filter(Boolean)
+            .join(" · ") || null
+        }
+        clearHref="/financeiro/receber"
+      />
+
+      <Card className="table-scroll hidden overflow-x-auto md:block">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
             <tr>
@@ -135,6 +158,7 @@ export default async function ContasAReceberPage({
           return (
             <TableCard
               key={r.id}
+              href={`/financeiro/receber/${r.id}/editar`}
               title={r.description}
               subtitle={r.client ? displayClientName(r.client) : undefined}
               fields={[

@@ -31,7 +31,7 @@ export default async function FunilPage() {
         <div>
           <h1 className="text-xl font-bold text-slate-900">Funil de vendas</h1>
           <p className="text-sm text-slate-500">
-            Arraste os cartões entre as etapas para atualizar o estágio do lead.
+            Arraste os cartões entre as etapas para atualizar o estágio do lead. No celular, use &quot;Mover para&quot; em cada cartão.
           </p>
         </div>
         <Link href="/leads">

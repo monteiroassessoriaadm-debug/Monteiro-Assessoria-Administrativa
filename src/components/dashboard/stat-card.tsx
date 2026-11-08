@@ -5,12 +5,14 @@ import type { LucideIcon } from "lucide-react";
 export function StatCard({
   label,
   value,
+  hint,
   icon: Icon,
   tone = "slate",
   href,
 }: {
   label: string;
   value: string | number;
+  hint?: string;
   icon?: LucideIcon;
   tone?: "slate" | "green" | "red" | "amber" | "blue";
   href?: string;
@@ -26,33 +28,31 @@ export function StatCard({
   const content = (
     <>
       {Icon && (
-        <div className={cn("rounded-lg p-2.5", toneClasses[tone])}>
+        <div className={cn("hidden shrink-0 rounded-lg p-2.5 lg:block", toneClasses[tone])}>
           <Icon className="h-5 w-5" />
         </div>
       )}
-      <div>
-        <p className="text-2xl font-bold text-slate-900">{value}</p>
+      <div className="min-w-0">
+        <p className="flex flex-wrap items-baseline gap-x-1.5 text-lg font-bold text-slate-900 lg:text-2xl">
+          <span className="whitespace-nowrap">{value}</span>
+          {hint && <span className="whitespace-nowrap text-xs font-medium text-slate-500">{hint}</span>}
+        </p>
         <p className="text-xs text-slate-500">{label}</p>
       </div>
     </>
   );
 
+  const box = "flex min-w-0 items-center gap-4 rounded-xl border border-slate-200 bg-white p-3 shadow-sm md:p-4";
+
   if (href) {
     return (
-      <Link
-        href={href}
-        className="flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-colors hover:border-blue-300 hover:bg-blue-50/40"
-      >
+      <Link href={href} className={cn(box, "transition-colors hover:border-blue-300 hover:bg-blue-50/40")}>
         {content}
       </Link>
     );
   }
 
-  return (
-    <div className="flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      {content}
-    </div>
-  );
+  return <div className={box}>{content}</div>;
 }
 
 export function SectionTitle({ children }: { children: React.ReactNode }) {

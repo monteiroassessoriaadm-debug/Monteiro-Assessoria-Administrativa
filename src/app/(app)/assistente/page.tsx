@@ -43,7 +43,7 @@ function Section({
               href={i.href}
               className="flex flex-col gap-1 rounded-lg border border-slate-100 px-3 py-2 text-sm hover:bg-slate-50 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
             >
-              <span className="text-slate-700">{i.text}</span>
+              <span className="min-w-0 flex-1 text-slate-700">{i.text}</span>
               <span className="shrink-0 text-blue-600">{i.cta} →</span>
             </Link>
           ))

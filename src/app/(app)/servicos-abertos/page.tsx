@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { FilterDrawer } from "@/components/ui/filter-drawer";
+import { ActiveFilter, statusLabel, statusList } from "@/components/ui/active-filter";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,7 +19,7 @@ export default async function ServicosAbertosPage({
   searchParams: Promise<{ status?: string; overdue?: string; due?: string }>;
 }) {
   const { status, overdue: overdueParam, due } = await searchParams;
-  const statuses = status ? status.split(",") : [];
+  const statuses = statusList(status);
 
   const { start: today, end: endOfToday } = brTodayRange();
 
@@ -49,6 +51,7 @@ export default async function ServicosAbertosPage({
         </p>
       </div>
 
+      <FilterDrawer>
       <form className="flex flex-wrap gap-3">
         <select
           name="status"
@@ -66,8 +69,22 @@ export default async function ServicosAbertosPage({
           Filtrar
         </Button>
       </form>
+      </FilterDrawer>
 
-      <Card className="hidden overflow-hidden md:block">
+      <ActiveFilter
+        label={
+          [
+            statuses.length ? statusLabel(statuses, serviceInstanceStatusLabels) : null,
+            overdueParam ? "atrasados" : null,
+            due === "today" ? "para hoje" : null,
+          ]
+            .filter(Boolean)
+            .join(" · ") || null
+        }
+        clearHref="/servicos-abertos"
+      />
+
+      <Card className="table-scroll hidden overflow-x-auto md:block">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
             <tr>

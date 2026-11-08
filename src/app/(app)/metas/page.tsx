@@ -34,7 +34,7 @@ export default async function MetasPage() {
           <p className="text-sm text-slate-500">
             Semana abaixo da meta passa a diferença para as restantes. Semana boa não reduz as próximas.
           </p>
-          <div className="hidden overflow-hidden md:block">
+          <div className="table-scroll hidden overflow-x-auto md:block">
             <table className="w-full text-sm">
               <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
                 <tr>
@@ -81,7 +81,7 @@ export default async function MetasPage() {
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-sm text-slate-500">Só para consulta: isto nunca muda a meta, que é uma só sobre o total.</p>
-          <div className="hidden overflow-hidden md:block">
+          <div className="table-scroll hidden overflow-x-auto md:block">
             <table className="w-full text-sm">
               <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
                 <tr>

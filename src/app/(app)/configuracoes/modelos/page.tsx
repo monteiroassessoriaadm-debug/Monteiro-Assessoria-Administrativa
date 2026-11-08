@@ -44,7 +44,7 @@ export default async function ModelosPage() {
         {[...groups.entries()].map(([baseId, versions]) => {
           const latest = versions[0];
           return (
-            <Card key={baseId} className="overflow-hidden">
+            <Card key={baseId} className="overflow-x-auto">
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-5 py-3">
                 <div>
                   <p className="font-semibold text-slate-900">{latest.name}</p>

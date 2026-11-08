@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { moneyToInput } from "@/lib/money";
 import { PayableForm } from "../../payable-form";
 import { updatePayableAction } from "../../actions";
 
@@ -33,7 +34,7 @@ export default async function EditarContaPagarPage({
           description: payable.description,
           category: payable.category ?? "",
           supplier: payable.supplier ?? "",
-          amount: Number(payable.amount).toFixed(2),
+          amount: moneyToInput(payable.amount.toString()),
           dueDate: payable.dueDate ? payable.dueDate.toISOString().slice(0, 10) : "",
           accountId: payable.accountId ?? "",
           notes: payable.notes ?? "",

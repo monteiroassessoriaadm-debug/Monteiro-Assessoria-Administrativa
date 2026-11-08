@@ -112,7 +112,7 @@ export default async function OrcamentoDetailPage({
         <CardHeader>
           <CardTitle>Serviços</CardTitle>
         </CardHeader>
-        <CardContent className="hidden p-0 md:block">
+        <CardContent className="hidden overflow-x-auto p-0 md:block">
           <table className="w-full text-sm">
             <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
               <tr>

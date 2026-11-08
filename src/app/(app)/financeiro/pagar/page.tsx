@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { FilterDrawer } from "@/components/ui/filter-drawer";
+import { ActiveFilter, statusLabel, statusList } from "@/components/ui/active-filter";
+import { queryRange } from "@/lib/br-time";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,12 +16,16 @@ import { PayableStatusActions } from "./status-actions";
 export default async function ContasAPagarPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; de?: string; ate?: string }>;
 }) {
-  const { status } = await searchParams;
+  const { status, de, ate } = await searchParams;
+  const statuses = statusList(status);
 
   const payables = await prisma.payable.findMany({
-    where: status ? { status: status as never } : undefined,
+    where: {
+      ...(statuses.length ? { status: { in: statuses as never[] } } : {}),
+      ...(de && ate ? { paidAt: queryRange(de, ate) } : {}),
+    },
     include: { account: true },
     orderBy: [{ status: "asc" }, { dueDate: "asc" }],
     take: 200,
@@ -52,6 +59,7 @@ export default async function ContasAPagarPage({
         </Link>
       </div>
 
+      <FilterDrawer>
       <form className="flex flex-wrap gap-3">
         <select
           name="status"
@@ -69,8 +77,21 @@ export default async function ContasAPagarPage({
           Filtrar
         </Button>
       </form>
+      </FilterDrawer>
 
-      <Card className="hidden overflow-hidden md:block">
+      <ActiveFilter
+        label={
+          [
+            statuses.length ? statusLabel(statuses, payableStatusLabels) : null,
+            de && ate ? `de ${formatDateBR(new Date(de))} a ${formatDateBR(new Date(ate))}` : null,
+          ]
+            .filter(Boolean)
+            .join(" · ") || null
+        }
+        clearHref="/financeiro/pagar"
+      />
+
+      <Card className="table-scroll hidden overflow-x-auto md:block">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
             <tr>
@@ -129,6 +150,7 @@ export default async function ContasAPagarPage({
           return (
             <TableCard
               key={p.id}
+              href={`/financeiro/pagar/${p.id}/editar`}
               title={p.description}
               subtitle={p.supplier ?? undefined}
               fields={[

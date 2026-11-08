@@ -4,6 +4,7 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
+import { BottomNav, QuickAdd } from "@/components/layout/mobile-nav";
 import type { Role } from "@/generated/prisma/enums";
 
 export function AppShell({
@@ -42,10 +43,12 @@ export function AppShell({
       <div className="flex min-h-dvh min-w-0 flex-1 flex-col">
         <Topbar name={name} role={role} onMenuClick={() => setMobileNavOpen(true)} />
         {/* Sem overflow-x-hidden: esconder a sobra cortaria o conteúdo em vez de resolver. */}
-        <main className="min-w-0 flex-1 p-4 md:p-6">
+        <main className="min-w-0 flex-1 p-4 pb-[calc(6rem+env(safe-area-inset-bottom))] md:p-6">
           {children}
         </main>
       </div>
+      <BottomNav role={role} onMore={() => setMobileNavOpen(true)} />
+      <QuickAdd role={role} />
     </div>
   );
 }

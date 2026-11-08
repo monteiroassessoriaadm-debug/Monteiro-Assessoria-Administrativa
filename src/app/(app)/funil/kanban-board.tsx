@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import { Select } from "@/components/ui/select";
 import { formatDateBR, cn } from "@/lib/utils";
 import { LEAD_STAGES, stageLabels, temperatureTone, temperatureLabel } from "@/lib/lead-labels";
 import { moveLeadStageAction } from "./actions";
@@ -24,16 +25,20 @@ export function KanbanBoard({ leads }: { leads: KanbanLead[] }) {
   const [dragging, setDragging] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
-  function handleDrop(stage: string) {
-    if (!dragging) return;
-    const leadId = dragging;
-    setDragging(null);
+  function moveLead(leadId: string, stage: string) {
     setItems((prev) =>
       prev.map((l) => (l.id === leadId ? { ...l, stage } : l)),
     );
     startTransition(() => {
       moveLeadStageAction(leadId, stage);
     });
+  }
+
+  function handleDrop(stage: string) {
+    if (!dragging) return;
+    const leadId = dragging;
+    setDragging(null);
+    moveLead(leadId, stage);
   }
 
   return (
@@ -69,7 +74,7 @@ export function KanbanBoard({ leads }: { leads: KanbanLead[] }) {
                 >
                   <Link
                     href={`/leads/${lead.id}`}
-                    className="text-sm font-medium text-slate-900 hover:underline"
+                    className="flex min-h-11 items-center text-sm font-medium text-slate-900 hover:underline md:block md:min-h-0"
                   >
                     {lead.name}
                   </Link>
@@ -96,6 +101,20 @@ export function KanbanBoard({ leads }: { leads: KanbanLead[] }) {
                       {lead.responsible.name}
                     </p>
                   )}
+                  {/* Arrastar não funciona no toque: no celular, a etapa muda por aqui. */}
+                  <label className="mt-2 block md:hidden">
+                    <span className="mb-1 block text-xs text-slate-500">Mover para</span>
+                    <Select
+                      value={lead.stage}
+                      onChange={(e) => moveLead(lead.id, e.target.value)}
+                    >
+                      {LEAD_STAGES.map((s) => (
+                        <option key={s} value={s}>
+                          {stageLabels[s]}
+                        </option>
+                      ))}
+                    </Select>
+                  </label>
                 </div>
               ))}
               {stageLeads.length === 0 && (

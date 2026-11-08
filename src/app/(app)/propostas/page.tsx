@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { FilterDrawer } from "@/components/ui/filter-drawer";
+import { ActiveFilter, statusLabel, statusList } from "@/components/ui/active-filter";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,9 +17,10 @@ export default async function PropostasPage({
   searchParams: Promise<{ status?: string }>;
 }) {
   const { status } = await searchParams;
+  const statuses = statusList(status);
 
   const proposals = await prisma.proposal.findMany({
-    where: status ? { status: status as never } : undefined,
+    where: statuses.length ? { status: { in: statuses as never[] } } : undefined,
     include: { client: true },
     orderBy: { createdAt: "desc" },
     take: 100,
@@ -39,6 +42,7 @@ export default async function PropostasPage({
         </Link>
       </div>
 
+      <FilterDrawer>
       <form className="flex flex-wrap gap-3">
         <select
           name="status"
@@ -56,8 +60,11 @@ export default async function PropostasPage({
           Filtrar
         </Button>
       </form>
+      </FilterDrawer>
 
-      <Card className="hidden overflow-hidden md:block">
+      <ActiveFilter label={statuses.length ? statusLabel(statuses, proposalStatusLabels) : null} clearHref="/propostas" />
+
+      <Card className="table-scroll hidden overflow-x-auto md:block">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
             <tr>

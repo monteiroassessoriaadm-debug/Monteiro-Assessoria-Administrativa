@@ -98,7 +98,7 @@ export function ClientForm({
             <Select
               name="status"
               defaultValue={defaults?.status ?? "ATIVO"}
-              className="w-40"
+              className="w-full md:w-40"
             >
               <option value="ATIVO">Ativo</option>
               <option value="INATIVO">Inativo</option>

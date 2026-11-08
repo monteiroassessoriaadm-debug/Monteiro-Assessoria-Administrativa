@@ -8,6 +8,7 @@ import { addTimelineEvent } from "@/lib/timeline";
 import { receivableSchema } from "@/lib/validations";
 import { ReceivableStatus } from "@/generated/prisma/enums";
 import { OperationError, cancelReceivable, reverseMovement, updateReceivable } from "@/lib/crm-operations";
+import { normalizeMoney } from "@/lib/money";
 
 export type ReceivableFormState = {
   error?: string;
@@ -79,7 +80,8 @@ export async function updateReceivableAction(
   const session = await requireSession();
 
   // Conta já recebida trava valor e vencimento: campo desabilitado não vem no formulário.
-  const amount = formData.get("amount") as string | null;
+  const rawAmount = formData.get("amount") as string | null;
+  const amount = rawAmount === null ? null : normalizeMoney(rawAmount);
   const dueDate = formData.get("dueDate") as string | null;
   if (amount !== null && !/^\d+(\.\d{1,2})?$/.test(amount)) {
     return { error: "Verifique os campos destacados.", fieldErrors: { amount: "Informe um valor numérico válido." } };

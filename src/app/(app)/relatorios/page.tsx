@@ -1,6 +1,7 @@
 import { requireRole } from "@/lib/permissions";
 import { Role } from "@/generated/prisma/enums";
 import { prisma } from "@/lib/prisma";
+import { FilterDrawer } from "@/components/ui/filter-drawer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -105,6 +106,7 @@ export default async function RelatoriosPage({
         </p>
       </div>
 
+      <FilterDrawer label="Escolher período">
       <form className="flex flex-wrap items-end gap-3">
         <div>
           <Label>De</Label>
@@ -118,6 +120,7 @@ export default async function RelatoriosPage({
           Filtrar
         </Button>
       </form>
+      </FilterDrawer>
 
       <div className="grid gap-6 md:grid-cols-2">
         <Card>

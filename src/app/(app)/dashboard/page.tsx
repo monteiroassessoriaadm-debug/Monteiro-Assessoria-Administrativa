@@ -13,6 +13,7 @@ import {
   AlertTriangle,
   ClipboardList,
   CalendarClock,
+  CalendarDays,
   CheckSquare,
   ArrowDownCircle,
   ArrowUpCircle,
@@ -21,25 +22,28 @@ import {
   Send,
   Sparkles,
   RotateCcw,
-  FileDown,
   Camera,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { StatCard, SectionTitle } from "@/components/dashboard/stat-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { daysAgo, formatCurrencyBRL, formatDateBR } from "@/lib/utils";
+import { daysAgo, formatCurrencyBRL, formatDateBR, formatWallTime } from "@/lib/utils";
 import { displayClientName } from "@/lib/client-display";
 import { getSession } from "@/lib/session";
 import { getMonthlyChartSeries } from "@/lib/dashboard-charts";
-import { MonthlyLineChart } from "@/components/dashboard/monthly-line-chart";
 import { GoalsSection } from "@/components/dashboard/goals-section";
+import { BalanceCard } from "@/components/dashboard/balance-card";
+import { ChartTabs, type ChartTab } from "@/components/dashboard/chart-tabs";
+import { CollapsibleSection } from "@/components/dashboard/collapsible-section";
+import { DashboardMenu } from "@/components/dashboard/page-menu";
 import { getGoalsProgress } from "@/lib/goals";
+import { getAccountBalances, getBalanceSeries } from "@/lib/account-balance";
 import { brTodayRange } from "@/lib/br-time";
 
 const QUOTE_AWAITING_STATUSES = ["ENVIADO", "VISUALIZADO", "EM_NEGOCIACAO"] as const;
 const ACTIVE_SERVICE_STATUSES = ["ABERTO", "EM_ANDAMENTO", "EM_REVISAO"] as const;
 const REACTIVATION_DAYS = 90;
+const STAT_GRID = "grid grid-cols-2 gap-2 md:grid-cols-4 md:gap-4";
 
 export default async function DashboardPage() {
   const session = await getSession();
@@ -48,7 +52,12 @@ export default async function DashboardPage() {
   const threeDaysAgo = daysAgo(3);
   const reactivationCutoff = daysAgo(REACTIVATION_DAYS);
   const { start: startOfToday, end: endOfToday } = brTodayRange();
-  const goalsProgress = canSeeFinanceiro ? await getGoalsProgress() : null;
+
+  const [goalsProgress, accountBalances, balanceSeries] = canSeeFinanceiro
+    ? await Promise.all([getGoalsProgress(), getAccountBalances(), getBalanceSeries()])
+    : [null, [], null];
+  const activeAccounts = accountBalances.filter((a) => a.active);
+  const totalBalance = activeAccounts.reduce((sum, a) => sum + a.current, 0);
 
   const [
     leadsNovos,
@@ -76,6 +85,10 @@ export default async function DashboardPage() {
     servicosPorResponsavel,
     clientesCandidatosReativacao,
     monthlyChartSeries,
+    agendaDeHoje,
+    servicosDeHoje,
+    conteudosDeHoje,
+    usuariosAtivos,
   ] = await Promise.all([
     prisma.lead.count({ where: { stage: "NOVO_LEAD" } }),
     prisma.lead.count({
@@ -148,6 +161,25 @@ export default async function DashboardPage() {
       take: 300,
     }),
     getMonthlyChartSeries(canSeeFinanceiro),
+    prisma.calendarEvent.findMany({
+      where: { startAt: { gte: startOfToday, lte: endOfToday } },
+      orderBy: { startAt: "asc" },
+      take: 10,
+    }),
+    prisma.serviceInstance.findMany({
+      where: { status: { in: [...ACTIVE_SERVICE_STATUSES] }, dueDate: { gte: startOfToday, lte: endOfToday } },
+      include: { client: true },
+      take: 10,
+    }),
+    prisma.mediaContent.findMany({
+      where: {
+        status: { in: ["IDEIA", "EM_PRODUCAO", "AGUARDANDO_APROVACAO", "APROVADO"] },
+        scheduledDate: { gte: startOfToday, lte: endOfToday },
+      },
+      orderBy: { scheduledDate: "asc" },
+      take: 10,
+    }),
+    prisma.user.findMany({ where: { active: true }, select: { id: true, role: true } }),
   ]);
 
   const responsibleIds = servicosPorResponsavel
@@ -221,49 +253,81 @@ export default async function DashboardPage() {
     usuariosPorPapel.map((r) => [r.role, r._count]),
   );
 
+  // Com uma pessoa só no papel, abre direto as tarefas dela; com mais, filtra pelo papel.
+  const tasksHref = (role: "BIA" | "ADMIN") => {
+    const people = usuariosAtivos.filter((u) => u.role === role);
+    return people.length === 1 ? `/tarefas?assignedTo=${people[0].id}` : `/tarefas?papel=${role}`;
+  };
+
   const followUpCount =
     orcamentosParaFollowUp.length + leadsParaFollowUp.length + servicosAtrasadosList.length;
+  const hojeCount = agendaDeHoje.length + servicosDeHoje.length + conteudosDeHoje.length;
 
   const { monthLabels, clientesSerie, leadsSerie, receitaSerie, despesaSerie } =
     monthlyChartSeries;
 
-  const clientesChartData = monthLabels.map((label, i) => ({
-    label,
-    clientes: clientesSerie[i],
-  }));
-  const leadsChartData = monthLabels.map((label, i) => ({
-    label,
-    leads: leadsSerie[i],
-  }));
-  const faturamentoChartData = financeiro
-    ? monthLabels.map((label, i) => ({ label, receita: receitaSerie[i] }))
-    : [];
-  const receitaDespesaChartData = financeiro
-    ? monthLabels.map((label, i) => ({
-        label,
-        receita: receitaSerie[i],
-        despesa: despesaSerie[i],
-      }))
-    : [];
+  const chartTabs: ChartTab[] = [
+    {
+      key: "clientes",
+      label: "Clientes",
+      title: "Novos clientes por mês",
+      format: "number",
+      series: [{ key: "clientes", label: "Novos clientes", color: "#2a78d6" }],
+      data: monthLabels.map((label, i) => ({ label, clientes: clientesSerie[i] })),
+    },
+    {
+      key: "leads",
+      label: "Leads",
+      title: "Leads convertidos por mês",
+      format: "number",
+      series: [{ key: "leads", label: "Leads convertidos", color: "#6250d6" }],
+      data: monthLabels.map((label, i) => ({ label, leads: leadsSerie[i] })),
+    },
+    ...(financeiro
+      ? ([
+          {
+            key: "faturamento",
+            label: "Faturamento",
+            title: "Faturamento recebido por mês",
+            format: "currency",
+            series: [{ key: "receita", label: "Recebido", color: "#008300" }],
+            data: monthLabels.map((label, i) => ({ label, receita: receitaSerie[i] })),
+          },
+          {
+            key: "receita-despesa",
+            label: "Receita x Despesa",
+            title: "Receita x Despesa por mês",
+            format: "currency",
+            series: [
+              { key: "receita", label: "Receita", color: "#008300" },
+              { key: "despesa", label: "Despesa", color: "#e34948", dashed: true },
+            ],
+            data: monthLabels.map((label, i) => ({ label, receita: receitaSerie[i], despesa: despesaSerie[i] })),
+          },
+        ] satisfies ChartTab[])
+      : []),
+  ];
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold text-slate-900">
-            Centro de operações — Monteiro
-          </h1>
-          <p className="text-sm text-slate-500">
-            Visão geral em tempo real. O que a Monteiro precisa fazer agora está
-            destacado abaixo.
+    <div className="space-y-5 md:space-y-8">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold text-slate-900">Centro de operações</h1>
+          <p className="hidden text-sm text-slate-500 md:block">
+            Visão geral em tempo real. O que a Monteiro precisa fazer agora está destacado abaixo.
           </p>
         </div>
-        <Link href="/relatorios/graficos/pdf" target="_blank">
-          <Button variant="outline">
-            <FileDown className="h-4 w-4" /> Gerar relatório em PDF
-          </Button>
-        </Link>
+        <DashboardMenu />
       </div>
+
+      {balanceSeries && (
+        <BalanceCard
+          total={totalBalance}
+          accounts={activeAccounts.map((a) => ({ id: a.accountId, name: a.name, current: a.current }))}
+          daily={balanceSeries.daily}
+          monthly={balanceSeries.monthly}
+        />
+      )}
 
       {goalsProgress && <GoalsSection progress={goalsProgress} />}
 
@@ -323,95 +387,101 @@ export default async function DashboardPage() {
         </Card>
       )}
 
-      <section>
-        <div className="mb-3 flex items-center justify-between">
-          <SectionTitle>Evolução (últimos 12 meses)</SectionTitle>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Novos clientes por mês</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <MonthlyLineChart
-                data={clientesChartData}
-                series={[{ key: "clientes", label: "Novos clientes", color: "#2a78d6" }]}
-                format="number"
-              />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Leads convertidos por mês</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <MonthlyLineChart
-                data={leadsChartData}
-                series={[{ key: "leads", label: "Leads convertidos", color: "#6250d6" }]}
-                format="number"
-              />
-            </CardContent>
-          </Card>
-          {financeiro && (
-            <>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Faturamento recebido por mês</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <MonthlyLineChart
-                    data={faturamentoChartData}
-                    series={[{ key: "receita", label: "Recebido", color: "#008300" }]}
-                    format="currency"
-                  />
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Receita x Despesa por mês</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <MonthlyLineChart
-                    data={receitaDespesaChartData}
-                    series={[
-                      { key: "receita", label: "Receita", color: "#008300" },
-                      { key: "despesa", label: "Despesa", color: "#e34948", dashed: true },
-                    ]}
-                    format="currency"
-                  />
-                </CardContent>
-              </Card>
-            </>
-          )}
-        </div>
+      <section aria-labelledby="hoje-titulo">
+        <Card>
+          <CardHeader>
+            <CardTitle id="hoje-titulo" className="flex items-center gap-2">
+              <CalendarDays className="h-4 w-4" /> Hoje
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-1">
+            {hojeCount === 0 && <p className="text-sm text-slate-500">Nada marcado para hoje.</p>}
+            {agendaDeHoje.map((e) => (
+              <Link
+                key={e.id}
+                href={`/agenda/${e.id}`}
+                className="flex min-h-11 items-center justify-between gap-3 rounded-lg px-2 py-1.5 text-sm hover:bg-slate-50"
+              >
+                <span className="min-w-0 text-slate-800">{e.title}</span>
+                <span className="shrink-0 text-xs text-slate-500">{formatWallTime(e.startAt)}</span>
+              </Link>
+            ))}
+            {servicosDeHoje.map((s) => (
+              <Link
+                key={s.id}
+                href={`/servicos-abertos/${s.id}`}
+                className="flex min-h-11 items-center justify-between gap-3 rounded-lg px-2 py-1.5 text-sm hover:bg-slate-50"
+              >
+                <span className="min-w-0 text-slate-800">
+                  {s.title} — {displayClientName(s.client)}
+                </span>
+                <span className="shrink-0 text-xs text-slate-500">Serviço</span>
+              </Link>
+            ))}
+            {conteudosDeHoje.map((c) => (
+              <Link
+                key={c.id}
+                href={`/midia/${c.id}`}
+                className="flex min-h-11 items-center justify-between gap-3 rounded-lg px-2 py-1.5 text-sm hover:bg-slate-50"
+              >
+                <span className="min-w-0 text-slate-800">{c.title}</span>
+                <span className="shrink-0 text-xs text-slate-500">
+                  {c.scheduledDate ? formatWallTime(c.scheduledDate) : "Conteúdo"}
+                </span>
+              </Link>
+            ))}
+          </CardContent>
+        </Card>
       </section>
 
-      <section>
-        <SectionTitle>Comercial</SectionTitle>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-4">
+      {financeiro && (
+        <CollapsibleSection title="Financeiro" defaultOpen>
+          <div className={STAT_GRID}>
+            <StatCard
+              label="A receber"
+              value={formatCurrencyBRL(financeiro.pendenteReceber)}
+              icon={ArrowDownCircle}
+              tone="green"
+              href="/financeiro/receber?status=PENDENTE"
+            />
+            <StatCard
+              label="Recebido (30 dias)"
+              value={formatCurrencyBRL(financeiro.recebido30)}
+              icon={Wallet}
+              tone="blue"
+              href="/financeiro/receber?status=RECEBIDO&dias=30"
+            />
+            <StatCard
+              label="A pagar"
+              value={formatCurrencyBRL(financeiro.pendentePagar)}
+              icon={ArrowUpCircle}
+              tone="amber"
+              href="/financeiro/pagar?status=PENDENTE"
+            />
+            <StatCard
+              label="Vencidas a receber"
+              value={financeiro.atrasadas}
+              icon={AlertTriangle}
+              tone="red"
+              href="/financeiro/receber?overdue=1"
+            />
+          </div>
+        </CollapsibleSection>
+      )}
+
+      <CollapsibleSection title="Comercial" defaultOpen>
+        <div className={STAT_GRID}>
+          <StatCard label="Leads novos" value={leadsNovos} icon={Target} tone="blue" href="/leads?stage=NOVO_LEAD" />
           <StatCard
-            label="Leads novos"
-            value={leadsNovos}
-            icon={Target}
-            tone="blue"
-            href="/leads?stage=NOVO_LEAD"
-          />
-          <StatCard
-            label="Leads em atendimento"
+            label="Em atendimento"
             value={leadsEmAtendimento}
             icon={Headphones}
             tone="amber"
             href="/leads?stage=PRIMEIRO_CONTATO,EM_ATENDIMENTO"
           />
+          <StatCard label="Leads quentes" value={leadsQuentes} icon={Flame} tone="red" href="/leads?temperature=QUENTE" />
           <StatCard
-            label="Leads quentes"
-            value={leadsQuentes}
-            icon={Flame}
-            tone="red"
-            href="/leads?temperature=QUENTE"
-          />
-          <StatCard
-            label="Orçamentos aguardando resposta"
+            label="Orçamentos sem resposta"
             value={orcamentosAguardando}
             icon={FileText}
             tone="amber"
@@ -425,39 +495,38 @@ export default async function DashboardPage() {
             href="/propostas?status=ENVIADA"
           />
           <StatCard
-            label="Orçamentos aprovados (30 dias)"
+            label="Aprovados (30 dias)"
             value={orcamentosAprovadosMes}
             icon={FileText}
             tone="green"
-            href="/orcamentos?status=APROVADO"
+            href="/orcamentos?status=APROVADO&dias=30"
           />
           <StatCard
-            label="Contratos aguardando assinatura"
+            label="Valor aprovado (30 dias)"
+            value={formatCurrencyBRL(orcamentosAprovadosValorMes)}
+            icon={Wallet}
+            tone="green"
+            href="/orcamentos?status=APROVADO&dias=30"
+          />
+          <StatCard
+            label="Contratos a assinar"
             value={contratosAguardandoAssinatura}
             icon={FileStack}
             tone="amber"
             href="/documentos?status=ENVIADO,AGUARDANDO_ASSINATURA"
           />
           <StatCard
-            label="Documentos gerados (30 dias)"
+            label="Documentos (30 dias)"
             value={documentosGeradosMes}
             icon={FileStack}
             tone="slate"
-            href="/documentos"
-          />
-          <StatCard
-            label="Valor aprovado em orçamentos (30 dias)"
-            value={formatCurrencyBRL(orcamentosAprovadosValorMes)}
-            icon={Wallet}
-            tone="green"
-            href="/relatorios"
+            href="/documentos?dias=30"
           />
         </div>
-      </section>
+      </CollapsibleSection>
 
-      <section>
-        <SectionTitle>Operacional</SectionTitle>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-4">
+      <CollapsibleSection title="Operacional" defaultOpen>
+        <div className={STAT_GRID}>
           <StatCard
             label="Serviços em andamento"
             value={servicosEmAndamento}
@@ -480,11 +549,11 @@ export default async function DashboardPage() {
             href="/servicos-abertos?overdue=1"
           />
           <StatCard
-            label="Serviços ativos no catálogo"
+            label="Ativos no catálogo"
             value={servicosAtivos}
             icon={Briefcase}
             tone="slate"
-            href="/servicos"
+            href="/servicos?ativos=1"
           />
         </div>
         {servicosPorResponsavel.length > 0 && (
@@ -504,11 +573,15 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
         )}
-      </section>
+      </CollapsibleSection>
 
       <section>
-        <SectionTitle>Bia / Mídia</SectionTitle>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-4">
+        <SectionTitle>Evolução (últimos 12 meses)</SectionTitle>
+        <ChartTabs tabs={chartTabs} />
+      </section>
+
+      <CollapsibleSection title="Bia / Mídia">
+        <div className={STAT_GRID}>
           <StatCard
             label="Aguardando aprovação"
             value={conteudosAguardandoAprovacao}
@@ -521,7 +594,7 @@ export default async function DashboardPage() {
             value={conteudosPublicadosMes}
             icon={Send}
             tone="green"
-            href="/midia?status=PUBLICADO"
+            href="/midia?status=PUBLICADO&dias=30"
           />
           <StatCard
             label="Conteúdos atrasados"
@@ -533,77 +606,29 @@ export default async function DashboardPage() {
           <StatCard
             label="Seguidores no Instagram"
             value={latestInstagramMetric ? latestInstagramMetric.followers : "-"}
-            icon={Camera}
-            tone={
-              instagramFollowerGrowth !== null && instagramFollowerGrowth < 0
-                ? "red"
-                : "blue"
+            hint={
+              instagramFollowerGrowth !== null
+                ? `${instagramFollowerGrowth >= 0 ? "+" : ""}${instagramFollowerGrowth}`
+                : undefined
             }
+            icon={Camera}
+            tone={instagramFollowerGrowth !== null && instagramFollowerGrowth < 0 ? "red" : "blue"}
             href="/instagram"
           />
         </div>
-      </section>
+      </CollapsibleSection>
 
-      {financeiro && (
-        <section>
-          <SectionTitle>Financeiro</SectionTitle>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-4">
-            <StatCard
-              label="A receber (pendente)"
-              value={formatCurrencyBRL(financeiro.pendenteReceber)}
-              icon={ArrowDownCircle}
-              tone="green"
-              href="/financeiro/receber?status=PENDENTE"
-            />
-            <StatCard
-              label="Recebido (30 dias)"
-              value={formatCurrencyBRL(financeiro.recebido30)}
-              icon={Wallet}
-              tone="blue"
-              href="/financeiro/receber?status=RECEBIDO"
-            />
-            <StatCard
-              label="A pagar (pendente)"
-              value={formatCurrencyBRL(financeiro.pendentePagar)}
-              icon={ArrowUpCircle}
-              tone="amber"
-              href="/financeiro/pagar?status=PENDENTE"
-            />
-            <StatCard
-              label="Contas a receber vencidas"
-              value={financeiro.atrasadas}
-              icon={AlertTriangle}
-              tone="red"
-              href="/financeiro/receber?overdue=1"
-            />
-          </div>
-        </section>
-      )}
-
-      <section>
-        <SectionTitle>Equipe</SectionTitle>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-4">
+      <CollapsibleSection title="Equipe">
+        <div className={STAT_GRID}>
           <StatCard
-            label="Administradores ativos"
+            label="Administradores"
             value={roleCounts.ADMIN ?? 0}
             icon={ShieldCheck}
             tone="slate"
-            href="/usuarios"
+            href="/usuarios?papel=ADMIN"
           />
-          <StatCard
-            label="Gestores ativos"
-            value={roleCounts.GESTOR ?? 0}
-            icon={Users}
-            tone="slate"
-            href="/usuarios"
-          />
-          <StatCard
-            label="Bia / Mídia ativas"
-            value={roleCounts.BIA ?? 0}
-            icon={Users}
-            tone="slate"
-            href="/usuarios"
-          />
+          <StatCard label="Gestores" value={roleCounts.GESTOR ?? 0} icon={Users} tone="slate" href="/usuarios?papel=GESTOR" />
+          <StatCard label="Bia / Mídia" value={roleCounts.BIA ?? 0} icon={Users} tone="slate" href="/usuarios?papel=BIA" />
           <StatCard
             label="Tarefas atrasadas"
             value={tarefasAtrasadas}
@@ -611,55 +636,37 @@ export default async function DashboardPage() {
             tone="red"
             href="/tarefas?overdue=1"
           />
-          <StatCard
-            label="Tarefas da Bia"
-            value={tarefasBia}
-            icon={CheckSquare}
-            tone="slate"
-            href="/tarefas"
-          />
+          <StatCard label="Tarefas da Bia" value={tarefasBia} icon={CheckSquare} tone="slate" href={tasksHref("BIA")} />
           <StatCard
             label="Tarefas do administrador"
             value={tarefasAdmin}
             icon={CheckSquare}
             tone="slate"
-            href="/tarefas"
+            href={tasksHref("ADMIN")}
           />
         </div>
-      </section>
+      </CollapsibleSection>
 
-      <section>
-        <SectionTitle>Clientes</SectionTitle>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-4">
+      <CollapsibleSection title="Clientes">
+        <div className={STAT_GRID}>
+          <StatCard label="Clientes ativos" value={clientesAtivos} icon={Users} tone="green" href="/clientes?status=ATIVO" />
           <StatCard
-            label="Clientes ativos"
-            value={clientesAtivos}
-            icon={Users}
-            tone="green"
-            href="/clientes?status=ATIVO"
-          />
-          <StatCard
-            label="Clientes novos (30 dias)"
+            label="Novos (30 dias)"
             value={clientesNovos}
             icon={UserPlus}
             tone="blue"
-            href="/clientes"
+            href="/clientes?novos=30"
           />
+          <StatCard label="Total cadastrados" value={totalClientes} icon={Users} href="/clientes" />
           <StatCard
-            label="Total de clientes cadastrados"
-            value={totalClientes}
-            icon={Users}
-            href="/clientes"
-          />
-          <StatCard
-            label="Clientes para reativação"
+            label="Para reativação"
             value={clientesParaReativacao}
             icon={RotateCcw}
             tone="amber"
-            href="/assistente"
+            href="/clientes?reativacao=1"
           />
         </div>
-      </section>
+      </CollapsibleSection>
     </div>
   );
 }

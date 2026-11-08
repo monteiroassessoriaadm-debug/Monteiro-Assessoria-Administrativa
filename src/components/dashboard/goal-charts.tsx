@@ -61,12 +61,12 @@ export function GoalBar({
             />
           ))}
       </div>
-      <dl className="mt-2 grid grid-cols-1 gap-1 text-xs sm:grid-cols-3">
+      <dl className="mt-2 flex flex-col gap-1 text-xs sm:flex-row sm:flex-wrap sm:gap-x-4">
         {segments.map((s) => (
           <div key={s.key} className="flex items-center gap-1.5">
             <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm" style={{ backgroundColor: s.color }} />
-            <dt className="text-slate-500">{s.key}:</dt>
-            <dd className="font-semibold text-slate-900">{formatCurrencyBRL(s.value)}</dd>
+            <dt className="whitespace-nowrap text-slate-500">{s.key}:</dt>
+            <dd className="whitespace-nowrap font-semibold text-slate-900">{formatCurrencyBRL(s.value)}</dd>
           </div>
         ))}
       </dl>
@@ -104,13 +104,14 @@ export function LastWeeksChart({
             dataKey="label"
             tickLine={false}
             axisLine={{ stroke: "#c3c2b7" }}
-            interval={0}
-            tick={{ fontSize: 10, fill: "#64748b" }}
+            interval="preserveStartEnd"
+            minTickGap={10}
+            tick={{ fontSize: 11, fill: "#64748b" }}
           />
           <YAxis
             tickLine={false}
             axisLine={false}
-            width={52}
+            width={68}
             tick={{ fontSize: 11, fill: "#64748b" }}
             tickFormatter={(v) => formatCompactBRL(Number(v))}
           />

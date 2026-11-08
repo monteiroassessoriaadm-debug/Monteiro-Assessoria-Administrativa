@@ -30,7 +30,7 @@ export default async function ProspeccaoPage() {
         </Link>
       </div>
 
-      <Card className="hidden overflow-hidden md:block">
+      <Card className="table-scroll hidden overflow-x-auto md:block">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
             <tr>

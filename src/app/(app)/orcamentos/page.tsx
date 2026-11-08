@@ -1,33 +1,48 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { FilterDrawer } from "@/components/ui/filter-drawer";
+import { ActiveFilter, statusLabel, statusList } from "@/components/ui/active-filter";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TableCard, TableCardList, TableCardEmpty } from "@/components/ui/table-card";
-import { formatCurrencyBRL, formatDateBR } from "@/lib/utils";
+import { daysAgo, formatCurrencyBRL, formatDateBR } from "@/lib/utils";
 import { displayClientName } from "@/lib/client-display";
 import { quoteStatusLabels, quoteStatusTone } from "@/lib/lead-labels";
 
 export default async function OrcamentosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; dias?: string }>;
 }) {
-  const { status } = await searchParams;
-  const statuses = status ? status.split(",") : [];
+  const { status, dias } = await searchParams;
+  const statuses = statusList(status);
+  const days = Number(dias) > 0 ? Number(dias) : null;
+  // Aprovados contam da data da resposta, como no cartão do dashboard; os demais, da criação.
+  const since = days ? daysAgo(days) : null;
+  const onlyApproved = statuses.length === 1 && statuses[0] === "APROVADO";
 
   const quotes = await prisma.quote.findMany({
-    where:
-      statuses.length === 1
-        ? { status: statuses[0] as never }
-        : statuses.length > 1
-          ? { status: { in: statuses as never[] } }
-          : undefined,
+    where: {
+      ...(statuses.length > 0 ? { status: { in: statuses as never[] } } : {}),
+      ...(since ? (onlyApproved ? { respondedAt: { gte: since } } : { createdAt: { gte: since } }) : {}),
+    },
     include: { client: true, items: true },
     orderBy: { createdAt: "desc" },
     take: 100,
   });
+
+  const total = quotes.reduce(
+    (sum, q) => sum + q.items.reduce((s, i) => s + i.quantity * Number(i.unitPrice), 0),
+    0,
+  );
+  const filterLabel = [
+    statuses.length ? statusLabel(statuses, quoteStatusLabels) : null,
+    days ? `últimos ${days} dias` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <div className="space-y-6">
@@ -45,6 +60,7 @@ export default async function OrcamentosPage({
         </Link>
       </div>
 
+      <FilterDrawer>
       <form className="flex flex-wrap gap-3">
         <select
           name="status"
@@ -62,8 +78,14 @@ export default async function OrcamentosPage({
           Filtrar
         </Button>
       </form>
+      </FilterDrawer>
 
-      <Card className="hidden overflow-hidden md:block">
+      <ActiveFilter
+        label={filterLabel ? `${filterLabel} (${quotes.length}, total ${formatCurrencyBRL(total)})` : null}
+        clearHref="/orcamentos"
+      />
+
+      <Card className="table-scroll hidden overflow-x-auto md:block">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
             <tr>

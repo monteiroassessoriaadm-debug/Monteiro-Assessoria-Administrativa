@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/permissions";
 import { Role } from "@/generated/prisma/enums";
@@ -17,6 +18,16 @@ export default async function ConfiguracoesPage() {
           automações, modelos) chegam nas próximas fases.
         </p>
       </div>
+      <Link
+        href="/metas"
+        className="flex min-h-11 items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm hover:bg-slate-50"
+      >
+        <span>
+          <span className="block font-medium text-slate-900">Meta, salário mínimo e teto do MEI</span>
+          <span className="block text-slate-500">Editar os valores de cada ano</span>
+        </span>
+        <span className="shrink-0 text-blue-700">Abrir →</span>
+      </Link>
       <SettingsForm
         name={settings?.name ?? "Monteiro Assessoria Administrativa"}
         slogan={settings?.slogan ?? null}

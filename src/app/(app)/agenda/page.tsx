@@ -5,7 +5,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TableCard, TableCardList, TableCardEmpty } from "@/components/ui/table-card";
-import { formatDateTimeBR } from "@/lib/utils";
+import { formatWallDateTime } from "@/lib/utils";
+import { brTodayRange } from "@/lib/br-time";
 import { displayClientName } from "@/lib/client-display";
 import { calendarEventTypeLabels } from "@/lib/lead-labels";
 import { DeleteEventButton } from "./delete-event-button";
@@ -18,10 +19,11 @@ export default async function AgendaPage({
   const { show } = await searchParams;
   const showPast = show === "passados";
 
-  const now = new Date();
+  // A agenda guarda o horário digitado como se fosse UTC; o dia inteiro de hoje continua em "próximos".
+  const { start: today } = brTodayRange();
 
   const events = await prisma.calendarEvent.findMany({
-    where: showPast ? { startAt: { lt: now } } : { startAt: { gte: now } },
+    where: showPast ? { startAt: { lt: today } } : { startAt: { gte: today } },
     include: { client: true, responsible: true },
     orderBy: { startAt: showPast ? "desc" : "asc" },
     take: 100,
@@ -56,7 +58,7 @@ export default async function AgendaPage({
         </Link>
       </div>
 
-      <Card className="hidden overflow-hidden md:block">
+      <Card className="table-scroll hidden overflow-x-auto md:block">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
             <tr>
@@ -71,8 +73,12 @@ export default async function AgendaPage({
           <tbody className="divide-y divide-slate-100">
             {events.map((e) => (
               <tr key={e.id} className="hover:bg-slate-50">
-                <td className="px-4 py-3 text-slate-600">{formatDateTimeBR(e.startAt)}</td>
-                <td className="px-4 py-3 font-medium text-slate-900">{e.title}</td>
+                <td className="px-4 py-3 text-slate-600">{formatWallDateTime(e.startAt)}</td>
+                <td className="px-4 py-3 font-medium text-slate-900">
+                  <Link href={`/agenda/${e.id}`} className="hover:underline">
+                    {e.title}
+                  </Link>
+                </td>
                 <td className="px-4 py-3">
                   <Badge tone="blue">{calendarEventTypeLabels[e.type]}</Badge>
                 </td>
@@ -100,8 +106,9 @@ export default async function AgendaPage({
         {events.map((e) => (
           <TableCard
             key={e.id}
+            href={`/agenda/${e.id}`}
             title={e.title}
-            subtitle={formatDateTimeBR(e.startAt)}
+            subtitle={formatWallDateTime(e.startAt)}
             fields={[
               { label: "Tipo", value: <Badge tone="blue">{calendarEventTypeLabels[e.type]}</Badge> },
               { label: "Cliente", value: e.client ? displayClientName(e.client) : "-" },

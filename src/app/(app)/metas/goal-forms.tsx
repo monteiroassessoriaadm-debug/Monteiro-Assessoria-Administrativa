@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { moneyToInput } from "@/lib/money";
 import { saveGoalAction, saveYearConfigAction, type GoalFormState } from "./actions";
 
 function Feedback({ state }: { state: GoalFormState }) {
@@ -32,11 +33,11 @@ export function YearConfigForm({
         </div>
         <div>
           <Label>Salário mínimo (R$)</Label>
-          <Input name="minimumWage" type="number" inputMode="decimal" step="0.01" min="0" defaultValue={minimumWage.toFixed(2)} />
+          <Input name="minimumWage" type="text" inputMode="decimal" defaultValue={moneyToInput(minimumWage)} />
         </div>
         <div>
           <Label>Limite anual do MEI (R$)</Label>
-          <Input name="meiAnnualLimit" type="number" inputMode="decimal" step="0.01" min="0" defaultValue={meiAnnualLimit.toFixed(2)} />
+          <Input name="meiAnnualLimit" type="text" inputMode="decimal" defaultValue={moneyToInput(meiAnnualLimit)} />
         </div>
       </div>
       <Feedback state={state} />
@@ -67,7 +68,7 @@ export function GoalOverrideForm({ today }: { today: string }) {
         </div>
         <div>
           <Label>Valor (R$)</Label>
-          <Input name="amount" type="number" inputMode="decimal" step="0.01" min="0" />
+          <Input name="amount" type="text" inputMode="decimal" placeholder="0,00" />
         </div>
       </div>
       <label className="flex min-h-11 items-center gap-2 text-sm text-slate-700">

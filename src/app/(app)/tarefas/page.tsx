@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { FilterDrawer } from "@/components/ui/filter-drawer";
+import { ActiveFilter } from "@/components/ui/active-filter";
 import { requireSession } from "@/lib/permissions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,17 +15,18 @@ import { TaskRowActions } from "./task-row-actions";
 export default async function TarefasPage({
   searchParams,
 }: {
-  searchParams: Promise<{ assignedTo?: string; overdue?: string }>;
+  searchParams: Promise<{ assignedTo?: string; overdue?: string; papel?: string }>;
 }) {
   const session = await requireSession();
-  const { assignedTo, overdue: overdueParam } = await searchParams;
+  const { assignedTo, overdue: overdueParam, papel } = await searchParams;
   const isAdmin = session.role === "ADMIN" || session.role === "GESTOR";
   const showAllOverdue = isAdmin && Boolean(overdueParam) && !assignedTo;
+  const roleFilter = isAdmin && (papel === "BIA" || papel === "ADMIN" || papel === "GESTOR") ? papel : null;
   const targetUserId = isAdmin && assignedTo ? assignedTo : session.userId;
 
   const [tasks, users, targetUser] = await Promise.all([
     prisma.task.findMany({
-      where: showAllOverdue ? {} : { assignedToId: targetUserId },
+      where: showAllOverdue ? {} : roleFilter ? { assignedTo: { role: roleFilter } } : { assignedToId: targetUserId },
       include: { client: true, assignedTo: true },
       orderBy: [{ status: "asc" }, { dueDate: "asc" }],
     }),
@@ -54,7 +57,9 @@ export default async function TarefasPage({
           <h1 className="text-xl font-bold text-slate-900">
             {showAllOverdue
               ? "Tarefas atrasadas (todos os usuários)"
-              : targetUserId === session.userId
+              : roleFilter
+                ? "Tarefas por papel"
+                : targetUserId === session.userId
                 ? "Minhas tarefas"
                 : `Tarefas de ${targetUser?.name}`}
           </h1>
@@ -69,7 +74,25 @@ export default async function TarefasPage({
         </Link>
       </div>
 
+      <ActiveFilter
+        label={
+          showAllOverdue
+            ? "tarefas atrasadas"
+            : roleFilter
+              ? roleFilter === "BIA"
+                ? "tarefas da Bia"
+                : roleFilter === "ADMIN"
+                  ? "tarefas de administradores"
+                  : "tarefas de gestores"
+              : assignedTo && isAdmin
+                ? `tarefas de ${targetUser?.name ?? "usuário"}`
+                : null
+        }
+        clearHref="/tarefas"
+      />
+
       {!showAllOverdue && isAdmin && users.length > 0 && (
+        <FilterDrawer>
         <form className="flex flex-wrap gap-3">
           <select
             name="assignedTo"
@@ -89,6 +112,7 @@ export default async function TarefasPage({
             Ver
           </Button>
         </form>
+        </FilterDrawer>
       )}
 
       <TaskGroup title="🔴 Atrasadas" tasks={overdue} showAssignee={showAllOverdue} />

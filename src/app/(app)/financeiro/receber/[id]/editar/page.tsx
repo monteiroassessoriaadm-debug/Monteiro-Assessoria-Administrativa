@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { moneyToInput } from "@/lib/money";
 import { displayClientName } from "@/lib/client-display";
 import { DEFAULT_BUSINESS_LINES, ReceivableFormLoader } from "../../form-data";
 import { ReceivableForm } from "../../receivable-form";
@@ -32,7 +33,7 @@ export default async function EditarContaReceberPage({
         defaults={{
           description: receivable.description,
           clientId: receivable.clientId ?? "",
-          amount: Number(receivable.amount).toFixed(2),
+          amount: moneyToInput(receivable.amount.toString()),
           dueDate: receivable.dueDate ? receivable.dueDate.toISOString().slice(0, 10) : "",
           accountId: receivable.accountId ?? "",
           paymentMethod: receivable.paymentMethod ?? "",

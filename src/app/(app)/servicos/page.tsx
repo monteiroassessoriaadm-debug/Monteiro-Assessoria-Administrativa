@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Plus, Pencil } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { ActiveFilter } from "@/components/ui/active-filter";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,11 +10,17 @@ import { formatCurrencyBRL } from "@/lib/utils";
 import { getSession } from "@/lib/session";
 import { ToggleActiveButton } from "./toggle-active-button";
 
-export default async function ServicosPage() {
+export default async function ServicosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ ativos?: string }>;
+}) {
+  const { ativos } = await searchParams;
   const session = await getSession();
   const canManage = session?.role === "ADMIN" || session?.role === "GESTOR";
 
   const services = await prisma.service.findMany({
+    where: ativos ? { active: true } : undefined,
     include: { defaultResponsible: true },
     orderBy: { name: "asc" },
   });
@@ -38,7 +45,9 @@ export default async function ServicosPage() {
         )}
       </div>
 
-      <Card className="hidden overflow-hidden md:block">
+      <ActiveFilter label={ativos ? "serviços ativos" : null} clearHref="/servicos" />
+
+      <Card className="table-scroll hidden overflow-x-auto md:block">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
             <tr>
@@ -101,6 +110,7 @@ export default async function ServicosPage() {
         {services.map((s) => (
           <TableCard
             key={s.id}
+            href={canManage ? `/servicos/${s.id}/editar` : undefined}
             title={s.name}
             subtitle={s.category ?? undefined}
             fields={[

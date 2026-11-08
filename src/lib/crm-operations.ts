@@ -5,6 +5,7 @@ import { displayClientName } from "@/lib/client-display";
 import { formatCurrencyBRL, onlyDigits } from "@/lib/utils";
 import { parseDayKey } from "@/lib/br-time";
 import { diffFields, logMcpAction, type AuditSource } from "@/lib/mcp/audit";
+import { getAccountBalances } from "@/lib/account-balance";
 
 // Regras de alteração usadas pelo conector MCP e pelas telas, para os dois
 // caminhos validarem e auditarem igual. No financeiro nada se apaga: cancela
@@ -322,6 +323,52 @@ export async function updateMovement(
   return { id, antes: diff.oldValue, depois: diff.newValue };
 }
 
+// ---------- Ajuste de saldo ----------
+
+/**
+ * Informa quanto a conta tem de verdade hoje. Grava só a diferença, sem apagar
+ * nem alterar nenhum lançamento; o ajuste não conta como faturamento nem despesa.
+ */
+export async function adjustBalance(
+  params: { accountId: string; realBalance: number; reason?: string },
+  actor: Actor,
+) {
+  if (!Number.isFinite(params.realBalance)) throw new OperationError("Informe quanto a conta tem hoje, como 950,00.");
+  const balances = await getAccountBalances();
+  const account = balances.find((b) => b.accountId === params.accountId);
+  if (!account) throw new OperationError(`Conta "${params.accountId}" não encontrada.`);
+
+  const difference = Math.round((params.realBalance - account.current) * 100) / 100;
+  if (difference === 0) {
+    throw new OperationError(`O saldo de ${account.name} já é ${formatCurrencyBRL(account.current)}. Nada para ajustar.`);
+  }
+
+  const reason = text(params.reason) ?? null;
+  const adjustment = await prisma.balanceAdjustment.create({
+    data: {
+      accountId: account.accountId,
+      amount: difference.toFixed(2),
+      newBalance: params.realBalance.toFixed(2),
+      reason,
+      createdById: actor.userId,
+    },
+  });
+  await audit(
+    actor,
+    "BalanceAdjustment",
+    adjustment.id,
+    `Saldo de ${account.name} ajustado para ${formatCurrencyBRL(params.realBalance)}`,
+    { saldo: account.current },
+    { saldo: params.realBalance, diferenca: difference, motivo: reason },
+  );
+  return {
+    conta: account.name,
+    saldoAnterior: account.current,
+    saldoNovo: params.realBalance,
+    diferenca: difference,
+  };
+}
+
 // ---------- Comissões ----------
 
 const COMMISSION_LABEL: Record<string, string> = {
@@ -340,8 +387,8 @@ export async function payCommission(id: string, params: { date?: string; account
   const number = await nextPayableNumber();
   const label = COMMISSION_LABEL[commission.category] ?? "Pagamento";
 
-  // Sem conta informada, usa a única conta ativa; sem conta a saída não abateria saldo nenhum.
-  let accountId = params.accountId;
+  // Sem conta informada, usa a do lançamento ou a única conta ativa; sem conta a saída não abateria saldo nenhum.
+  let accountId = params.accountId ?? commission.accountId;
   if (!accountId) {
     const active = await prisma.financialAccount.findMany({ where: { active: true }, take: 2 });
     if (active.length !== 1) {
@@ -365,7 +412,7 @@ export async function payCommission(id: string, params: { date?: string; account
         createdById: actor.userId,
       },
     });
-    await tx.commission.update({ where: { id }, data: { status: "PAGO", paidAt: when, payableId: created.id } });
+    await tx.commission.update({ where: { id }, data: { status: "PAGO", paidAt: when, payableId: created.id, accountId } });
     return created;
   });
 

@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrencyBRL } from "@/lib/utils";
+import { parseMoney } from "@/lib/money";
 import type { QuoteFormState } from "./actions";
 
 type ServiceOption = {
@@ -86,7 +87,7 @@ export function QuoteForm({
   }
 
   const total = items.reduce(
-    (sum, i) => sum + (Number(i.quantity) || 0) * (Number(i.unitPrice) || 0),
+    (sum, i) => sum + (Number(i.quantity) || 0) * (parseMoney(i.unitPrice) ?? 0),
     0,
   );
 
@@ -163,7 +164,7 @@ export function QuoteForm({
                   onChange={(e) => updateItem(item.key, { description: e.target.value })}
                 />
               </div>
-              <div className="grid grid-cols-3 gap-2 sm:contents">
+              <div className="grid grid-cols-3 items-end gap-2 sm:contents">
                 <div className="sm:col-span-1">
                   <Label>Qtd.</Label>
                   <Input
@@ -174,11 +175,9 @@ export function QuoteForm({
                   />
                 </div>
                 <div className="sm:col-span-2">
-                  <Label>Valor unit. (R$)</Label>
+                  <Label>Valor (R$)</Label>
                   <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
+                    type="text" inputMode="decimal" placeholder="0,00"
                     value={item.unitPrice}
                     onChange={(e) => updateItem(item.key, { unitPrice: e.target.value })}
                   />

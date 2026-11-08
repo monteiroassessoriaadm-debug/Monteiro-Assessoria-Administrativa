@@ -14,10 +14,12 @@ export function CommissionForm({
   action,
   users,
   clients,
+  accounts,
 }: {
   action: (prevState: CommissionFormState, formData: FormData) => Promise<CommissionFormState>;
   users: { id: string; name: string }[];
   clients: { id: string; label: string }[];
+  accounts: { id: string; name: string }[];
 }) {
   const [state, formAction, pending] = useActionState(action, {});
 
@@ -67,20 +69,31 @@ export function CommissionForm({
               </Select>
             </div>
             <div>
+              <Label>Conta de onde sai</Label>
+              <Select name="accountId" defaultValue="">
+                <option value="">Definir ao pagar</option>
+                {accounts.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div>
               <Label>Data</Label>
               <Input type="date" name="date" />
             </div>
             <div>
               <Label>Valor base (R$)</Label>
-              <Input name="baseAmount" type="number" step="0.01" min="0" />
+              <Input name="baseAmount" type="text" inputMode="decimal" placeholder="0,00" />
             </div>
             <div>
               <Label>Percentual (%)</Label>
-              <Input name="percentage" type="number" step="0.01" min="0" />
+              <Input name="percentage" type="text" inputMode="decimal" placeholder="0,00" />
             </div>
             <div>
               <Label>Valor final (R$) *</Label>
-              <Input name="amount" type="number" step="0.01" min="0" />
+              <Input name="amount" type="text" inputMode="decimal" placeholder="0,00" />
               {state.fieldErrors?.amount && (
                 <p className="mt-1 text-xs text-red-600">{state.fieldErrors.amount}</p>
               )}

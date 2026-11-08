@@ -90,7 +90,7 @@ export function MonthlyLineChart({
           <YAxis
             tickLine={false}
             axisLine={false}
-            width={48}
+            width={format === "currency" ? 68 : 36}
             tick={{ fontSize: 11, fill: "#898781" }}
             tickFormatter={(v) => valueFormatter(Number(v))}
           />

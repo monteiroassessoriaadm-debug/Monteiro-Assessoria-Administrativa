@@ -56,6 +56,7 @@ model User {
   oauthAuthorizationCodes     OAuthAuthorizationCode[]
   oauthTokens                 OAuthToken[]
   mcpAuditLogs                McpAuditLog[]
+  balanceAdjustments          BalanceAdjustment[]      @relation("BalanceAdjustmentCreatedBy")
 
   @@map("users")
 }
@@ -591,10 +592,31 @@ model FinancialAccount {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  receivables Receivable[]
-  payables    Payable[]
+  receivables        Receivable[]
+  payables           Payable[]
+  commissions        Commission[]
+  balanceAdjustments BalanceAdjustment[]
 
   @@map("financial_accounts")
+}
+
+// Conferência do saldo com o banco. Guarda a diferença em vez de mexer no saldo
+// inicial: mudar saldo inicial + data daria divergência com lançamentos do mesmo
+// dia. Não é faturamento nem despesa: não entra na meta nem em relatórios de receita.
+model BalanceAdjustment {
+  id         String           @id @default(cuid())
+  accountId  String
+  account    FinancialAccount @relation(fields: [accountId], references: [id])
+  amount     Decimal // diferença: saldo real informado menos saldo calculado
+  newBalance Decimal // saldo real informado
+  reason     String?
+
+  createdById String?
+  createdBy   User?    @relation("BalanceAdjustmentCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@index([accountId, createdAt])
+  @@map("balance_adjustments")
 }
 
 enum ReceivableStatus {
@@ -708,6 +730,8 @@ model Commission {
   paidAt     DateTime?
   notes      String?
   payableId  String?            @unique // saída no caixa gerada ao pagar; sem ela, a comissão paga é histórico antigo
+  accountId  String? // conta de onde o valor sai; usada ao pagar
+  account    FinancialAccount?  @relation(fields: [accountId], references: [id])
 
   createdById String?
   createdBy   User?    @relation("CommissionCreatedBy", fields: [createdById], references: [id])

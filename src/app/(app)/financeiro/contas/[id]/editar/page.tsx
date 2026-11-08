@@ -1,4 +1,7 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { AdjustmentHistory } from "@/components/financeiro/adjustment-history";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/permissions";
 import { Role } from "@/generated/prisma/enums";
@@ -41,6 +44,12 @@ export default async function EditarContaPage({
             : null,
         }}
       />
+      <div className="flex justify-end">
+        <Link href={`/financeiro/ajustar-saldo?conta=${id}`}>
+          <Button variant="outline">Ajustar saldo desta conta</Button>
+        </Link>
+      </div>
+      <AdjustmentHistory accountId={id} />
     </div>
   );
 }

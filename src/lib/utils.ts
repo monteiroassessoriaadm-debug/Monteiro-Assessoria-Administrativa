@@ -37,6 +37,23 @@ export function formatDateBR(date: Date | string | null | undefined) {
   return new Intl.DateTimeFormat("pt-BR", { timeZone: isDateOnly(d) ? "UTC" : "America/Sao_Paulo" }).format(d);
 }
 
+/**
+ * Data e hora "de parede" (agenda e mídia guardam o horário digitado como se
+ * fosse UTC). Sem horário definido (meia-noite), é um compromisso do dia inteiro.
+ */
+export function formatWallDateTime(date: Date | string | null | undefined) {
+  if (!date) return "-";
+  const d = typeof date === "string" ? new Date(date) : date;
+  const day = new Intl.DateTimeFormat("pt-BR", { timeZone: "UTC" }).format(d);
+  return `${day} · ${formatWallTime(d)}`;
+}
+
+export function formatWallTime(date: Date | string) {
+  const d = typeof date === "string" ? new Date(date) : date;
+  if (isDateOnly(d)) return "Dia inteiro";
+  return new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" }).format(d);
+}
+
 /** Instante real (createdAt, histórico) no horário de Brasília. */
 export function formatInstantBR(date: Date | string | null | undefined) {
   if (!date) return "-";

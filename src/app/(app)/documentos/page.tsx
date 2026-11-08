@@ -1,29 +1,30 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { FilterDrawer } from "@/components/ui/filter-drawer";
+import { ActiveFilter, statusLabel, statusList } from "@/components/ui/active-filter";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TableCard, TableCardList, TableCardEmpty } from "@/components/ui/table-card";
-import { formatDateBR } from "@/lib/utils";
+import { daysAgo, formatDateBR } from "@/lib/utils";
 import { displayClientName } from "@/lib/client-display";
 import { documentStatusLabels, documentStatusTone } from "@/lib/lead-labels";
 
 export default async function DocumentosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; dias?: string }>;
 }) {
-  const { status } = await searchParams;
-  const statuses = status ? status.split(",") : [];
+  const { status, dias } = await searchParams;
+  const statuses = statusList(status);
+  const days = Number(dias) > 0 ? Number(dias) : null;
 
   const documents = await prisma.generatedDocument.findMany({
-    where:
-      statuses.length === 1
-        ? { status: statuses[0] as never }
-        : statuses.length > 1
-          ? { status: { in: statuses as never[] } }
-          : undefined,
+    where: {
+      ...(statuses.length > 0 ? { status: { in: statuses as never[] } } : {}),
+      ...(days ? { createdAt: { gte: daysAgo(days) } } : {}),
+    },
     include: { client: true, template: true },
     orderBy: { createdAt: "desc" },
     take: 100,
@@ -45,6 +46,7 @@ export default async function DocumentosPage({
         </Link>
       </div>
 
+      <FilterDrawer>
       <form className="flex flex-wrap gap-3">
         <select
           name="status"
@@ -62,8 +64,18 @@ export default async function DocumentosPage({
           Filtrar
         </Button>
       </form>
+      </FilterDrawer>
 
-      <Card className="hidden overflow-hidden md:block">
+      <ActiveFilter
+        label={
+          [statuses.length ? statusLabel(statuses, documentStatusLabels) : null, days ? `últimos ${days} dias` : null]
+            .filter(Boolean)
+            .join(" · ") || null
+        }
+        clearHref="/documentos"
+      />
+
+      <Card className="table-scroll hidden overflow-x-auto md:block">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
             <tr>

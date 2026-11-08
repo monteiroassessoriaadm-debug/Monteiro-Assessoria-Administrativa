@@ -1,6 +1,8 @@
 import { requireRole } from "@/lib/permissions";
 import { Role } from "@/generated/prisma/enums";
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { FilterDrawer } from "@/components/ui/filter-drawer";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,21 +71,25 @@ export default async function FluxoCaixaPage({
 
   const fromInput = rangeFrom.toISOString().slice(0, 10);
   const toInput = rangeTo.toISOString().slice(0, 10);
+  const CARD_LINK = "block rounded-xl transition-colors hover:bg-slate-50 active:bg-slate-50";
 
   const movements = [
     ...receivedIn.map((r) => ({
+      href: `/financeiro/receber/${r.id}/editar`,
       date: r.receivedAt,
       description: r.description,
       type: "entrada" as const,
       amount: Number(r.amount),
     })),
     ...paidOut.map((p) => ({
+      href: `/financeiro/pagar/${p.id}/editar`,
       date: p.paidAt,
       description: p.description,
       type: "saida" as const,
       amount: Number(p.amount),
     })),
     ...commissionsOut.map((c) => ({
+      href: `/financeiro/comissoes/${c.id}`,
       date: c.paidAt,
       description: `${c.category === "SALARIO_FIXO" ? "Salário" : c.category === "COMISSAO" ? "Comissão" : "Pagamento"} — ${c.user.name}`,
       type: "saida" as const,
@@ -114,7 +120,7 @@ export default async function FluxoCaixaPage({
               {formatCurrencyBRL(saldoAtualTotal)}
             </p>
             <p className="text-xs text-slate-400">
-              Saldo inicial de cada conta + recebido − pago, sem considerar o período
+              Saldo inicial de cada conta + recebido − pago + ajustes, sem considerar o período
               filtrado abaixo.
             </p>
           </div>
@@ -135,6 +141,7 @@ export default async function FluxoCaixaPage({
         </div>
       </Card>
 
+      <FilterDrawer label="Escolher período">
       <form className="flex flex-wrap items-end gap-3">
         <div>
           <Label>De</Label>
@@ -148,16 +155,21 @@ export default async function FluxoCaixaPage({
           Filtrar
         </Button>
       </form>
+      </FilterDrawer>
 
       <div className="grid gap-3 sm:grid-cols-3">
-        <Card className="p-4">
-          <p className="text-xs font-medium uppercase text-slate-500">Entradas (realizadas)</p>
-          <p className="mt-1 text-lg font-bold text-green-600">{formatCurrencyBRL(totalIn)}</p>
-        </Card>
-        <Card className="p-4">
-          <p className="text-xs font-medium uppercase text-slate-500">Saídas (realizadas)</p>
-          <p className="mt-1 text-lg font-bold text-red-600">{formatCurrencyBRL(totalOut)}</p>
-        </Card>
+        <Link href={`/financeiro/receber?status=RECEBIDO&de=${fromInput}&ate=${toInput}`} className={CARD_LINK}>
+          <Card className="h-full p-4">
+            <p className="text-xs font-medium uppercase text-slate-500">Entradas (realizadas)</p>
+            <p className="mt-1 text-lg font-bold text-green-600">{formatCurrencyBRL(totalIn)}</p>
+          </Card>
+        </Link>
+        <Link href={`/financeiro/pagar?status=PAGO&de=${fromInput}&ate=${toInput}`} className={CARD_LINK}>
+          <Card className="h-full p-4">
+            <p className="text-xs font-medium uppercase text-slate-500">Saídas (realizadas)</p>
+            <p className="mt-1 text-lg font-bold text-red-600">{formatCurrencyBRL(totalOut)}</p>
+          </Card>
+        </Link>
         <Card className="p-4">
           <p className="text-xs font-medium uppercase text-slate-500">Saldo do período</p>
           <p className={`mt-1 text-lg font-bold ${saldo >= 0 ? "text-green-600" : "text-red-600"}`}>
@@ -167,16 +179,20 @@ export default async function FluxoCaixaPage({
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3">
-        <Card className="p-4">
-          <p className="text-xs font-medium uppercase text-slate-500">Previsão de entradas</p>
-          <p className="mt-1 text-sm text-slate-700">{formatCurrencyBRL(previsaoEntradas)}</p>
-          <p className="text-xs text-slate-400">Contas a receber pendentes</p>
-        </Card>
-        <Card className="p-4">
-          <p className="text-xs font-medium uppercase text-slate-500">Previsão de saídas</p>
-          <p className="mt-1 text-sm text-slate-700">{formatCurrencyBRL(previsaoSaidas)}</p>
-          <p className="text-xs text-slate-400">Contas a pagar e comissões pendentes</p>
-        </Card>
+        <Link href="/financeiro/receber?status=PENDENTE" className={CARD_LINK}>
+          <Card className="h-full p-4">
+            <p className="text-xs font-medium uppercase text-slate-500">Previsão de entradas</p>
+            <p className="mt-1 text-sm text-slate-700">{formatCurrencyBRL(previsaoEntradas)}</p>
+            <p className="text-xs text-slate-400">Contas a receber pendentes</p>
+          </Card>
+        </Link>
+        <Link href="/financeiro/pagar?status=PENDENTE" className={CARD_LINK}>
+          <Card className="h-full p-4">
+            <p className="text-xs font-medium uppercase text-slate-500">Previsão de saídas</p>
+            <p className="mt-1 text-sm text-slate-700">{formatCurrencyBRL(previsaoSaidas)}</p>
+            <p className="text-xs text-slate-400">Contas a pagar e comissões pendentes</p>
+          </Card>
+        </Link>
         <Card className="p-4">
           <p className="text-xs font-medium uppercase text-slate-500">Resultado previsto</p>
           <p
@@ -187,7 +203,7 @@ export default async function FluxoCaixaPage({
         </Card>
       </div>
 
-      <Card className="hidden overflow-hidden md:block">
+      <Card className="table-scroll hidden overflow-x-auto md:block">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
             <tr>
@@ -201,7 +217,11 @@ export default async function FluxoCaixaPage({
             {movements.map((m, i) => (
               <tr key={i} className="hover:bg-slate-50">
                 <td className="px-4 py-3 text-slate-600">{formatDateBR(m.date)}</td>
-                <td className="px-4 py-3 font-medium text-slate-900">{m.description}</td>
+                <td className="px-4 py-3 font-medium text-slate-900">
+                  <Link href={m.href} className="hover:underline">
+                    {m.description}
+                  </Link>
+                </td>
                 <td className="px-4 py-3">
                   <span className={m.type === "entrada" ? "text-green-600" : "text-red-600"}>
                     {m.type === "entrada" ? "Entrada" : "Saída"}
@@ -231,6 +251,7 @@ export default async function FluxoCaixaPage({
         {movements.map((m, i) => (
           <TableCard
             key={i}
+            href={m.href}
             title={m.description}
             subtitle={formatDateBR(m.date)}
             fields={[

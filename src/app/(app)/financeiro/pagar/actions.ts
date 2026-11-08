@@ -7,6 +7,7 @@ import { requireSession } from "@/lib/permissions";
 import { payableSchema } from "@/lib/validations";
 import { PayableStatus } from "@/generated/prisma/enums";
 import { OperationError, cancelPayable, reverseMovement, updatePayable } from "@/lib/crm-operations";
+import { normalizeMoney } from "@/lib/money";
 
 export type PayableFormState = {
   error?: string;
@@ -64,7 +65,8 @@ export async function updatePayableAction(
   const session = await requireSession();
 
   // Conta já paga trava valor e vencimento: campo desabilitado não vem no formulário.
-  const amount = formData.get("amount") as string | null;
+  const rawAmount = formData.get("amount") as string | null;
+  const amount = rawAmount === null ? null : normalizeMoney(rawAmount);
   const dueDate = formData.get("dueDate") as string | null;
   if (amount !== null && !/^\d+(\.\d{1,2})?$/.test(amount)) {
     return { error: "Verifique os campos destacados.", fieldErrors: { amount: "Informe um valor numérico válido." } };

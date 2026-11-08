@@ -114,9 +114,7 @@ export function ProposalForm({
             <Label>Investimento (R$)</Label>
             <Input
               name="investment"
-              type="number"
-              step="0.01"
-              min="0"
+              type="text" inputMode="decimal" placeholder="0,00"
               defaultValue={defaults?.investment}
             />
             {fieldError("investment") && (

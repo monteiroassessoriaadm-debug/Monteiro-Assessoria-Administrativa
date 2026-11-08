@@ -16,5 +16,19 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
-  overflow-wrap: anywhere; /* texto longo quebra linha em vez de empurrar a página */
+  /* Palavra longa quebra só quando não cabe; "anywhere" partia até valores em R$. */
+  overflow-wrap: break-word;
+}
+
+/* Em tablet, a tabela rola dentro do quadro e a primeira coluna fica à vista. */
+@media (max-width: 1023px) {
+  .table-scroll table :is(th, td):first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: #fff;
+  }
+  .table-scroll table thead th:first-child {
+    background: var(--color-slate-50);
+  }
 }

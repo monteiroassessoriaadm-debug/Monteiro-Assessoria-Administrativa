@@ -8,6 +8,8 @@ import { errorResult, textResult, resolveAccountId, resolveClientId, resolveServ
 import * as ops from "@/lib/crm-operations";
 import { OperationError, type Actor } from "@/lib/crm-operations";
 import { getGoalsProgress, setGoal, type GoalsProgress } from "@/lib/goals";
+import { getAccountBalances } from "@/lib/account-balance";
+import { parseMoney } from "@/lib/money";
 
 type Ctx = { userId: string };
 
@@ -210,6 +212,49 @@ export function registerFase1CrmTools(server: McpServer, ctx: Ctx) {
       },
     },
     (a) => run(() => ops.updateMovement(a.tipo, a.id, { description: a.descricao, category: a.categoria, date: a.data }, actor("atualizar_movimentacao"))),
+  );
+
+  // ---------- Saldo ----------
+  server.registerTool(
+    "consultar_saldo",
+    {
+      title: "Consultar saldo",
+      description: "Mostra o saldo atual de cada conta ativa e o total, somando saldo inicial, recebimentos, pagamentos e ajustes.",
+      inputSchema: {},
+    },
+    () =>
+      run(async () => {
+        const active = (await getAccountBalances()).filter((b) => b.active);
+        return {
+          total: brl(active.reduce((sum, b) => sum + b.current, 0)),
+          contas: active.map((b) => ({ id: b.accountId, conta: b.name, saldo: brl(b.current), ajustes: brl(b.adjustments) })),
+        };
+      }),
+  );
+
+  server.registerTool(
+    "ajustar_saldo",
+    {
+      title: "Ajustar saldo",
+      description:
+        "Informa quanto a conta tem de verdade hoje. O sistema calcula a diferença e grava um ajuste de saldo, sem apagar o histórico. O ajuste não conta como faturamento nem como despesa.",
+      inputSchema: {
+        conta: z.string({ message: "Informe o nome ou o ID da conta." }).min(1, "Informe o nome ou o ID da conta."),
+        valor_real: z
+          .union([z.number(), z.string()], { message: "Informe o valor real, como 950,00." })
+          .describe("Quanto a conta tem hoje (ex.: 950,00 ou 950.00)"),
+        motivo: MOTIVO,
+      },
+    },
+    (a) =>
+      run(async () => {
+        const accountId = await accountArg(a.conta);
+        if (!accountId) throw new OperationError("Informe a conta.");
+        const realBalance = parseMoney(a.valor_real);
+        if (realBalance === null) throw new OperationError(`Valor inválido: "${a.valor_real}". Use, por exemplo, 950,00.`);
+        const r = await ops.adjustBalance({ accountId, realBalance, reason: a.motivo }, actor("ajustar_saldo"));
+        return { conta: r.conta, saldoAnterior: brl(r.saldoAnterior), saldoNovo: brl(r.saldoNovo), diferenca: brl(r.diferenca) };
+      }),
   );
 
   // ---------- Comissões ----------

@@ -61,10 +61,9 @@ export function PayableForm({
               <Label>Valor (R$) *</Label>
               <Input
                 name="amount"
-                type="number"
+                type="text"
                 inputMode="decimal"
-                step="0.01"
-                min="0"
+                placeholder="0,00"
                 defaultValue={defaults?.amount}
                 disabled={lockMoney}
               />

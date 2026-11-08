@@ -54,8 +54,9 @@ export function GoalsSection({ progress, showLink = true }: { progress: GoalsPro
         </p>
       )}
 
-      <Card className="hidden overflow-hidden md:block">
-        <table className="w-full text-sm">
+      {/* Em tablet, a coluna lateral aperta a tabela: ela rola só dentro do próprio quadro. */}
+      <Card className="table-scroll hidden overflow-x-auto md:block">
+        <table className="w-full min-w-[640px] text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
             <tr>
               <th className="px-4 py-3">Período</th>

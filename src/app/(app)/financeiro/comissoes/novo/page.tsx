@@ -8,7 +8,7 @@ import { createCommissionAction } from "../actions";
 export default async function NovaComissaoPage() {
   await requireRole(Role.ADMIN, Role.GESTOR);
 
-  const [users, clients] = await Promise.all([
+  const [users, clients, accounts] = await Promise.all([
     prisma.user.findMany({
       where: { active: true },
       select: { id: true, name: true },
@@ -18,6 +18,11 @@ export default async function NovaComissaoPage() {
       where: { status: "ATIVO" },
       select: { id: true, type: true, fullName: true, legalName: true, tradeName: true },
       orderBy: { createdAt: "desc" },
+    }),
+    prisma.financialAccount.findMany({
+      where: { active: true },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
     }),
   ]);
 
@@ -30,6 +35,7 @@ export default async function NovaComissaoPage() {
         action={createCommissionAction}
         users={users}
         clients={clients.map((c) => ({ id: c.id, label: displayClientName(c) }))}
+        accounts={accounts}
       />
     </div>
   );

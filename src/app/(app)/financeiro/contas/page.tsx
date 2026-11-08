@@ -35,7 +35,7 @@ export default async function ContasFinanceirasPage() {
         </CardContent>
       </Card>
 
-      <Card className="hidden overflow-hidden md:block">
+      <Card className="table-scroll hidden overflow-x-auto md:block">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
             <tr>
@@ -91,6 +91,7 @@ export default async function ContasFinanceirasPage() {
         {balances.map((a) => (
           <TableCard
             key={a.accountId}
+            href={`/financeiro/contas/${a.accountId}/editar`}
             title={a.name}
             subtitle={a.type ?? undefined}
             fields={[

@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { brDayKey, mondayKey, parseDayKey } from "./br-time.ts";
+import { moneyToInput, parseMoney } from "./money.ts";
 import { distributeMonth, meiStatus, monthSegments, progressRow } from "./goals-calc.ts";
 
 const META = 1621;
@@ -80,6 +81,17 @@ test("segunda-feira e validação de data", () => {
 test("progresso não mostra falta negativa", () => {
   assert.deepEqual(progressRow(100, 150, 20), { meta: 100, recebido: 150, aReceber: 20, falta: 0, percentual: 150 });
   assert.equal(progressRow(0, 10, 0).percentual, 0);
+});
+
+test("valores digitados com vírgula", () => {
+  assert.equal(parseMoney("950,00"), 950);
+  assert.equal(parseMoney("1.100,50"), 1100.5);
+  assert.equal(parseMoney("R$ 1.500"), 1500);
+  assert.equal(parseMoney("1100.50"), 1100.5);
+  assert.equal(parseMoney("-20,50"), -20.5);
+  assert.equal(parseMoney("abc"), null);
+  assert.equal(parseMoney("10,123"), null);
+  assert.equal(moneyToInput(1100.5), "1100,50");
 });
 
 test("alerta do MEI a partir de 80%", () => {

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { CLIENT_TOKEN_KEYS } from "@/lib/document-tokens";
+import { normalizeMoney } from "@/lib/money";
 
 const normalizedEmail = z
   .string()
@@ -17,10 +18,17 @@ const optionalDateString = z
 const optionalDecimalString = z
   .string()
   .optional()
+  .transform((v) => (v ? normalizeMoney(v) : v))
   .refine(
     (v) => !v || /^\d+(\.\d{1,2})?$/.test(v),
-    "Informe um valor numérico válido (ex.: 150.00).",
+    "Informe um valor numérico válido (ex.: 150,00).",
   );
+
+const requiredDecimalString = (message: string) =>
+  z
+    .string()
+    .transform(normalizeMoney)
+    .refine((v) => /^\d+(\.\d{1,2})?$/.test(v), message);
 
 const optionalIntString = z
   .string()
@@ -158,9 +166,7 @@ const quoteItemSchema = z.object({
     .optional()
     .refine((v) => !v || /^\d+$/.test(v), "Quantidade inválida.")
     .transform((v) => (v ? parseInt(v, 10) : 1)),
-  unitPrice: z
-    .string()
-    .refine((v) => /^\d+(\.\d{1,2})?$/.test(v), "Valor unitário inválido."),
+  unitPrice: requiredDecimalString("Valor unitário inválido."),
   termDays: optionalIntString,
 });
 
@@ -356,9 +362,7 @@ export type FinancialAccountFormValues = z.infer<typeof financialAccountSchema>;
 export const receivableSchema = z.object({
   clientId: z.string().optional(),
   description: z.string().min(1, "Informe a descrição."),
-  amount: z
-    .string()
-    .refine((v) => /^\d+(\.\d{1,2})?$/.test(v), "Informe um valor numérico válido."),
+  amount: requiredDecimalString("Informe um valor numérico válido."),
   dueDate: optionalDateString,
   accountId: z.string().optional(),
   paymentMethod: z.string().optional(),
@@ -373,9 +377,7 @@ export const payableSchema = z.object({
   description: z.string().min(1, "Informe a descrição."),
   category: z.string().optional(),
   supplier: z.string().optional(),
-  amount: z
-    .string()
-    .refine((v) => /^\d+(\.\d{1,2})?$/.test(v), "Informe um valor numérico válido."),
+  amount: requiredDecimalString("Informe um valor numérico válido."),
   dueDate: optionalDateString,
   accountId: z.string().optional(),
   notes: z.string().optional(),
@@ -389,10 +391,9 @@ export const commissionSchema = z.object({
   category: z.enum(["SALARIO_FIXO", "COMISSAO", "OUTRO_PAGAMENTO"]),
   baseAmount: optionalDecimalString,
   percentage: optionalDecimalString,
-  amount: z
-    .string()
-    .refine((v) => /^\d+(\.\d{1,2})?$/.test(v), "Informe um valor numérico válido."),
+  amount: requiredDecimalString("Informe um valor numérico válido."),
   date: optionalDateString,
+  accountId: z.string().optional(),
   notes: z.string().optional(),
 });
 

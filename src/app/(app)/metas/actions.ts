@@ -5,6 +5,7 @@ import { requireRole } from "@/lib/permissions";
 import { Role } from "@/generated/prisma/enums";
 import { OperationError } from "@/lib/crm-operations";
 import { setGoal, setYearConfig } from "@/lib/goals";
+import { parseMoney } from "@/lib/money";
 
 export type GoalFormState = { error?: string; success?: string };
 
@@ -19,8 +20,8 @@ export async function saveYearConfigAction(_prev: GoalFormState, formData: FormD
     await setYearConfig(
       {
         year: Number(formData.get("year")),
-        minimumWage: Number(formData.get("minimumWage")),
-        meiAnnualLimit: Number(formData.get("meiAnnualLimit")),
+        minimumWage: parseMoney(String(formData.get("minimumWage") ?? "")) ?? 0,
+        meiAnnualLimit: parseMoney(String(formData.get("meiAnnualLimit") ?? "")) ?? 0,
       },
       { userId: session.userId, source: "usuário", tool: "tela: configuração do ano" },
     );
@@ -41,7 +42,7 @@ export async function saveGoalAction(_prev: GoalFormState, formData: FormData): 
       {
         type: formData.get("type") === "SEMANAL" ? "SEMANAL" : "MENSAL",
         date: String(formData.get("date") ?? ""),
-        amount: amount ? Number(amount) : undefined,
+        amount: amount ? (parseMoney(String(amount)) ?? undefined) : undefined,
         automatic,
       },
       { userId: session.userId, source: "usuário", tool: "tela: definir meta" },

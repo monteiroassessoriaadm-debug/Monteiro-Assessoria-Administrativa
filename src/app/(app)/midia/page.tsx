@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { FilterDrawer } from "@/components/ui/filter-drawer";
+import { ActiveFilter, statusLabel, statusList } from "@/components/ui/active-filter";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { TableCard, TableCardList, TableCardEmpty } from "@/components/ui/table-card";
-import { formatDateBR } from "@/lib/utils";
+import { daysAgo, formatWallDateTime } from "@/lib/utils";
 import { brTodayRange } from "@/lib/br-time";
 import { displayClientName } from "@/lib/client-display";
 import { mediaContentStatusLabels, mediaContentStatusTone } from "@/lib/lead-labels";
@@ -14,9 +16,11 @@ import { mediaContentStatusLabels, mediaContentStatusTone } from "@/lib/lead-lab
 export default async function MidiaPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; responsibleId?: string; overdue?: string }>;
+  searchParams: Promise<{ status?: string; responsibleId?: string; overdue?: string; dias?: string }>;
 }) {
-  const { status, responsibleId, overdue: overdueParam } = await searchParams;
+  const { status, responsibleId, overdue: overdueParam, dias } = await searchParams;
+  const statuses = statusList(status);
+  const days = Number(dias) > 0 ? Number(dias) : null;
   const activeStatuses = ["IDEIA", "EM_PRODUCAO", "AGUARDANDO_APROVACAO", "APROVADO"];
 
   const { start: today } = brTodayRange();
@@ -24,7 +28,8 @@ export default async function MidiaPage({
   const [contents, users] = await Promise.all([
     prisma.mediaContent.findMany({
       where: {
-        status: status ? (status as never) : overdueParam ? { in: activeStatuses as never[] } : undefined,
+        status: statuses.length ? { in: statuses as never[] } : overdueParam ? { in: activeStatuses as never[] } : undefined,
+        ...(days ? { publishedAt: { gte: daysAgo(days) } } : {}),
         responsibleId: responsibleId || undefined,
         ...(overdueParam ? { scheduledDate: { lt: today } } : {}),
       },
@@ -51,8 +56,9 @@ export default async function MidiaPage({
         </Link>
       </div>
 
+      <FilterDrawer>
       <form className="flex flex-wrap gap-3">
-        <Select name="status" defaultValue={status ?? ""} className="w-56">
+        <Select name="status" defaultValue={status ?? ""} className="w-full md:w-56">
           <option value="">Todos os status</option>
           {Object.entries(mediaContentStatusLabels).map(([value, label]) => (
             <option key={value} value={value}>
@@ -60,7 +66,7 @@ export default async function MidiaPage({
             </option>
           ))}
         </Select>
-        <Select name="responsibleId" defaultValue={responsibleId ?? ""} className="w-56">
+        <Select name="responsibleId" defaultValue={responsibleId ?? ""} className="w-full md:w-56">
           <option value="">Todos os responsáveis</option>
           {users.map((u) => (
             <option key={u.id} value={u.id}>
@@ -72,8 +78,23 @@ export default async function MidiaPage({
           Filtrar
         </Button>
       </form>
+      </FilterDrawer>
 
-      <Card className="hidden overflow-hidden md:block">
+      <ActiveFilter
+        label={
+          [
+            statuses.length ? statusLabel(statuses, mediaContentStatusLabels) : null,
+            overdueParam ? "atrasados" : null,
+            days ? `últimos ${days} dias` : null,
+            responsibleId ? users.find((u) => u.id === responsibleId)?.name : null,
+          ]
+            .filter(Boolean)
+            .join(" · ") || null
+        }
+        clearHref="/midia"
+      />
+
+      <Card className="table-scroll hidden overflow-x-auto md:block">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
             <tr>
@@ -92,7 +113,7 @@ export default async function MidiaPage({
               return (
                 <tr key={c.id} className="hover:bg-slate-50">
                   <td className={`px-4 py-3 ${overdue ? "font-medium text-red-600" : "text-slate-600"}`}>
-                    {formatDateBR(c.scheduledDate)}
+                    {formatWallDateTime(c.scheduledDate)}
                     {overdue ? " (atrasado)" : ""}
                   </td>
                   <td className="px-4 py-3 font-medium text-slate-900">
@@ -139,7 +160,7 @@ export default async function MidiaPage({
                   label: "Data prevista",
                   value: (
                     <span className={overdue ? "font-medium text-red-600" : undefined}>
-                      {formatDateBR(c.scheduledDate)}
+                      {formatWallDateTime(c.scheduledDate)}
                       {overdue ? " (atrasado)" : ""}
                     </span>
                   ),

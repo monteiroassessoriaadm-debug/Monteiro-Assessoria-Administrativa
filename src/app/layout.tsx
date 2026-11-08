@@ -20,6 +20,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  viewportFit: "cover", // permite respeitar a área segura do iPhone na barra inferior
   // Teclado do celular encolhe a área visível, para o botão de salvar continuar alcançável.
   interactiveWidget: "resizes-content",
 };

@@ -3,6 +3,7 @@ import { Plus } from "lucide-react";
 import { requireRole } from "@/lib/permissions";
 import { Role } from "@/generated/prisma/enums";
 import { prisma } from "@/lib/prisma";
+import { FilterDrawer } from "@/components/ui/filter-drawer";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -81,8 +82,9 @@ export default async function ComissoesPage({
         })}
       </div>
 
+      <FilterDrawer>
       <form className="flex flex-wrap gap-3">
-        <Select name="userId" defaultValue={userId ?? ""} className="w-56">
+        <Select name="userId" defaultValue={userId ?? ""} className="w-full md:w-56">
           <option value="">Todos os usuários</option>
           {users.map((u) => (
             <option key={u.id} value={u.id}>
@@ -90,7 +92,7 @@ export default async function ComissoesPage({
             </option>
           ))}
         </Select>
-        <Select name="category" defaultValue={category ?? ""} className="w-56">
+        <Select name="category" defaultValue={category ?? ""} className="w-full md:w-56">
           <option value="">Todas as categorias</option>
           {Object.entries(commissionCategoryLabels).map(([value, label]) => (
             <option key={value} value={value}>
@@ -102,8 +104,9 @@ export default async function ComissoesPage({
           Filtrar
         </Button>
       </form>
+      </FilterDrawer>
 
-      <Card className="hidden overflow-hidden md:block">
+      <Card className="table-scroll hidden overflow-x-auto md:block">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
             <tr>
@@ -119,7 +122,11 @@ export default async function ComissoesPage({
           <tbody className="divide-y divide-slate-100">
             {commissions.map((c) => (
               <tr key={c.id} className="hover:bg-slate-50">
-                <td className="px-4 py-3 font-medium text-slate-900">{c.user.name}</td>
+                <td className="px-4 py-3 font-medium text-slate-900">
+                  <Link href={`/financeiro/comissoes/${c.id}`} className="hover:underline">
+                    {c.user.name}
+                  </Link>
+                </td>
                 <td className="px-4 py-3 text-slate-600">{commissionCategoryLabels[c.category]}</td>
                 <td className="px-4 py-3 text-slate-600">
                   {c.client ? displayClientName(c.client) : "-"}
@@ -151,6 +158,7 @@ export default async function ComissoesPage({
         {commissions.map((c) => (
           <TableCard
             key={c.id}
+            href={`/financeiro/comissoes/${c.id}`}
             title={c.user.name}
             subtitle={commissionCategoryLabels[c.category]}
             fields={[

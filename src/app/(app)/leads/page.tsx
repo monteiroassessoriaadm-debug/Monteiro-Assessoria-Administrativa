@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Plus, Kanban } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { FilterDrawer } from "@/components/ui/filter-drawer";
+import { ActiveFilter, statusLabel, statusList } from "@/components/ui/active-filter";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,7 +16,7 @@ export default async function LeadsPage({
   searchParams: Promise<{ stage?: string; temperature?: string }>;
 }) {
   const { stage, temperature } = await searchParams;
-  const stages = stage ? stage.split(",") : [];
+  const stages = statusList(stage);
 
   const leads = await prisma.lead.findMany({
     where: {
@@ -53,6 +55,7 @@ export default async function LeadsPage({
         </div>
       </div>
 
+      <FilterDrawer>
       <form className="flex flex-wrap gap-3">
         <select
           name="stage"
@@ -80,8 +83,21 @@ export default async function LeadsPage({
           Filtrar
         </Button>
       </form>
+      </FilterDrawer>
 
-      <Card className="hidden overflow-hidden md:block">
+      <ActiveFilter
+        label={
+          [
+            stages.length ? statusLabel(stages, stageLabels) : null,
+            temperature === "QUENTE" ? "leads quentes" : temperature === "MORNO" ? "leads mornos" : temperature === "FRIO" ? "leads frios" : null,
+          ]
+            .filter(Boolean)
+            .join(" · ") || null
+        }
+        clearHref="/leads"
+      />
+
+      <Card className="table-scroll hidden overflow-x-auto md:block">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
             <tr>

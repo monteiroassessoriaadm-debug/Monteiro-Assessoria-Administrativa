@@ -126,7 +126,7 @@ export default async function InstagramPage() {
 
       <section>
         <SectionTitle>Histórico de registros</SectionTitle>
-        <Card className="hidden overflow-hidden md:block">
+        <Card className="table-scroll hidden overflow-x-auto md:block">
           <table className="w-full text-sm">
             <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
               <tr>
@@ -184,6 +184,7 @@ export default async function InstagramPage() {
           {[...metrics].reverse().map((m) => (
             <TableCard
               key={m.id}
+              href={`/instagram/${m.id}/editar`}
               title={formatDateBR(m.date)}
               subtitle={m.notes ?? undefined}
               fields={[

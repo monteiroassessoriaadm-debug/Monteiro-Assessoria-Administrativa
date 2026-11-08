@@ -84,9 +84,7 @@ export function ServiceForm({
             <Label>Preço padrão (R$)</Label>
             <Input
               name="defaultPrice"
-              type="number"
-              step="0.01"
-              min="0"
+              type="text" inputMode="decimal" placeholder="0,00"
               defaultValue={defaults?.defaultPrice}
             />
             {fieldError("defaultPrice") ? (

@@ -36,13 +36,13 @@ export function AccountForm({
   }, [state, pending, isEdit]);
 
   return (
-    <form ref={formRef} action={formAction} className="flex flex-wrap items-end gap-3">
+    <form ref={formRef} action={formAction} className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-end">
       <div>
         <Label>Nome da conta *</Label>
         <Input
           name="name"
           placeholder="Caixa, Banco X, Nubank PJ..."
-          className="w-56"
+          className="w-full md:w-56"
           defaultValue={defaults?.name}
         />
         {state.fieldErrors?.name && (
@@ -54,7 +54,7 @@ export function AccountForm({
         <Input
           name="type"
           placeholder="Caixa, Conta bancária, Carteira digital..."
-          className="w-56"
+          className="w-full md:w-56"
           defaultValue={defaults?.type ?? undefined}
         />
       </div>
@@ -64,8 +64,8 @@ export function AccountForm({
           name="openingBalance"
           type="text"
           inputMode="decimal"
-          placeholder="0.00"
-          className="w-32"
+          placeholder="0,00"
+          className="w-full md:w-32"
           defaultValue={defaults?.openingBalance ?? undefined}
         />
         {state.fieldErrors?.openingBalance && (
@@ -77,11 +77,11 @@ export function AccountForm({
         <Input
           name="openingBalanceAt"
           type="date"
-          className="w-40"
+          className="w-full md:w-40"
           defaultValue={defaults?.openingBalanceAt ?? undefined}
         />
       </div>
-      <label className="mb-2 flex items-center gap-2 text-sm">
+      <label className="flex min-h-11 items-center gap-2 text-sm md:mb-2 md:min-h-0">
         <input type="checkbox" name="active" defaultChecked={defaults?.active ?? true} />
         Ativa
       </label>
