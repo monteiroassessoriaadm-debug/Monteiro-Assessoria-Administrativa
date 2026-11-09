@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/permissions";
 import { calendarEventSchema } from "@/lib/validations";
+import { OperationError, setCalendarEventStatus, type CalendarEventStatusValue } from "@/lib/crm-operations";
 
 export type CalendarEventFormState = {
   error?: string;
@@ -101,4 +102,19 @@ export async function deleteCalendarEventAction(eventId: string) {
   await requireSession();
   await prisma.calendarEvent.delete({ where: { id: eventId } }).catch(() => null);
   revalidatePath("/agenda");
+}
+
+export async function setEventStatusAction(eventId: string, status: CalendarEventStatusValue, result?: string) {
+  const session = await requireSession();
+  try {
+    await setCalendarEventStatus(eventId, status, { result }, { userId: session.userId, source: "usuário", tool: "tela: agenda" });
+  } catch (e) {
+    if (e instanceof OperationError) return { error: e.message };
+    throw e;
+  }
+  revalidatePath("/agenda");
+  revalidatePath(`/agenda/${eventId}`);
+  revalidatePath("/dashboard");
+  revalidatePath("/midia");
+  return {};
 }

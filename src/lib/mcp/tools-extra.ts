@@ -4,7 +4,15 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { prisma } from "@/lib/prisma";
 import { displayClientName } from "@/lib/client-display";
 import { formatCurrencyBRL } from "@/lib/utils";
-import { calendarEventTypeLabels } from "@/lib/lead-labels";
+import { calendarEventStatusLabels, calendarEventTypeLabels } from "@/lib/lead-labels";
+import { dayProgress, isEventOverdue } from "@/lib/agenda";
+import {
+  OperationError,
+  completePublicationEvents,
+  linkedPublicationEvents,
+  setCalendarEventStatus,
+  type CalendarEventStatusValue,
+} from "@/lib/crm-operations";
 import { logMcpAction, logClientTimelineViaClaude } from "@/lib/mcp/audit";
 import { textResult, errorResult, resolveClientId, resolveServiceId } from "@/lib/mcp/tools";
 
@@ -131,6 +139,30 @@ const EVENT_TYPES = [
   "RETORNO_CLIENTE",
 ] as const;
 
+const EVENT_STATUS = ["PENDENTE", "CONCLUIDO", "NAO_REALIZADO"] as const;
+
+/** Situação do compromisso como as ferramentas devolvem. */
+function eventStatusFields(e: { status: string; startAt: Date; endAt: Date | null; completedAt: Date | null; result: string | null }) {
+  return {
+    status: e.status,
+    statusNome: calendarEventStatusLabels[e.status] ?? e.status,
+    atrasado: isEventOverdue(e, nowWall()),
+    concluidoEm: e.completedAt ? fmtWall(new Date(e.completedAt.getTime() - BRASILIA_OFFSET_MS)) : null,
+    resultado: e.result,
+  };
+}
+
+/** Roda uma alteração da agenda e devolve o erro de regra como mensagem. */
+async function agendaStatus(id: string, status: CalendarEventStatusValue, resultado: string | undefined, ctx: Ctx, tool: string) {
+  try {
+    const r = await setCalendarEventStatus(id, status, { result: resultado }, { userId: ctx.userId, source: "Claude", tool });
+    return textResult({ ok: true, ...r, concluidoEm: r.concluidoEm ? fmtWall(new Date(r.concluidoEm.getTime() - BRASILIA_OFFSET_MS)) : null });
+  } catch (e) {
+    if (e instanceof OperationError) return errorResult(e.message);
+    throw e;
+  }
+}
+
 const MEDIA_STATUS = [
   "IDEIA",
   "EM_PRODUCAO",
@@ -150,15 +182,16 @@ export function registerExtraCrmTools(server: McpServer, ctx: Ctx) {
     {
       title: "Listar agenda",
       description:
-        "Lista os compromissos da agenda do CRM (atendimentos, reuniões, prazos, entregas, prospecção, publicações, gravações, retornos). Padrão: de hoje até 7 dias. Horários de Brasília.",
+        "Lista os compromissos da agenda do CRM (atendimentos, reuniões, prazos, entregas, prospecção, publicações, gravações, retornos) com a situação de cada um (PENDENTE, CONCLUIDO, NAO_REALIZADO, e se está atrasado). Padrão: de hoje até 7 dias. Horários de Brasília.",
       inputSchema: {
         de: z.string().optional().describe("Início do período (YYYY-MM-DD). Padrão: hoje."),
         ate: z.string().optional().describe("Fim do período (YYYY-MM-DD). Padrão: hoje + 7 dias."),
         tipo: z.enum(EVENT_TYPES).optional(),
         cliente: z.string().optional().describe("Nome ou ID do cliente"),
+        status: z.enum(EVENT_STATUS).optional().describe("Só os compromissos nesta situação"),
       },
     },
-    async ({ de, ate, tipo, cliente }) => {
+    async ({ de, ate, tipo, cliente, status }) => {
       const from = parseWall(de) ?? startOfWallDay(nowWall());
       const toParsed = parseWall(ate);
       if (from === "invalid" || toParsed === "invalid") return errorResult("Data inválida. Use YYYY-MM-DD.");
@@ -174,7 +207,7 @@ export function registerExtraCrmTools(server: McpServer, ctx: Ctx) {
       }
 
       const events = await prisma.calendarEvent.findMany({
-        where: { startAt: { gte: from, lte: to }, type: tipo ?? undefined, clientId },
+        where: { startAt: { gte: from, lte: to }, type: tipo ?? undefined, clientId, status: status ?? undefined },
         include: { client: true, responsible: true },
         orderBy: { startAt: "asc" },
         take: 200,
@@ -183,6 +216,7 @@ export function registerExtraCrmTools(server: McpServer, ctx: Ctx) {
       return textResult({
         periodo: `${fmtDay(from)} a ${fmtDay(to)}`,
         total: events.length,
+        concluidos: events.filter((e) => e.status === "CONCLUIDO").length,
         eventos: events.map((e) => ({
           id: e.id,
           titulo: e.title,
@@ -194,6 +228,8 @@ export function registerExtraCrmTools(server: McpServer, ctx: Ctx) {
           cliente: e.client ? displayClientName(e.client) : null,
           responsavel: e.responsible?.name ?? null,
           observacoes: e.notes,
+          ...eventStatusFields(e),
+          conteudoDeMidiaId: e.mediaContentId,
         })),
       });
     },
@@ -278,7 +314,8 @@ export function registerExtraCrmTools(server: McpServer, ctx: Ctx) {
     "atualizar_evento_agenda",
     {
       title: "Atualizar compromisso da agenda",
-      description: "Remarca ou altera um compromisso da agenda (título, tipo, horário, cliente, observações).",
+      description:
+        "Remarca ou altera um compromisso da agenda (título, tipo, horário, cliente, observações) e/ou muda a situação: PENDENTE (reabre), CONCLUIDO ou NAO_REALIZADO, com resultado opcional. Publicação ligada a conteúdo de mídia: CONCLUIDO marca o conteúdo como PUBLICADO.",
       inputSchema: {
         id: z.string(),
         titulo: z.string().optional(),
@@ -287,11 +324,17 @@ export function registerExtraCrmTools(server: McpServer, ctx: Ctx) {
         fim: z.string().optional().describe(DATA_HORA + " (vazio remove)"),
         cliente: z.string().optional(),
         observacoes: z.string().optional(),
+        status: z.enum(EVENT_STATUS).optional(),
+        resultado: z.string().optional().describe('Observação curta do resultado (ex.: "cliente respondeu"). Vazio limpa.'),
       },
     },
-    async ({ id, titulo, tipo, inicio, fim, cliente, observacoes }) => {
+    async ({ id, titulo, tipo, inicio, fim, cliente, observacoes, status, resultado }) => {
       const event = await prisma.calendarEvent.findUnique({ where: { id } });
       if (!event) return errorResult(`Compromisso "${id}" não encontrado.`);
+      const onlyStatus = [titulo, tipo, inicio, fim, cliente, observacoes].every((v) => v === undefined);
+      if (onlyStatus && (status !== undefined || resultado !== undefined)) {
+        return agendaStatus(id, status ?? event.status, resultado, ctx, "atualizar_evento_agenda");
+      }
       const startAt = inicio !== undefined ? parseWall(inicio) : undefined;
       const endAt = fim !== undefined ? parseWall(fim) : undefined;
       if (startAt === "invalid" || endAt === "invalid" || startAt === null) return errorResult(`Data inválida. ${DATA_HORA}.`);
@@ -321,8 +364,49 @@ export function registerExtraCrmTools(server: McpServer, ctx: Ctx) {
         oldValue: { title: event.title, type: event.type, startAt: event.startAt, endAt: event.endAt, clientId: event.clientId, notes: event.notes },
         newValue: { title: updated.title, type: updated.type, startAt: updated.startAt, endAt: updated.endAt, clientId: updated.clientId, notes: updated.notes },
       });
-      return textResult({ ok: true, id, titulo: updated.title, inicio: fmtWall(updated.startAt), fim: fmtWall(updated.endAt) });
+      if (status !== undefined || resultado !== undefined) {
+        try {
+          await setCalendarEventStatus(id, status ?? updated.status, { result: resultado }, { userId: ctx.userId, source: "Claude", tool: "atualizar_evento_agenda" });
+        } catch (e) {
+          if (e instanceof OperationError) return errorResult(e.message);
+          throw e;
+        }
+      }
+      const final = await prisma.calendarEvent.findUniqueOrThrow({ where: { id } });
+      return textResult({
+        ok: true,
+        id,
+        titulo: final.title,
+        inicio: fmtWall(final.startAt),
+        fim: fmtWall(final.endAt),
+        ...eventStatusFields(final),
+      });
     },
+  );
+
+  server.registerTool(
+    "concluir_evento_agenda",
+    {
+      title: "Concluir compromisso da agenda",
+      description:
+        'Marca um compromisso da agenda como CONCLUIDO, guardando data/hora da conclusão e um resultado curto opcional (ex.: "mandei a mensagem", "cliente respondeu", "fechou"). Publicação ligada a conteúdo de mídia: o conteúdo vira PUBLICADO também. Para desfazer, use reabrir_evento_agenda.',
+      inputSchema: {
+        id: z.string(),
+        resultado: z.string().optional().describe("Observação curta do resultado (opcional)"),
+      },
+    },
+    async ({ id, resultado }) => agendaStatus(id, "CONCLUIDO", resultado, ctx, "concluir_evento_agenda"),
+  );
+
+  server.registerTool(
+    "reabrir_evento_agenda",
+    {
+      title: "Reabrir compromisso da agenda",
+      description:
+        "Desfaz a conclusão (ou o não realizado) e volta o compromisso para PENDENTE, limpando data da conclusão e resultado. Se a conclusão tinha marcado o conteúdo de mídia como publicado, ele volta ao status anterior.",
+      inputSchema: { id: z.string() },
+    },
+    async ({ id }) => agendaStatus(id, "PENDENTE", undefined, ctx, "reabrir_evento_agenda"),
   );
 
   server.registerTool(
@@ -456,6 +540,7 @@ export function registerExtraCrmTools(server: McpServer, ctx: Ctx) {
             clientId: clientRes.clientId,
             responsibleId: ctx.userId,
             notes: `Conteúdo #${content.number} do calendário de mídia.`,
+            mediaContentId: content.id,
             createdById: ctx.userId,
           },
         });
@@ -534,15 +619,16 @@ export function registerExtraCrmTools(server: McpServer, ctx: Ctx) {
 
       if (when) {
         await prisma.calendarEvent.updateMany({
-          where: { type: "PUBLICACAO", notes: `Conteúdo #${content.number} do calendário de mídia.` },
+          where: linkedPublicationEvents(content),
           data: { startAt: when, title: `Publicar: ${updated.title}${updated.type ? ` (${updated.type})` : ""}` },
         });
       }
       if (status === "CANCELADO") {
         await prisma.calendarEvent.deleteMany({
-          where: { type: "PUBLICACAO", notes: `Conteúdo #${content.number} do calendário de mídia.` },
+          where: linkedPublicationEvents(content),
         });
       }
+      if (status === "PUBLICADO") await completePublicationEvents(content);
 
       const resumo = status ? `status ${status}` : "dados alterados";
       await logMcpAction({
@@ -1127,7 +1213,7 @@ export function registerExtraCrmTools(server: McpServer, ctx: Ctx) {
       return textResult({
         cliente: client ? displayClientName(client) : cliente,
         whatsapp: client?.whatsapp ?? null,
-        proximosCompromissos: events.map((e) => ({ id: e.id, titulo: e.title, inicio: fmtWall(e.startAt) })),
+        proximosCompromissos: events.map((e) => ({ id: e.id, titulo: e.title, inicio: fmtWall(e.startAt), status: e.status })),
         historico: timeline.map((t) => ({ quando: fmtDay(t.createdAt), tipo: t.type, descricao: t.description })),
       });
     },
@@ -1160,7 +1246,9 @@ export async function agendaEConteudosResumo() {
       titulo: e.title,
       tipo: calendarEventTypeLabels[e.type] ?? e.type,
       cliente: e.client ? displayClientName(e.client) : null,
+      ...eventStatusFields(e),
     })),
+    agendaDeHojeProgresso: dayProgress(eventosHoje),
     conteudosProximos7Dias: conteudos.map((c) => ({
       id: c.id,
       quando: fmtWall(c.scheduledDate),

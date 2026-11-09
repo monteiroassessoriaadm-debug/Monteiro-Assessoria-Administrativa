@@ -148,7 +148,7 @@ export function registerCrmTools(server: McpServer, ctx: Ctx) {
     {
       title: "Resumo do dia",
       description:
-        "Visão geral do CRM agora: progresso das metas, saldo por conta, contas a receber/pagar pendentes e vencidas, tarefas atrasadas/hoje/próximas, leads com follow-up vencido, agenda de hoje e conteúdos de mídia dos próximos 7 dias.",
+        "Visão geral do CRM agora: progresso das metas, saldo por conta, contas a receber/pagar pendentes e vencidas, tarefas atrasadas/hoje/próximas, leads com follow-up vencido, agenda de hoje (com a situação de cada compromisso e quantos já foram concluídos) e conteúdos de mídia dos próximos 7 dias.",
       inputSchema: {},
     },
     async () => {

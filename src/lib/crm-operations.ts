@@ -803,3 +803,129 @@ export async function mergeProspects(
   await audit(actor, "ProspectingEntry", keepId, `Fichas de "${keep.name}" mescladas`, { mantida: keep, absorvida: absorb }, data);
   return { id: keepId, nome: keep.name, fichaAbsorvida: absorbId, depois: data };
 }
+
+// ---------- Agenda ----------
+
+export type CalendarEventStatusValue = "PENDENTE" | "CONCLUIDO" | "NAO_REALIZADO";
+
+const STATUS_NOME: Record<CalendarEventStatusValue, string> = {
+  PENDENTE: "Pendente",
+  CONCLUIDO: "Concluído",
+  NAO_REALIZADO: "Não realizado",
+};
+
+/** Publicações de um conteúdo: pela ligação, ou pela observação que o conector gravava antes dela existir. */
+export function linkedPublicationEvents(content: { id: string; number: number }) {
+  return {
+    type: "PUBLICACAO" as const,
+    OR: [
+      { mediaContentId: content.id },
+      { mediaContentId: null, notes: `Conteúdo #${content.number} do calendário de mídia.` },
+    ],
+  };
+}
+
+/**
+ * Conclui, marca como não realizado ou reabre um compromisso. Publicação ligada
+ * ao calendário de mídia: concluir marca o conteúdo como PUBLICADO; reabrir
+ * devolve o status anterior, se foi a agenda que publicou.
+ */
+export async function setCalendarEventStatus(
+  id: string,
+  status: CalendarEventStatusValue,
+  params: { result?: string | null },
+  actor: Actor,
+) {
+  const event = await prisma.calendarEvent.findUnique({ where: { id }, include: { mediaContent: true } });
+  if (!event) throw new OperationError(`Compromisso "${id}" não encontrado.`);
+
+  const result = text(params.result);
+  const sameStatus = event.status === status;
+  if (sameStatus && (status === "PENDENTE" || result === undefined)) {
+    return { id, titulo: event.title, status, statusNome: STATUS_NOME[status], semMudanca: true };
+  }
+
+  const data =
+    status === "PENDENTE"
+      ? { status, completedAt: null, result: null }
+      : { status, completedAt: sameStatus ? event.completedAt : new Date(), result };
+  const updated = await prisma.calendarEvent.update({ where: { id }, data });
+
+  await audit(
+    actor,
+    "CalendarEvent",
+    id,
+    `Agenda: "${event.title}" — ${STATUS_NOME[status]}${updated.result ? ` (${updated.result})` : ""}`,
+    { status: event.status, completedAt: event.completedAt, result: event.result },
+    { status: updated.status, completedAt: updated.completedAt, result: updated.result },
+  );
+  if (status !== "PENDENTE" && !sameStatus) {
+    await timeline(
+      actor,
+      event.clientId,
+      "EVENTO_AGENDA",
+      `Compromisso "${event.title}" ${status === "CONCLUIDO" ? "concluído" : "não realizado"}${updated.result ? `: ${updated.result}` : ""}`,
+    );
+  }
+
+  const media = event.type === "PUBLICACAO" ? event.mediaContent : null;
+  let conteudo: { id: string; numero: number; status: string } | null = null;
+
+  if (media && status === "CONCLUIDO" && media.status !== "PUBLICADO" && media.status !== "CANCELADO") {
+    await prisma.mediaContent.update({ where: { id: media.id }, data: { status: "PUBLICADO", publishedAt: new Date() } });
+    await audit(
+      actor,
+      "MediaContent",
+      media.id,
+      `Mídia: conteúdo #${media.number} publicado pela agenda`,
+      { status: media.status, publishedAt: media.publishedAt },
+      { status: "PUBLICADO", eventoAgendaId: id },
+    );
+    await timeline(actor, media.clientId, "CONTEUDO_STATUS", `Conteúdo "${media.title}" publicado (concluído na agenda)`);
+    conteudo = { id: media.id, numero: media.number, status: "PUBLICADO" };
+  }
+
+  if (media && event.status === "CONCLUIDO" && status !== "CONCLUIDO" && media.status === "PUBLICADO") {
+    // Só desfaz se a última mudança do conteúdo foi esta agenda que publicou.
+    const last = await prisma.mcpAuditLog.findFirst({
+      where: { entity: "MediaContent", entityId: media.id },
+      orderBy: { createdAt: "desc" },
+    });
+    const before = last?.oldValue as { status?: string; publishedAt?: string | null } | null;
+    const after = last?.newValue as { eventoAgendaId?: string } | null;
+    if (after?.eventoAgendaId === id && before?.status) {
+      const restored = before.status as typeof media.status;
+      await prisma.mediaContent.update({
+        where: { id: media.id },
+        data: { status: restored, publishedAt: before.publishedAt ? new Date(before.publishedAt) : null },
+      });
+      await audit(
+        actor,
+        "MediaContent",
+        media.id,
+        `Mídia: conteúdo #${media.number} voltou para ${restored} (agenda reaberta)`,
+        { status: "PUBLICADO" },
+        { status: restored },
+      );
+      conteudo = { id: media.id, numero: media.number, status: restored };
+    }
+  }
+
+  return {
+    id,
+    titulo: updated.title,
+    status: updated.status,
+    statusNome: STATUS_NOME[updated.status],
+    concluidoEm: updated.completedAt,
+    resultado: updated.result,
+    conteudoDeMidia: conteudo,
+  };
+}
+
+/** Conteúdo publicado pela tela ou pelo conector: a publicação na agenda fica concluída. */
+export async function completePublicationEvents(content: { id: string; number: number }) {
+  await prisma.calendarEvent.updateMany({
+    where: { ...linkedPublicationEvents(content), status: "PENDENTE" },
+    data: { status: "CONCLUIDO", completedAt: new Date() },
+  });
+}

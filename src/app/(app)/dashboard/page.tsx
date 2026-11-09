@@ -23,6 +23,7 @@ import {
   Sparkles,
   RotateCcw,
   Camera,
+  Check,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { StatCard, SectionTitle } from "@/components/dashboard/stat-card";
@@ -402,7 +403,14 @@ export default async function DashboardPage() {
                 href={`/agenda/${e.id}`}
                 className="flex min-h-11 items-center justify-between gap-3 rounded-lg px-2 py-1.5 text-sm hover:bg-slate-50"
               >
-                <span className="min-w-0 text-slate-800">{e.title}</span>
+                <span
+                  className={
+                    e.status === "CONCLUIDO" ? "min-w-0 text-slate-400 line-through" : "min-w-0 text-slate-800"
+                  }
+                >
+                  {e.status === "CONCLUIDO" && <Check className="mr-1 inline h-3.5 w-3.5 text-emerald-600" aria-label="Concluído" />}
+                  {e.title}
+                </span>
                 <span className="shrink-0 text-xs text-slate-500">{formatWallTime(e.startAt)}</span>
               </Link>
             ))}

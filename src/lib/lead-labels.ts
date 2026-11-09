@@ -204,3 +204,15 @@ export const calendarEventTypeLabels: Record<string, string> = {
   GRAVACAO: "Gravação",
   RETORNO_CLIENTE: "Retorno de cliente",
 };
+
+export const calendarEventStatusLabels: Record<string, string> = {
+  PENDENTE: "Pendente",
+  CONCLUIDO: "Concluído",
+  NAO_REALIZADO: "Não realizado",
+};
+
+export const calendarEventStatusTone: Record<string, "slate" | "green" | "purple"> = {
+  PENDENTE: "slate",
+  CONCLUIDO: "green",
+  NAO_REALIZADO: "purple",
+};

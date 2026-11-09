@@ -7,6 +7,7 @@ import { requireSession } from "@/lib/permissions";
 import { addTimelineEvent } from "@/lib/timeline";
 import { mediaContentSchema } from "@/lib/validations";
 import { MediaContentStatus } from "@/generated/prisma/enums";
+import { completePublicationEvents } from "@/lib/crm-operations";
 
 export type MediaContentFormState = {
   error?: string;
@@ -212,6 +213,7 @@ export async function publishMediaContentAction(contentId: string, formData: For
       link: link || null,
     },
   });
+  await completePublicationEvents(content);
 
   await addTimelineEvent({
     clientId: content.clientId,
@@ -222,6 +224,7 @@ export async function publishMediaContentAction(contentId: string, formData: For
     createdById: session.userId,
   });
 
+  revalidatePath("/agenda");
   revalidatePath("/midia");
   revalidatePath(`/midia/${contentId}`);
   revalidatePath(`/clientes/${content.clientId}`);

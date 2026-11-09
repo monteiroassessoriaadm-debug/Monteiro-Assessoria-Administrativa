@@ -551,6 +551,12 @@ enum CalendarEventType {
   RETORNO_CLIENTE
 }
 
+enum CalendarEventStatus {
+  PENDENTE
+  CONCLUIDO
+  NAO_REALIZADO
+}
+
 model CalendarEvent {
   id      String            @id @default(cuid())
   title   String
@@ -564,12 +570,23 @@ model CalendarEvent {
   responsible   User?   @relation("EventResponsible", fields: [responsibleId], references: [id])
   notes         String?
 
+  // Concluir na agenda: quando foi feito e uma observação curta do resultado.
+  status      CalendarEventStatus @default(PENDENTE)
+  completedAt DateTime?
+  result      String?
+
+  // Publicação ligada a um conteúdo do calendário de mídia.
+  mediaContentId String?
+  mediaContent   MediaContent? @relation(fields: [mediaContentId], references: [id], onDelete: SetNull)
+
   createdById String?
   createdBy   User?    @relation("EventCreatedBy", fields: [createdById], references: [id])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@index([startAt])
+  @@index([status])
+  @@index([mediaContentId])
   @@map("calendar_events")
 }
 
@@ -786,6 +803,8 @@ model MediaContent {
   link        String? // link do conteúdo publicado, preenchido manualmente
 
   notes String?
+
+  calendarEvents CalendarEvent[]
 
   createdById String?
   createdBy   User?    @relation("MediaContentCreatedBy", fields: [createdById], references: [id])

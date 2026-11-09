@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 /**
  * Lista de cartões usada no celular como alternativa às tabelas (que só
@@ -16,12 +17,14 @@ export function TableCard({
   fields,
   actions,
   href,
+  className,
 }: {
   title: React.ReactNode;
   subtitle?: React.ReactNode;
   fields?: { label: string; value: React.ReactNode }[];
   actions?: React.ReactNode;
   href?: string;
+  className?: string;
 }) {
   const main = (
     <>
@@ -49,7 +52,7 @@ export function TableCard({
 
   // Os botões ficam fora do link: botão dentro de link é inválido e o toque vira navegação.
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+    <div className={cn("overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm", className)}>
       {href ? (
         <Link href={href} className="block p-4 active:bg-slate-50">
           {main}

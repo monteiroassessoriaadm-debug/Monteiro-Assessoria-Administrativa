@@ -12,6 +12,8 @@ export function DeleteEventButton({ eventId }: { eventId: string }) {
     <Button
       variant="ghost"
       size="sm"
+      className="min-w-11"
+      aria-label="Excluir evento"
       disabled={pending}
       onClick={() => startTransition(() => deleteCalendarEventAction(eventId))}
     >
