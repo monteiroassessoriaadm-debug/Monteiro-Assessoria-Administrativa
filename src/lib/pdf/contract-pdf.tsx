@@ -2,8 +2,8 @@ import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/render
 import { splitContractBlocks } from "@/lib/contract-render";
 
 // Identidade da Monteiro: preto e dourado.
-const BLACK = "#14181f";
-const GOLD = "#b8892b";
+const BLACK = "#0f0f0f";
+const GOLD = "#bd9548"; // dourado oficial (mesmo da proposta comercial)
 const MUTED = "#64748b";
 
 const s = StyleSheet.create({
@@ -17,7 +17,7 @@ const s = StyleSheet.create({
   title: { fontSize: 13, fontFamily: "Helvetica-Bold", textAlign: "center", marginBottom: 14, letterSpacing: 0.5 },
   heading: { fontSize: 10, fontFamily: "Helvetica-Bold", color: GOLD, marginTop: 10, marginBottom: 4 },
   paragraph: { marginBottom: 7, textAlign: "justify" },
-  signatures: { marginTop: 36, flexDirection: "row", justifyContent: "space-between" },
+  signatures: { marginTop: 28, flexDirection: "row", justifyContent: "space-between" },
   signBox: { width: "46%" },
   signLine: { borderTopWidth: 1, borderTopColor: BLACK, marginBottom: 4 },
   signRole: { fontSize: 8, color: GOLD, fontFamily: "Helvetica-Bold", letterSpacing: 0.5 },
@@ -25,7 +25,7 @@ const s = StyleSheet.create({
   signDoc: { fontSize: 8, color: MUTED },
   hint: { marginTop: 18, fontSize: 8, color: MUTED, textAlign: "center" },
   draft: { position: "absolute", top: 380, left: 90, fontSize: 64, color: "#e5e7eb", transform: "rotate(-30deg)", fontFamily: "Helvetica-Bold" },
-  footer: { position: "absolute", bottom: 24, left: 48, right: 48, flexDirection: "row", justifyContent: "space-between", fontSize: 7.5, color: MUTED, borderTopWidth: 1, borderTopColor: "#e2e8f0", paddingTop: 6 },
+  footer: { position: "absolute", bottom: 24, left: 48, right: 150, fontSize: 7.5, color: MUTED },
 });
 
 export type ContractPdfProps = {
@@ -55,6 +55,9 @@ export function ContractPdf({ company, contract }: ContractPdfProps) {
           </Text>
         )}
 
+        <Text style={s.footer} fixed>
+          {footerLeft}
+        </Text>
         <View style={s.header} fixed>
           <View>
             {company.logoData ? (
@@ -111,10 +114,6 @@ export function ContractPdf({ company, contract }: ContractPdfProps) {
           </View>
         )}
 
-        <View style={s.footer} fixed>
-          <Text>{footerLeft}</Text>
-          <Text render={({ pageNumber, totalPages }) => `Página ${pageNumber} de ${totalPages}`} />
-        </View>
       </Page>
     </Document>
   );

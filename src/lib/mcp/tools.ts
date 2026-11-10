@@ -9,6 +9,7 @@ import { formatCurrencyBRL, formatDateBR } from "@/lib/utils";
 import { addTimelineEvent } from "@/lib/timeline";
 import { logMcpAction, logClientTimelineViaClaude } from "@/lib/mcp/audit";
 import { brTodayRange } from "@/lib/br-time";
+import { scheduleContractEvents } from "@/lib/contracts";
 
 type Ctx = { userId: string };
 
@@ -873,11 +874,11 @@ export function registerCrmTools(server: McpServer, ctx: Ctx) {
       const accountResolution = await resolveAccountId(conta);
       if (!accountResolution.ok) return errorResult(accountResolution.error);
 
-      let contract: { id: string; quoteId: string | null; clientId: string } | null = null;
+      let contract: { id: string; quoteId: string | null; clientId: string; status: string } | null = null;
       if (contrato) {
         contract = await prisma.contract.findFirst({
           where: { OR: [{ id: contrato }, { code: contrato.trim().toUpperCase() }] },
-          select: { id: true, quoteId: true, clientId: true },
+          select: { id: true, quoteId: true, clientId: true, status: true },
         });
         if (!contract) return errorResult(`Contrato "${contrato}" não encontrado.`);
         if (contract.clientId !== clientResolution.clientId) return errorResult(`O contrato ${contrato} é de outro cliente.`);
@@ -910,7 +911,13 @@ export function registerCrmTools(server: McpServer, ctx: Ctx) {
         userId: ctx.userId,
       });
 
-      return textResult({ ok: true, id: receivable.id, numero: receivable.number });
+      // Parcela de contrato já assinado entra direto na agenda, como as da assinatura.
+      const agenda =
+        contract && (contract.status === "ASSINADO" || contract.status === "VIGENTE")
+          ? await scheduleContractEvents(contract.id, { userId: ctx.userId, source: "Claude", tool: "criar_conta_receber" })
+          : [];
+
+      return textResult({ ok: true, id: receivable.id, numero: receivable.number, ...(agenda.length ? { agendaCriada: agenda } : {}) });
     },
   );
 
