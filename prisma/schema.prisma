@@ -35,8 +35,6 @@ model User {
   quotesCreated               Quote[]                  @relation("QuoteCreatedBy")
   proposalsCreated            Proposal[]               @relation("ProposalCreatedBy")
   prospectsResponsible        ProspectingEntry[]       @relation("ProspectResponsible")
-  templatesCreated            DocumentTemplate[]       @relation("TemplateCreatedBy")
-  documentsCreated            GeneratedDocument[]      @relation("DocumentCreatedBy")
   serviceInstancesResponsible ServiceInstance[]        @relation("ServiceInstanceResponsible")
   serviceInstancesCreated     ServiceInstance[]        @relation("ServiceInstanceCreatedBy")
   tasksAssigned               Task[]                   @relation("TaskAssignedTo")
@@ -149,7 +147,6 @@ model Client {
   timelineEvents     TimelineEvent[]
   quotes             Quote[]
   proposals          Proposal[]
-  documents          GeneratedDocument[]
   contracts          Contract[]
   legalConsultations LegalConsultation[]
   serviceInstances   ServiceInstance[]
@@ -398,71 +395,6 @@ model ProspectingEntry {
   updatedAt DateTime @updatedAt
 
   @@map("prospecting_entries")
-}
-
-// ---------- LEGADO: Documentos (substituído pelo Jurídico) ----------
-// Os registros foram copiados para ContractTemplate/Contract na migração
-// 20261110120000_juridico_contratos. As telas foram removidas; as tabelas
-// só saem numa migração seguinte, depois da conferência dos dados migrados.
-//
-// ---------- Fase 3: Documentos ----------
-// O administrador cadastra e edita os modelos; o sistema nunca inventa
-// cláusulas jurídicas. Campos dinâmicos {{TOKEN}} são substituídos na
-// geração. Documentos gerados ficam congelados na versão do modelo usada.
-
-model DocumentTemplate {
-  id             String  @id @default(cuid())
-  baseTemplateId String // agrupa as versões de um mesmo modelo
-  name           String
-  category       String?
-  version        Int     @default(1)
-  active         Boolean @default(true)
-  content        String // corpo do documento com {{TOKENS}} — editado pelo admin
-  headerNote     String?
-  footerNote     String?
-  fieldsSchema   String // JSON: [{ key, label, type, required }] — campos específicos deste modelo
-
-  createdById String?
-  createdBy   User?    @relation("TemplateCreatedBy", fields: [createdById], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  documents GeneratedDocument[]
-
-  @@index([baseTemplateId])
-  @@map("document_templates")
-}
-
-enum DocumentStatus {
-  RASCUNHO
-  GERADO
-  ENVIADO
-  AGUARDANDO_ASSINATURA
-  ASSINADO
-  CANCELADO
-}
-
-model GeneratedDocument {
-  id         String           @id @default(cuid())
-  number     Int // número sequencial de exibição, atribuído na criação
-  templateId String
-  template   DocumentTemplate @relation(fields: [templateId], references: [id])
-  clientId   String
-  client     Client           @relation(fields: [clientId], references: [id])
-  title      String
-  status     DocumentStatus   @default(GERADO)
-
-  fieldValues     String // JSON com os valores preenchidos no momento da geração
-  renderedContent String // texto final, já com os tokens substituídos (congelado)
-
-  createdById String?
-  createdBy   User?    @relation("DocumentCreatedBy", fields: [createdById], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([clientId])
-  @@index([status])
-  @@map("generated_documents")
 }
 
 // ---------- Fase 4: Operacional ----------
@@ -1071,7 +1003,7 @@ model ContractTemplate {
   content        String // corpo com {{campos}} — editado pelo admin
   fieldsSchema   String // JSON: [{ key, label, type, required, default?, hint? }]
 
-  legacyDocumentTemplateId String? @unique // origem em document_templates (migração)
+  legacyDocumentTemplateId String? @unique // id do modelo no sistema antigo (Documentos, já removido)
 
   createdById String?
   createdBy   User?    @relation("ContractTemplateCreatedBy", fields: [createdById], references: [id])
@@ -1125,7 +1057,7 @@ model Contract {
   currentVersion  Int     @default(1)
   notes           String?
 
-  legacyDocumentId String? @unique // origem em generated_documents (migração)
+  legacyDocumentId String? @unique // id do documento no sistema antigo; /documentos/:id redireciona para cá
 
   createdById String?
   createdBy   User?    @relation("ContractCreatedBy", fields: [createdById], references: [id])
