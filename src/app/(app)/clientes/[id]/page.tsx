@@ -11,8 +11,8 @@ import {
   quoteStatusTone,
   proposalStatusLabels,
   proposalStatusTone,
-  documentStatusLabels,
-  documentStatusTone,
+  contractStatusLabels,
+  contractStatusTone,
   serviceInstanceStatusLabels,
   serviceInstanceStatusTone,
   mediaContentStatusLabels,
@@ -36,7 +36,7 @@ export default async function ClienteDetailPage({
       leads: true,
       quotes: { orderBy: { createdAt: "desc" } },
       proposals: { orderBy: { createdAt: "desc" } },
-      documents: { orderBy: { createdAt: "desc" } },
+      contracts: { orderBy: [{ year: "desc" }, { sequence: "desc" }] },
       serviceInstances: { orderBy: { createdAt: "desc" } },
       mediaContents: { orderBy: { createdAt: "desc" } },
       whatsappMessages: { orderBy: { sentAt: "desc" }, take: 20 },
@@ -78,9 +78,9 @@ export default async function ClienteDetailPage({
               <FileSignature className="h-4 w-4" /> Proposta
             </Button>
           </Link>
-          <Link href={`/documentos/novo?clientId=${client.id}`}>
+          <Link href={`/juridico/contratos/novo?clientId=${client.id}`}>
             <Button variant="outline">
-              <FileStack className="h-4 w-4" /> Documento
+              <FileStack className="h-4 w-4" /> Gerar contrato
             </Button>
           </Link>
           <Link href={`/midia/novo?clientId=${client.id}`}>
@@ -236,12 +236,12 @@ export default async function ClienteDetailPage({
 
           <Card>
             <CardHeader>
-              <CardTitle>Orçamentos, propostas e documentos</CardTitle>
+              <CardTitle>Orçamentos, propostas e contratos</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {client.quotes.length === 0 &&
               client.proposals.length === 0 &&
-              client.documents.length === 0 ? (
+              client.contracts.length === 0 ? (
                 <p className="text-sm text-slate-400">Nenhum ainda.</p>
               ) : (
                 <>
@@ -269,15 +269,15 @@ export default async function ClienteDetailPage({
                       </Badge>
                     </Link>
                   ))}
-                  {client.documents.map((d) => (
+                  {client.contracts.map((d) => (
                     <Link
                       key={d.id}
-                      href={`/documentos/${d.id}`}
+                      href={`/juridico/contratos/${d.id}`}
                       className="flex min-h-11 items-center justify-between gap-2 rounded-lg border border-slate-100 px-3 py-2 text-sm hover:bg-slate-50 md:min-h-0"
                     >
-                      <span>{d.title}</span>
-                      <Badge tone={documentStatusTone[d.status]}>
-                        {documentStatusLabels[d.status]}
+                      <span>{d.code} — {d.title}</span>
+                      <Badge tone={contractStatusTone[d.status]}>
+                        {contractStatusLabels[d.status]}
                       </Badge>
                     </Link>
                   ))}

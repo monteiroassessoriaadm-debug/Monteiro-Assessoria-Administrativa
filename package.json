@@ -7,7 +7,7 @@
     "build": "prisma migrate deploy && next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --test src/lib/goals-calc.test.ts src/lib/agenda.test.ts",
+    "test": "node --test src/lib/goals-calc.test.ts src/lib/agenda.test.ts src/lib/contract-render.test.ts",
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate deploy",
     "db:seed": "prisma db seed"

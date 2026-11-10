@@ -21,7 +21,13 @@ export default async function OrcamentoDetailPage({
 
   const quote = await prisma.quote.findUnique({
     where: { id },
-    include: { client: true, items: true, createdBy: true, serviceInstances: true },
+    include: {
+      client: true,
+      items: true,
+      createdBy: true,
+      serviceInstances: true,
+      contracts: { where: { status: { notIn: ["ENCERRADO", "RESCINDIDO"] } }, orderBy: { createdAt: "desc" } },
+    },
   });
 
   if (!quote) notFound();
@@ -61,8 +67,15 @@ export default async function OrcamentoDetailPage({
               <Pencil className="h-4 w-4" /> Editar
             </Button>
           </Link>
-          {quote.status === "APROVADO" && (
-            <Link href={`/documentos/novo?clientId=${quote.clientId}`}>
+          {quote.contracts.map((c) => (
+            <Link key={c.id} href={`/juridico/contratos/${c.id}`}>
+              <Button variant="outline">
+                <FileStack className="h-4 w-4" /> Contrato {c.code}
+              </Button>
+            </Link>
+          ))}
+          {quote.status === "APROVADO" && quote.contracts.length === 0 && (
+            <Link href={`/juridico/contratos/novo?clientId=${quote.clientId}&quoteId=${quote.id}`}>
               <Button variant="secondary">
                 <FileStack className="h-4 w-4" /> Gerar contrato
               </Button>

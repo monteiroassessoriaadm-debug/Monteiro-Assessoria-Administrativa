@@ -456,6 +456,14 @@ export type ClientPatch = {
   addressState?: string | null;
   addressZip?: string | null;
   notes?: string | null;
+  // Qualificação usada nos contratos do Jurídico
+  rg?: string | null;
+  profession?: string | null;
+  maritalStatus?: string | null;
+  legalName?: string | null;
+  responsibleName?: string | null;
+  responsibleCpf?: string | null;
+  responsibleRole?: string | null;
 };
 
 export async function updateClient(id: string, patch: ClientPatch, actor: Actor) {
@@ -492,7 +500,19 @@ export async function updateClient(id: string, patch: ClientPatch, actor: Actor)
     addressState: text(patch.addressState),
     addressZip: text(patch.addressZip),
     notes: text(patch.notes),
+    ...(client.type === "PF"
+      ? { rg: text(patch.rg), profession: text(patch.profession), maritalStatus: text(patch.maritalStatus) }
+      : {
+          legalName: text(patch.legalName),
+          responsibleName: text(patch.responsibleName),
+          responsibleCpf: patch.responsibleCpf === undefined ? undefined : onlyDigits(patch.responsibleCpf) || null,
+          responsibleRole: text(patch.responsibleRole),
+        }),
   };
+  const responsibleDigits = onlyDigits(patch.responsibleCpf);
+  if (client.type === "PJ" && responsibleDigits && responsibleDigits.length !== 11) {
+    throw new OperationError(`CPF do responsável inválido: precisa de 11 dígitos, e foram informados ${responsibleDigits.length}.`);
+  }
   const diff = diffFields(client as Record<string, unknown>, data as Record<string, unknown>);
   if (!diff.changed) return { id, antes: {}, depois: {} };
 

@@ -17,6 +17,7 @@ export function SettingsForm({
   whatsapp,
   instagram,
   about,
+  legal,
 }: {
   name: string;
   slogan: string | null;
@@ -24,6 +25,14 @@ export function SettingsForm({
   whatsapp: string | null;
   instagram: string | null;
   about: string | null;
+  legal: {
+    legalName: string | null;
+    cnpj: string | null;
+    address: string | null;
+    representativeName: string | null;
+    forum: string | null;
+    signatureCity: string | null;
+  };
 }) {
   const [state, formAction, pending] = useActionState(
     updateCompanySettingsAction,
@@ -89,6 +98,41 @@ export function SettingsForm({
           <div>
             <Label>Quem somos / sobre a empresa</Label>
             <Textarea name="about" rows={4} defaultValue={about ?? ""} />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Dados para os contratos (Jurídico)</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <p className="text-xs text-slate-500 sm:col-span-2">
+            Entram na qualificação da CONTRATADA em todos os contratos. Confira com o cartão CNPJ do MEI.
+          </p>
+          <div className="sm:col-span-2">
+            <Label>Nome empresarial (como está no cartão CNPJ)</Label>
+            <Input name="legalName" defaultValue={legal.legalName ?? ""} placeholder="Ex.: 68.566.006 JOÃO VITOR MONTEIRO" />
+          </div>
+          <div>
+            <Label>CNPJ</Label>
+            <Input name="cnpj" defaultValue={legal.cnpj ?? ""} />
+          </div>
+          <div>
+            <Label>Quem assina pela Monteiro</Label>
+            <Input name="representativeName" defaultValue={legal.representativeName ?? ""} />
+          </div>
+          <div className="sm:col-span-2">
+            <Label>Endereço da sede</Label>
+            <Input name="address" defaultValue={legal.address ?? ""} />
+          </div>
+          <div>
+            <Label>Foro</Label>
+            <Input name="forum" defaultValue={legal.forum ?? ""} placeholder="Comarca de Redenção-PA" />
+          </div>
+          <div>
+            <Label>Cidade da assinatura</Label>
+            <Input name="signatureCity" defaultValue={legal.signatureCity ?? ""} placeholder="Pau D'Arco-PA" />
           </div>
         </CardContent>
       </Card>

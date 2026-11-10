@@ -39,7 +39,9 @@ import { CollapsibleSection } from "@/components/dashboard/collapsible-section";
 import { DashboardMenu } from "@/components/dashboard/page-menu";
 import { getGoalsProgress } from "@/lib/goals";
 import { getAccountBalances, getBalanceSeries } from "@/lib/account-balance";
-import { brTodayRange } from "@/lib/br-time";
+import { brTodayRange, brDayKey, addDaysKey, keyToUtc } from "@/lib/br-time";
+import { refreshContractStatuses } from "@/lib/contracts";
+import { contractNextDate } from "@/lib/contract-display";
 
 const QUOTE_AWAITING_STATUSES = ["ENVIADO", "VISUALIZADO", "EM_NEGOCIACAO"] as const;
 const ACTIVE_SERVICE_STATUSES = ["ABERTO", "EM_ANDAMENTO", "EM_REVISAO"] as const;
@@ -53,6 +55,9 @@ export default async function DashboardPage() {
   const threeDaysAgo = daysAgo(3);
   const reactivationCutoff = daysAgo(REACTIVATION_DAYS);
   const { start: startOfToday, end: endOfToday } = brTodayRange();
+  const todayDay = keyToUtc(brDayKey(new Date()));
+  const in30Days = keyToUtc(addDaysKey(brDayKey(new Date()), 30));
+  await refreshContractStatuses();
 
   const [goalsProgress, accountBalances, balanceSeries] = canSeeFinanceiro
     ? await Promise.all([getGoalsProgress(), getAccountBalances(), getBalanceSeries()])
@@ -75,7 +80,7 @@ export default async function DashboardPage() {
     orcamentosParaFollowUp,
     leadsParaFollowUp,
     contratosAguardandoAssinatura,
-    documentosGeradosMes,
+    contratosVencendo,
     servicosEmAndamento,
     servicosParaHoje,
     servicosAtrasados,
@@ -124,10 +129,18 @@ export default async function DashboardPage() {
       orderBy: { nextContactDate: "asc" },
       take: 5,
     }),
-    prisma.generatedDocument.count({
-      where: { status: { in: ["ENVIADO", "AGUARDANDO_ASSINATURA"] } },
+    prisma.contract.findMany({
+      where: { status: "ENVIADO" },
+      include: { client: true },
+      orderBy: { sentAt: "asc" },
     }),
-    prisma.generatedDocument.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
+    prisma.contract.findMany({
+      where: {
+        status: { in: ["ASSINADO", "VIGENTE"] },
+        OR: [{ endDate: { gte: todayDay, lte: in30Days } }, { renewalDate: { gte: todayDay, lte: in30Days } }],
+      },
+      include: { client: true },
+    }),
     prisma.serviceInstance.count({ where: { status: { in: [...ACTIVE_SERVICE_STATUSES] } } }),
     prisma.serviceInstance.count({
       where: {
@@ -518,19 +531,60 @@ export default async function DashboardPage() {
           />
           <StatCard
             label="Contratos a assinar"
-            value={contratosAguardandoAssinatura}
+            value={contratosAguardandoAssinatura.length}
             icon={FileStack}
             tone="amber"
-            href="/documentos?status=ENVIADO,AGUARDANDO_ASSINATURA"
+            href="/juridico/contratos?status=ENVIADO"
           />
           <StatCard
-            label="Documentos (30 dias)"
-            value={documentosGeradosMes}
+            label="Vencem ou reajustam (30 dias)"
+            value={contratosVencendo.length}
             icon={FileStack}
             tone="slate"
-            href="/documentos?dias=30"
+            href="/juridico/contratos?vence=30"
           />
         </div>
+        {(contratosAguardandoAssinatura.length > 0 || contratosVencendo.length > 0) && (
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle>Jurídico</CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <p className="text-xs font-semibold uppercase text-slate-500">Aguardando assinatura</p>
+                {contratosAguardandoAssinatura.length === 0 && <p className="text-sm text-slate-400">Nenhum.</p>}
+                {contratosAguardandoAssinatura.slice(0, 5).map((c) => (
+                  <Link
+                    key={c.id}
+                    href={`/juridico/contratos/${c.id}`}
+                    className="flex min-h-11 items-center justify-between gap-2 rounded-lg border border-slate-100 px-3 py-2 text-sm hover:bg-slate-50 md:min-h-0"
+                  >
+                    <span className="min-w-0 break-words">
+                      {c.code} — {displayClientName(c.client)}
+                    </span>
+                    <span className="shrink-0 text-xs text-slate-500">desde {formatDateBR(c.sentAt)}</span>
+                  </Link>
+                ))}
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs font-semibold uppercase text-slate-500">Vencimentos e reajustes (30 dias)</p>
+                {contratosVencendo.length === 0 && <p className="text-sm text-slate-400">Nenhum.</p>}
+                {contratosVencendo.slice(0, 5).map((c) => (
+                  <Link
+                    key={c.id}
+                    href={`/juridico/contratos/${c.id}`}
+                    className="flex min-h-11 items-center justify-between gap-2 rounded-lg border border-slate-100 px-3 py-2 text-sm hover:bg-slate-50 md:min-h-0"
+                  >
+                    <span className="min-w-0 break-words">
+                      {c.code} — {displayClientName(c.client)}
+                    </span>
+                    <span className="shrink-0 text-xs text-slate-500">{contractNextDate(c)}</span>
+                  </Link>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </CollapsibleSection>
 
       <CollapsibleSection title="Operacional" defaultOpen>

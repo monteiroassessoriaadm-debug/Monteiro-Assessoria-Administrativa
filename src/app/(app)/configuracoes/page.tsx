@@ -35,6 +35,14 @@ export default async function ConfiguracoesPage() {
         whatsapp={settings?.whatsapp ?? null}
         instagram={settings?.instagram ?? null}
         about={settings?.about ?? null}
+        legal={{
+          legalName: settings?.legalName ?? null,
+          cnpj: settings?.cnpj ?? null,
+          address: settings?.address ?? null,
+          representativeName: settings?.representativeName ?? null,
+          forum: settings?.forum ?? null,
+          signatureCity: settings?.signatureCity ?? null,
+        }}
       />
     </div>
   );

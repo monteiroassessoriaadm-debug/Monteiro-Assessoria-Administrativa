@@ -57,6 +57,11 @@ model User {
   oauthTokens                 OAuthToken[]
   mcpAuditLogs                McpAuditLog[]
   balanceAdjustments          BalanceAdjustment[]      @relation("BalanceAdjustmentCreatedBy")
+  contractTemplatesCreated    ContractTemplate[]       @relation("ContractTemplateCreatedBy")
+  contractsCreated            Contract[]               @relation("ContractCreatedBy")
+  contractVersionsCreated     ContractVersion[]        @relation("ContractVersionCreatedBy")
+  contractStatusChanges       ContractStatusChange[]   @relation("ContractStatusChangedBy")
+  legalConsultationsCreated   LegalConsultation[]      @relation("LegalConsultationCreatedBy")
 
   @@map("users")
 }
@@ -65,14 +70,22 @@ model User {
 // A logo é cadastrada pelo administrador; o sistema nunca cria/altera identidade visual sozinho.
 
 model CompanySettings {
-  id        String   @id @default(cuid())
-  name      String   @default("Monteiro Assessoria Administrativa")
+  id        String  @id @default(cuid())
+  name      String  @default("Monteiro Assessoria Administrativa")
   slogan    String? // ex.: "A Monteiro Resolve" — cadastrado pelo admin, não fixo no código
   logoData  String? // logo enviada pelo admin (data URI), usada em contratos/orçamentos/PDFs
   whatsapp  String? // número exibido no site público, cadastrado pelo admin
   instagram String? // @ ou link exibido no site público, cadastrado pelo admin
   about     String? // texto "sobre a empresa" do site público, cadastrado pelo admin
-  updatedAt DateTime @updatedAt
+
+  // Qualificação da CONTRATADA nos contratos do Jurídico
+  legalName          String? // nome empresarial do MEI, como está no cartão CNPJ
+  cnpj               String?
+  address            String? // endereço completo da sede
+  representativeName String? // quem assina pela Monteiro
+  forum              String? // foro de eleição, ex.: "Comarca de Redenção-PA"
+  signatureCity      String? // cidade que aparece em "local e data" do contrato
+  updatedAt          DateTime @updatedAt
 
   @@map("company_settings")
 }
@@ -132,18 +145,20 @@ model Client {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  leads            Lead[]
-  timelineEvents   TimelineEvent[]
-  quotes           Quote[]
-  proposals        Proposal[]
-  documents        GeneratedDocument[]
-  serviceInstances ServiceInstance[]
-  tasks            Task[]
-  calendarEvents   CalendarEvent[]
-  receivables      Receivable[]
-  commissions      Commission[]
-  mediaContents    MediaContent[]
-  whatsappMessages WhatsAppMessage[]
+  leads              Lead[]
+  timelineEvents     TimelineEvent[]
+  quotes             Quote[]
+  proposals          Proposal[]
+  documents          GeneratedDocument[]
+  contracts          Contract[]
+  legalConsultations LegalConsultation[]
+  serviceInstances   ServiceInstance[]
+  tasks              Task[]
+  calendarEvents     CalendarEvent[]
+  receivables        Receivable[]
+  commissions        Commission[]
+  mediaContents      MediaContent[]
+  whatsappMessages   WhatsAppMessage[]
 
   @@unique([cpf])
   @@unique([cnpj])
@@ -236,6 +251,7 @@ model Service {
   proposals          Proposal[]
   prospectingEntries ProspectingEntry[]
   serviceInstances   ServiceInstance[]
+  contracts          Contract[]
 
   @@map("services")
 }
@@ -292,6 +308,7 @@ model Quote {
   items            QuoteItem[]
   serviceInstances ServiceInstance[]
   receivables      Receivable[]
+  contracts        Contract[]
 
   @@index([status])
   @@index([clientId])
@@ -383,6 +400,11 @@ model ProspectingEntry {
   @@map("prospecting_entries")
 }
 
+// ---------- LEGADO: Documentos (substituído pelo Jurídico) ----------
+// Os registros foram copiados para ContractTemplate/Contract na migração
+// 20261110120000_juridico_contratos. As telas foram removidas; as tabelas
+// só saem numa migração seguinte, depois da conferência dos dados migrados.
+//
 // ---------- Fase 3: Documentos ----------
 // O administrador cadastra e edita os modelos; o sistema nunca inventa
 // cláusulas jurídicas. Campos dinâmicos {{TOKEN}} são substituídos na
@@ -489,6 +511,7 @@ model ServiceInstance {
   tasks          Task[]
   receivables    Receivable[]
   commissions    Commission[]
+  contracts      Contract[]
 
   @@index([status])
   @@index([clientId])
@@ -652,6 +675,8 @@ model Receivable {
   serviceInstance   ServiceInstance? @relation(fields: [serviceInstanceId], references: [id])
   quoteId           String?
   quote             Quote?           @relation(fields: [quoteId], references: [id])
+  contractId        String?
+  contract          Contract?        @relation(fields: [contractId], references: [id], onDelete: SetNull)
 
   description   String
   amount        Decimal
@@ -677,6 +702,7 @@ model Receivable {
 
   @@index([status])
   @@index([dueDate])
+  @@index([contractId])
   @@map("receivables")
 }
 
@@ -1010,4 +1036,164 @@ model YearlyConfig {
   updatedAt DateTime @updatedAt
 
   @@map("yearly_configs")
+}
+
+// ---------- Jurídico: contratos, modelos e orientações ----------
+// O funcionário Jurídico (e as telas em /juridico) montam o contrato a partir
+// de um modelo e dos dados do CRM. Nada de dado de cliente é inventado: o que
+// falta é pedido antes de gerar. Cada alteração vira uma versão nova e cada
+// mudança de status fica registrada.
+
+enum ContractStatus {
+  RASCUNHO
+  ENVIADO
+  ASSINADO
+  VIGENTE
+  ENCERRADO
+  RESCINDIDO
+}
+
+enum ContractKind {
+  CONTRATO // numerado MON-AAAA-NNN
+  DOCUMENTO // briefing e outros documentos sem valor contratual, numerados DOC-AAAA-NNN
+}
+
+model ContractTemplate {
+  id             String       @id @default(cuid())
+  baseTemplateId String // agrupa as versões de um mesmo modelo
+  slug           String? // chave estável usada pelo conector (ex.: "criacao-site")
+  name           String
+  kind           ContractKind @default(CONTRATO)
+  category       String?
+  description    String? // quando usar este modelo
+  version        Int          @default(1)
+  active         Boolean      @default(true)
+  content        String // corpo com {{campos}} — editado pelo admin
+  fieldsSchema   String // JSON: [{ key, label, type, required, default?, hint? }]
+
+  legacyDocumentTemplateId String? @unique // origem em document_templates (migração)
+
+  createdById String?
+  createdBy   User?    @relation("ContractTemplateCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  contracts Contract[]
+
+  @@index([baseTemplateId])
+  @@index([slug])
+  @@map("contract_templates")
+}
+
+model Contract {
+  id       String       @id @default(cuid())
+  code     String       @unique // MON-2026-001 / DOC-2026-001
+  kind     ContractKind @default(CONTRATO)
+  year     Int
+  sequence Int
+
+  templateId String
+  template   ContractTemplate @relation(fields: [templateId], references: [id])
+  clientId   String
+  client     Client           @relation(fields: [clientId], references: [id])
+
+  quoteId           String?
+  quote             Quote?           @relation(fields: [quoteId], references: [id], onDelete: SetNull)
+  serviceId         String?
+  service           Service?         @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  serviceInstanceId String?
+  serviceInstance   ServiceInstance? @relation(fields: [serviceInstanceId], references: [id], onDelete: SetNull)
+
+  title  String
+  status ContractStatus @default(RASCUNHO)
+
+  totalValue   Decimal? // valor do serviço (criação, avulso)
+  monthlyValue Decimal? // mensalidade (manutenção, social media, tráfego)
+  paymentTerms String?
+  startDate    DateTime?
+  endDate      DateTime?
+  renewalDate  DateTime? // reajuste/renovação
+
+  sentAt          DateTime?
+  signedAt        DateTime?
+  signatureMethod String? // gov.br, presencial, outra
+  endedAt         DateTime?
+  endReason       String?
+
+  fieldValues     String // JSON com os valores preenchidos (versão atual)
+  renderedContent String // texto final da versão atual
+  currentVersion  Int     @default(1)
+  notes           String?
+
+  legacyDocumentId String? @unique // origem em generated_documents (migração)
+
+  createdById String?
+  createdBy   User?    @relation("ContractCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  versions           ContractVersion[]
+  statusChanges      ContractStatusChange[]
+  receivables        Receivable[]
+  legalConsultations LegalConsultation[]
+
+  @@unique([kind, year, sequence])
+  @@index([clientId])
+  @@index([status])
+  @@index([quoteId])
+  @@map("contracts")
+}
+
+model ContractVersion {
+  id              String   @id @default(cuid())
+  contractId      String
+  contract        Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  version         Int
+  templateVersion Int // versão do modelo usada nesta versão do contrato
+  fieldValues     String
+  renderedContent String
+  reason          String? // o que mudou
+
+  createdById String?
+  createdBy   User?    @relation("ContractVersionCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@unique([contractId, version])
+  @@map("contract_versions")
+}
+
+model ContractStatusChange {
+  id         String          @id @default(cuid())
+  contractId String
+  contract   Contract        @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  fromStatus ContractStatus?
+  toStatus   ContractStatus
+  note       String?
+
+  createdById String?
+  createdBy   User?    @relation("ContractStatusChangedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@index([contractId])
+  @@map("contract_status_changes")
+}
+
+model LegalConsultation {
+  id          String    @id @default(cuid())
+  topic       String // assunto curto: "Cliente quer cancelar a manutenção"
+  question    String // a dúvida como chegou
+  guidance    String // a orientação dada
+  needsLawyer Boolean   @default(false) // recomendou procurar advogado
+  clientId    String?
+  client      Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  contractId  String?
+  contract    Contract? @relation(fields: [contractId], references: [id], onDelete: SetNull)
+
+  createdById String?
+  createdBy   User?    @relation("LegalConsultationCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([createdAt])
+  @@map("legal_consultations")
 }

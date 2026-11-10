@@ -10,7 +10,10 @@ import {
   Search,
   FileText,
   FileSignature,
-  FileStack,
+  ScrollText,
+  FilePlus2,
+  Files,
+  Scale,
   Briefcase,
   UserCog,
   Settings,
@@ -64,7 +67,15 @@ const navGroups: NavGroup[] = [
       { href: "/funil", label: "Funil", icon: Kanban },
       { href: "/orcamentos", label: "Orçamentos", icon: FileText },
       { href: "/propostas", label: "Propostas", icon: FileSignature },
-      { href: "/documentos", label: "Documentos", icon: FileStack },
+    ],
+  },
+  {
+    label: "Jurídico",
+    items: [
+      { href: "/juridico/contratos", label: "Contratos", icon: ScrollText },
+      { href: "/juridico/contratos/novo", label: "Novo contrato", icon: FilePlus2 },
+      { href: "/juridico/modelos", label: "Modelos", icon: Files, roles: ["ADMIN"] },
+      { href: "/juridico/consultas", label: "Consultas", icon: Scale },
     ],
   },
   {
@@ -123,12 +134,6 @@ const navGroups: NavGroup[] = [
     items: [
       { href: "/servicos", label: "Serviços", icon: Briefcase },
       { href: "/usuarios", label: "Usuários", icon: UserCog, roles: ["ADMIN"] },
-      {
-        href: "/configuracoes/modelos",
-        label: "Modelos de documentos",
-        icon: FileStack,
-        roles: ["ADMIN"],
-      },
       {
         href: "/whatsapp/modelos",
         label: "Modelos de WhatsApp",
@@ -213,8 +218,11 @@ export function Sidebar({
                 <div className="space-y-1">
                   {items.map((item) => {
                     const Icon = item.icon;
+                    // Só o item mais específico acende ("Novo contrato" e não "Contratos").
+                    const matches = (href: string) => pathname === href || pathname.startsWith(href + "/");
                     const active =
-                      pathname === item.href || pathname.startsWith(item.href + "/");
+                      matches(item.href) &&
+                      !items.some((o) => o.href.length > item.href.length && o.href.startsWith(item.href + "/") && matches(o.href));
                     return (
                       <Link
                         key={item.href}

@@ -862,9 +862,10 @@ export function registerCrmTools(server: McpServer, ctx: Ctx) {
         vencimento: z.string().optional().describe("Data de vencimento (YYYY-MM-DD)"),
         cliente: z.string().min(1).describe("Nome ou ID do cliente"),
         conta: z.string().optional().describe("Nome ou ID da conta prevista"),
+        contrato: z.string().optional().describe("Número do contrato (ex.: MON-2026-003) a que a parcela ou mensalidade pertence"),
       },
     },
-    async ({ descricao, valor, vencimento, cliente, conta }) => {
+    async ({ descricao, valor, vencimento, cliente, conta, contrato }) => {
       const clientResolution = await resolveClientId(cliente);
       if (!clientResolution.ok) return errorResult(clientResolution.error);
       if (!clientResolution.clientId) return errorResult(`Cliente "${cliente}" é obrigatório.`);
@@ -872,11 +873,23 @@ export function registerCrmTools(server: McpServer, ctx: Ctx) {
       const accountResolution = await resolveAccountId(conta);
       if (!accountResolution.ok) return errorResult(accountResolution.error);
 
+      let contract: { id: string; quoteId: string | null; clientId: string } | null = null;
+      if (contrato) {
+        contract = await prisma.contract.findFirst({
+          where: { OR: [{ id: contrato }, { code: contrato.trim().toUpperCase() }] },
+          select: { id: true, quoteId: true, clientId: true },
+        });
+        if (!contract) return errorResult(`Contrato "${contrato}" não encontrado.`);
+        if (contract.clientId !== clientResolution.clientId) return errorResult(`O contrato ${contrato} é de outro cliente.`);
+      }
+
       const count = await prisma.receivable.count();
       const receivable = await prisma.receivable.create({
         data: {
           number: count + 1,
           clientId: clientResolution.clientId,
+          contractId: contract?.id ?? null,
+          quoteId: contract?.quoteId ?? null,
           description: descricao,
           amount: valor.toFixed(2),
           dueDate: vencimento ? new Date(vencimento) : null,

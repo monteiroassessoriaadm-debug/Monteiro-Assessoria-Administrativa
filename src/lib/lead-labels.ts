@@ -78,27 +78,6 @@ export const proposalStatusTone: Record<
   CANCELADA: "red",
 };
 
-export const documentStatusLabels: Record<string, string> = {
-  RASCUNHO: "Rascunho",
-  GERADO: "Gerado",
-  ENVIADO: "Enviado",
-  AGUARDANDO_ASSINATURA: "Aguardando assinatura",
-  ASSINADO: "Assinado",
-  CANCELADO: "Cancelado",
-};
-
-export const documentStatusTone: Record<
-  string,
-  "slate" | "blue" | "yellow" | "green" | "red"
-> = {
-  RASCUNHO: "slate",
-  GERADO: "blue",
-  ENVIADO: "blue",
-  AGUARDANDO_ASSINATURA: "yellow",
-  ASSINADO: "green",
-  CANCELADO: "red",
-};
-
 export const serviceInstanceStatusLabels: Record<string, string> = {
   ABERTO: "Aberto",
   EM_ANDAMENTO: "Em andamento",
@@ -215,4 +194,27 @@ export const calendarEventStatusTone: Record<string, "slate" | "green" | "purple
   PENDENTE: "slate",
   CONCLUIDO: "green",
   NAO_REALIZADO: "purple",
+};
+
+export const contractStatusLabels: Record<string, string> = {
+  RASCUNHO: "Rascunho",
+  ENVIADO: "Enviado",
+  ASSINADO: "Assinado",
+  VIGENTE: "Vigente",
+  ENCERRADO: "Encerrado",
+  RESCINDIDO: "Rescindido",
+};
+
+export const contractStatusTone: Record<string, "slate" | "blue" | "yellow" | "green" | "red" | "purple"> = {
+  RASCUNHO: "slate",
+  ENVIADO: "yellow",
+  ASSINADO: "blue",
+  VIGENTE: "green",
+  ENCERRADO: "slate",
+  RESCINDIDO: "red",
+};
+
+export const contractKindLabels: Record<string, string> = {
+  CONTRATO: "Contrato",
+  DOCUMENTO: "Documento",
 };

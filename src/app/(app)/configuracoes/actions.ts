@@ -31,6 +31,7 @@ export async function updateCompanySettingsAction(
   const instagram = String(formData.get("instagram") || "").trim();
   const about = String(formData.get("about") || "").trim();
   const logoFile = formData.get("logo");
+  const legal = (key: string) => String(formData.get(key) || "").trim() || null;
 
   let logoData: string | undefined;
   if (logoFile instanceof File && logoFile.size > 0) {
@@ -52,6 +53,12 @@ export async function updateCompanySettingsAction(
       whatsapp: whatsapp || null,
       instagram: instagram || null,
       about: about || null,
+      legalName: legal("legalName"),
+      cnpj: legal("cnpj"),
+      address: legal("address"),
+      representativeName: legal("representativeName"),
+      forum: legal("forum"),
+      signatureCity: legal("signatureCity"),
       ...(logoData ? { logoData } : {}),
     },
   });

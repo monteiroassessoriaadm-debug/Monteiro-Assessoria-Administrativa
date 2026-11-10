@@ -56,7 +56,7 @@ export default async function PropostaDetailPage({
             </Button>
           </Link>
           {proposal.status === "APROVADA" && (
-            <Link href={`/documentos/novo?clientId=${proposal.clientId}`}>
+            <Link href={`/juridico/contratos/novo?clientId=${proposal.clientId}`}>
               <Button variant="secondary">
                 <FileStack className="h-4 w-4" /> Gerar contrato
               </Button>

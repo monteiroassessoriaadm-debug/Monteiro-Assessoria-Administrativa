@@ -5,6 +5,7 @@ import { findValidAccessToken } from "@/lib/oauth";
 import { registerCrmTools } from "@/lib/mcp/tools";
 import { registerExtraCrmTools } from "@/lib/mcp/tools-extra";
 import { registerFase1CrmTools } from "@/lib/mcp/tools-fase1";
+import { registerJuridicoTools } from "@/lib/mcp/tools-juridico";
 
 export const runtime = "nodejs";
 
@@ -34,6 +35,7 @@ async function handle(request: NextRequest): Promise<Response> {
   registerCrmTools(server, { userId: tokenRecord.userId });
   registerExtraCrmTools(server, { userId: tokenRecord.userId });
   registerFase1CrmTools(server, { userId: tokenRecord.userId });
+  registerJuridicoTools(server, { userId: tokenRecord.userId, origin });
 
   const transport = new WebStandardStreamableHTTPServerTransport({
     sessionIdGenerator: undefined,

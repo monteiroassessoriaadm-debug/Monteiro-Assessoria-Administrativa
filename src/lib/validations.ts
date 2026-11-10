@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { CLIENT_TOKEN_KEYS } from "@/lib/document-tokens";
 import { normalizeMoney } from "@/lib/money";
 
 const normalizedEmail = z
@@ -229,81 +228,6 @@ export const prospectSchema = z.object({
 });
 
 export type ProspectFormValues = z.infer<typeof prospectSchema>;
-
-const templateFieldDefSchema = z.object({
-  key: z
-    .string()
-    .min(1)
-    .regex(/^[A-Z][A-Z0-9_]*$/, "Use letras maiúsculas, números e _ (ex.: VALOR_TOTAL)."),
-  label: z.string().min(1, "Informe o rótulo do campo."),
-  type: z.enum(["text", "textarea", "number", "date"]),
-  required: z.boolean(),
-});
-
-export const documentTemplateSchema = z.object({
-  name: z.string().min(1, "Informe o nome do modelo."),
-  category: z.string().optional(),
-  content: z.string().min(1, "Informe o conteúdo do modelo."),
-  headerNote: z.string().optional(),
-  footerNote: z.string().optional(),
-  fieldsSchema: z
-    .string()
-    .transform((raw, ctx) => {
-      let parsed: unknown;
-      try {
-        parsed = raw.trim() ? JSON.parse(raw) : [];
-      } catch {
-        ctx.addIssue({ code: "custom", message: "Campos dinâmicos inválidos." });
-        return z.NEVER;
-      }
-      const result = z.array(templateFieldDefSchema).safeParse(parsed);
-      if (!result.success) {
-        ctx.addIssue({
-          code: "custom",
-          message: result.error.issues[0]?.message ?? "Verifique os campos dinâmicos.",
-        });
-        return z.NEVER;
-      }
-      const keys = result.data.map((f) => f.key);
-      if (new Set(keys).size !== keys.length) {
-        ctx.addIssue({ code: "custom", message: "Cada campo dinâmico precisa de uma chave única." });
-        return z.NEVER;
-      }
-      const reserved = keys.find((k) => (CLIENT_TOKEN_KEYS as string[]).includes(k));
-      if (reserved) {
-        ctx.addIssue({
-          code: "custom",
-          message: `A chave ${reserved} já é usada automaticamente para os dados do cliente — escolha outra.`,
-        });
-        return z.NEVER;
-      }
-      return result.data;
-    }),
-});
-
-export type DocumentTemplateFormValues = z.infer<typeof documentTemplateSchema>;
-
-export const generateDocumentSchema = z.object({
-  clientId: z.string().min(1, "Selecione um cliente."),
-  templateId: z.string().min(1, "Selecione um modelo."),
-  title: z.string().optional(),
-  fieldValues: z
-    .string()
-    .transform((raw, ctx) => {
-      try {
-        const parsed = JSON.parse(raw || "{}");
-        if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-          throw new Error("invalid");
-        }
-        return parsed as Record<string, string>;
-      } catch {
-        ctx.addIssue({ code: "custom", message: "Valores de campos inválidos." });
-        return z.NEVER;
-      }
-    }),
-});
-
-export type GenerateDocumentFormValues = z.infer<typeof generateDocumentSchema>;
 
 export const taskSchema = z.object({
   title: z.string().min(1, "Informe o título da tarefa."),
