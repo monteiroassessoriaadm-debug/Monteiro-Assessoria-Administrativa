@@ -1,6 +1,7 @@
 import { Role } from "@/generated/prisma/enums";
 import { requireRole } from "@/lib/permissions";
 import { getGoalsProgress } from "@/lib/goals";
+import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TableCard, TableCardEmpty, TableCardList } from "@/components/ui/table-card";
 import { GoalsSection } from "@/components/dashboard/goals-section";
@@ -12,7 +13,10 @@ const day = (key: string) => formatDateBR(keyToUtc(key)).slice(0, 5);
 
 export default async function MetasPage() {
   await requireRole(Role.ADMIN, Role.GESTOR);
-  const progress = await getGoalsProgress();
+  const [progress, brand] = await Promise.all([
+    getGoalsProgress(),
+    prisma.companySettings.findFirst({ select: { name: true, slogan: true, logoData: true } }),
+  ]);
   const { monthWeeks, byLine, config, today } = progress;
 
   return (
@@ -24,7 +28,7 @@ export default async function MetasPage() {
         </p>
       </div>
 
-      <GoalsSection progress={progress} showLink={false} />
+      <GoalsSection progress={progress} showLink={false} company={brand ?? undefined} />
 
       <Card>
         <CardHeader>

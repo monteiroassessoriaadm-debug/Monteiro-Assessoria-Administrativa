@@ -7,6 +7,29 @@ import { formatCurrencyBRL, formatDateBR } from "@/lib/utils";
 import { keyToUtc } from "@/lib/br-time";
 import type { GoalsProgress } from "@/lib/goals";
 import { GoalBar, LastWeeksChart } from "@/components/dashboard/goal-charts";
+import { GoalCelebration, type CelebrationInfo } from "@/components/dashboard/goal-celebration";
+
+export type CompanyBrand = { name: string; slogan: string | null; logoData: string | null };
+
+/** Meta do mês batida tem prioridade; senão, a da semana. */
+function celebrationFor(p: GoalsProgress): CelebrationInfo | null {
+  const short = (key: string) => formatDateBR(keyToUtc(key)).slice(0, 5);
+  if (p.month.meta > 0 && p.month.percentual >= 100) {
+    const monthName = new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric", timeZone: "UTC" }).format(keyToUtc(p.monthPeriod.start));
+    return { key: `MENSAL-${p.monthPeriod.start}`, kind: "mes", periodLabel: monthName, percentual: p.month.percentual, recebido: p.month.recebido, meta: p.month.meta };
+  }
+  if (p.week.meta > 0 && p.week.percentual >= 100) {
+    return {
+      key: `SEMANAL-${p.weekPeriod.start}`,
+      kind: "semana",
+      periodLabel: `${short(p.weekPeriod.start)} a ${short(p.weekPeriod.end)}`,
+      percentual: p.week.percentual,
+      recebido: p.week.recebido,
+      meta: p.week.meta,
+    };
+  }
+  return null;
+}
 
 const percent = (v: number) => `${v.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`;
 const day = (key: string) => formatDateBR(keyToUtc(key));
@@ -15,8 +38,17 @@ function statusTone(pct: number) {
   return pct >= 100 ? ("green" as const) : ("slate" as const);
 }
 
-export function GoalsSection({ progress, showLink = true }: { progress: GoalsProgress; showLink?: boolean }) {
+export function GoalsSection({
+  progress,
+  showLink = true,
+  company,
+}: {
+  progress: GoalsProgress;
+  showLink?: boolean;
+  company?: CompanyBrand;
+}) {
   const { week, month, mei, weekPeriod, monthPeriod, last8Weeks, config } = progress;
+  const celebration = celebrationFor(progress);
   const rows = [
     {
       label: "Semana atual",
@@ -44,6 +76,13 @@ export function GoalsSection({ progress, showLink = true }: { progress: GoalsPro
           </Link>
         )}
       </div>
+
+      {celebration && (
+        <GoalCelebration
+          info={celebration}
+          company={company ?? { name: "Monteiro Assessoria Administrativa", slogan: null, logoData: null }}
+        />
+      )}
 
       {config.fallbackFrom && (
         <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">

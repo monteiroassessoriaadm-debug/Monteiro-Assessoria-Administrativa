@@ -62,6 +62,9 @@ export default async function DashboardPage() {
   const [goalsProgress, accountBalances, balanceSeries] = canSeeFinanceiro
     ? await Promise.all([getGoalsProgress(), getAccountBalances(), getBalanceSeries()])
     : [null, [], null];
+  const brand = goalsProgress
+    ? await prisma.companySettings.findFirst({ select: { name: true, slogan: true, logoData: true } })
+    : null;
   const activeAccounts = accountBalances.filter((a) => a.active);
   const totalBalance = activeAccounts.reduce((sum, a) => sum + a.current, 0);
 
@@ -343,7 +346,7 @@ export default async function DashboardPage() {
         />
       )}
 
-      {goalsProgress && <GoalsSection progress={goalsProgress} />}
+      {goalsProgress && <GoalsSection progress={goalsProgress} company={brand ?? undefined} />}
 
       {followUpCount > 0 && (
         <Card className="border-amber-200 bg-amber-50">
