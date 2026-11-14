@@ -32,6 +32,7 @@ import {
   Camera,
   Goal,
   History,
+  HeartHandshake,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -42,6 +43,7 @@ type NavItem = {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   roles?: Role[];
+  ownerOnly?: boolean; // só o dono (Finanças Pessoais); o servidor confere de novo
 };
 
 type NavGroup = {
@@ -130,6 +132,10 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
+    label: "Pessoal",
+    items: [{ href: "/financas-pessoais", label: "Finanças Pessoais", icon: HeartHandshake, ownerOnly: true }],
+  },
+  {
     label: "Gestão",
     items: [
       { href: "/servicos", label: "Serviços", icon: Briefcase },
@@ -157,8 +163,10 @@ export function Sidebar({
   logoData,
   mobileOpen = false,
   onClose,
+  showPersonal = false,
 }: {
   role: Role;
+  showPersonal?: boolean;
   companyName?: string;
   logoData?: string | null;
   mobileOpen?: boolean;
@@ -207,7 +215,7 @@ export function Sidebar({
         <nav className="flex-1 space-y-5 px-3">
           {navGroups.map((group) => {
             const items = group.items.filter(
-              (item) => !item.roles || item.roles.includes(role),
+              (item) => (!item.roles || item.roles.includes(role)) && (!item.ownerOnly || showPersonal),
             );
             if (items.length === 0) return null;
             return (

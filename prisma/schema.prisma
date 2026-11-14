@@ -1129,3 +1129,288 @@ model LegalConsultation {
   @@index([createdAt])
   @@map("legal_consultations")
 }
+
+// ---------- Finanças Pessoais (pessoa física do dono) ----------
+// Totalmente separado da empresa: nenhuma tabela pf_ tem chave para as tabelas
+// da Monteiro e nenhum relatório da empresa lê estas tabelas. Só o dono acessa
+// (ver src/lib/pf/access.ts). Datas "só o dia" ficam à meia-noite UTC.
+
+enum PfAccountType {
+  BANCO
+  CONTA_DIGITAL
+  DINHEIRO
+  INVESTIMENTO
+}
+
+enum PfMovementType {
+  ENTRADA
+  SAIDA
+}
+
+enum PfBillStatus {
+  PENDENTE
+  PAGO
+}
+
+enum PfDebtType {
+  CARTAO
+  EMPRESTIMO_PESSOAL
+  CONSIGNADO
+  FINANCIAMENTO
+  CHEQUE_ESPECIAL
+  FAMILIA
+  OUTRO
+}
+
+enum PfDebtStatus {
+  EM_DIA
+  ATRASADA
+  NEGOCIANDO
+  QUITADA
+}
+
+enum PfLiquidity {
+  DIARIA
+  NO_VENCIMENTO
+}
+
+model PfAccount {
+  id             String        @id @default(cuid())
+  name           String
+  type           PfAccountType @default(BANCO)
+  openingBalance Decimal       @default(0) // saldo que já existia ao cadastrar
+  active         Boolean       @default(true)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  transactions PfTransaction[]
+  cardPayments PfCardPayment[]
+  bills        PfRecurringBill[]
+
+  @@map("pf_accounts")
+}
+
+model PfCategory {
+  id        String         @id @default(cuid())
+  name      String
+  type      PfMovementType
+  essential Boolean        @default(false) // entra no cálculo de "meses de reserva"
+  saving    Boolean        @default(false) // dinheiro guardado: conta na taxa de poupança, não como gasto
+  active    Boolean        @default(true)
+  sortOrder Int            @default(0)
+  createdAt DateTime       @default(now())
+
+  transactions PfTransaction[]
+  bills        PfRecurringBill[]
+  budgets      PfBudget[]
+
+  @@unique([type, name])
+  @@map("pf_categories")
+}
+
+model PfCard {
+  id         String   @id @default(cuid())
+  name       String
+  limit      Decimal
+  closingDay Int // dia em que a fatura fecha
+  dueDay     Int // dia em que a fatura vence
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  transactions PfTransaction[]
+  payments     PfCardPayment[]
+
+  @@map("pf_cards")
+}
+
+model PfTransaction {
+  id          String         @id @default(cuid())
+  type        PfMovementType
+  date        DateTime // só o dia
+  amount      Decimal
+  description String
+  notes       String?
+
+  categoryId String
+  category   PfCategory @relation(fields: [categoryId], references: [id])
+  // Conta OU cartão. Compra no cartão não mexe no saldo até a fatura ser paga.
+  accountId  String?
+  account    PfAccount? @relation(fields: [accountId], references: [id])
+  cardId     String?
+  card       PfCard?    @relation(fields: [cardId], references: [id])
+
+  // Compra parcelada: cada parcela é um lançamento, com a fatura em que cai.
+  invoiceMonth       String? // AAAA-MM do vencimento da fatura
+  installmentGroupId String?
+  installmentNumber  Int?
+  installmentTotal   Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  attachment     PfAttachment?
+  billOccurrence PfBillOccurrence?
+
+  @@index([date])
+  @@index([cardId, invoiceMonth])
+  @@index([installmentGroupId])
+  @@map("pf_transactions")
+}
+
+model PfAttachment {
+  id            String        @id @default(cuid())
+  transactionId String        @unique
+  transaction   PfTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  fileName      String
+  mimeType      String
+  data          Bytes
+  createdAt     DateTime      @default(now())
+
+  @@map("pf_attachments")
+}
+
+// Pagamento de fatura: só tira o dinheiro da conta. Não é gasto (os gastos são as compras).
+model PfCardPayment {
+  id           String    @id @default(cuid())
+  cardId       String
+  card         PfCard    @relation(fields: [cardId], references: [id])
+  invoiceMonth String // AAAA-MM
+  accountId    String
+  account      PfAccount @relation(fields: [accountId], references: [id])
+  amount       Decimal
+  date         DateTime // só o dia
+  createdAt    DateTime  @default(now())
+
+  @@index([cardId, invoiceMonth])
+  @@map("pf_card_payments")
+}
+
+model PfRecurringBill {
+  id         String     @id @default(cuid())
+  name       String
+  amount     Decimal
+  dueDay     Int
+  categoryId String
+  category   PfCategory @relation(fields: [categoryId], references: [id])
+  accountId  String? // conta de onde costuma sair
+  account    PfAccount? @relation(fields: [accountId], references: [id])
+  active     Boolean    @default(true)
+  startMonth String // AAAA-MM: primeiro mês gerado
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  occurrences PfBillOccurrence[]
+
+  @@map("pf_recurring_bills")
+}
+
+// Uma por conta fixa e mês, criada automaticamente.
+model PfBillOccurrence {
+  id            String          @id @default(cuid())
+  billId        String
+  bill          PfRecurringBill @relation(fields: [billId], references: [id], onDelete: Cascade)
+  month         String // AAAA-MM
+  dueDate       DateTime // só o dia
+  amount        Decimal
+  status        PfBillStatus    @default(PENDENTE)
+  paidAt        DateTime?
+  transactionId String?         @unique // saída criada ao pagar
+  transaction   PfTransaction?  @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+  createdAt     DateTime        @default(now())
+
+  @@unique([billId, month])
+  @@index([dueDate])
+  @@map("pf_bill_occurrences")
+}
+
+model PfDebt {
+  id                    String       @id @default(cuid())
+  creditor              String
+  type                  PfDebtType
+  balance               Decimal // saldo devedor atual
+  monthlyRate           Decimal      @default(0) // juros ao mês, em % (ex.: 3.5)
+  installment           Decimal      @default(0) // parcela mensal
+  remainingInstallments Int?
+  dueDay                Int?
+  status                PfDebtStatus @default(EM_DIA)
+  daysLate              Int          @default(0)
+  notes                 String?
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+
+  negotiations PfDebtNegotiation[]
+
+  @@map("pf_debts")
+}
+
+model PfDebtNegotiation {
+  id        String   @id @default(cuid())
+  debtId    String
+  debt      PfDebt   @relation(fields: [debtId], references: [id], onDelete: Cascade)
+  date      DateTime // só o dia
+  proposal  String
+  result    String?
+  createdAt DateTime @default(now())
+
+  @@index([debtId, date])
+  @@map("pf_debt_negotiations")
+}
+
+// Limite por categoria. Vale a partir do mês informado até haver outro mais novo.
+model PfBudget {
+  id         String     @id @default(cuid())
+  month      String // AAAA-MM
+  categoryId String
+  category   PfCategory @relation(fields: [categoryId], references: [id])
+  limit      Decimal
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  @@unique([month, categoryId])
+  @@map("pf_budgets")
+}
+
+model PfGoal {
+  id        String    @id @default(cuid())
+  name      String
+  target    Decimal   @default(0)
+  current   Decimal   @default(0)
+  deadline  DateTime? // só o dia
+  emergency Boolean   @default(false) // a "Reserva de Emergência", que não pode ser apagada
+  done      Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("pf_goals")
+}
+
+model PfInvestment {
+  id           String      @id @default(cuid())
+  name         String
+  institution  String?
+  applied      Decimal // valor aplicado
+  current      Decimal // valor atual
+  liquidity    PfLiquidity @default(DIARIA)
+  appliedAt    DateTime // só o dia
+  maturityDate DateTime? // só o dia
+  redeemed     Boolean     @default(false)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@map("pf_investments")
+}
+
+// Foto do mês (contas, investido, dívida, patrimônio), atualizada sempre que o
+// painel é aberto, para os gráficos de evolução.
+model PfMonthlySnapshot {
+  id            String   @id @default(cuid())
+  month         String   @unique // AAAA-MM
+  accountsTotal Decimal
+  investedTotal Decimal
+  debtTotal     Decimal
+  netWorth      Decimal
+  updatedAt     DateTime @updatedAt
+
+  @@map("pf_monthly_snapshots")
+}

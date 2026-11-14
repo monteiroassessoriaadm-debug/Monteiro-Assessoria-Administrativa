@@ -12,12 +12,14 @@ export function AppShell({
   companyName,
   logoData,
   name,
+  showPersonal = false,
   children,
 }: {
   role: Role;
   companyName?: string;
   logoData?: string | null;
   name: string;
+  showPersonal?: boolean;
   children: React.ReactNode;
 }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -39,6 +41,7 @@ export function AppShell({
         logoData={logoData}
         mobileOpen={mobileNavOpen}
         onClose={() => setMobileNavOpen(false)}
+        showPersonal={showPersonal}
       />
       <div className="flex min-h-dvh min-w-0 flex-1 flex-col">
         <Topbar name={name} role={role} onMenuClick={() => setMobileNavOpen(true)} />
